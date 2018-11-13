@@ -1,0 +1,681 @@
+openapi: 3.0.0
+servers:
+# Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/ProtocolOne/Authentication/1.0.0
+  - url: 'https://auth.protocol.one'
+info:
+  description: Basic methods for registration and authentication
+  version: 1.0.0
+  title: ProtocolOne Authentication API
+  termsOfService: ''
+  contact:
+    email: vadim.sabirov@protocol.one
+    name: Vadim Sabirov
+    url: 'https://protocol.one'
+tags:
+  - name: Login
+    description: ''
+  - name: Logout
+    description: Use this endpoint to logout a user
+  - name: Passwordless
+    description: One-time code sent through email or SMS, every time the user logs in
+  - name: Signup
+    description: Create a new user using active authentication
+  - name: Change Password
+    description: Send message to change password
+  - name: Get User Info
+    description: Get user information by Access Token
+  - name: Multi-Factor Authentication
+    description: Management multifactor authentication the Multi-Factor Authentication
+paths:
+  /logout:
+    get:
+      tags:
+        - Logout
+      summary: Clears all single sign-on cookies set by Auth1 for the user
+      description: >-
+        Redirecting the user to this URL clears all single sign-on cookies set
+        by Auth1 for the user.<br><br>The Auth1 logout endpoint logs you out
+        from Auth1 and, optionally, from your identity provider. It does not log
+        you out of your application! This is something that you must implement
+        on your side. You need to log out the user from your application by
+        clearing their session.<br><br>SAML logout is configured differently
+        depending on whether Auth1 acts as the Service Provider (i.e. when you
+        create a SAML connection) or when Auth1 acts as the Identity Provider
+        (i.e. when you have an application with the SAML2 Web App addon).
+      operationId: logout
+      parameters:
+        - name: redirect_uri
+          in: query
+          description: >-
+            URL to redirect the user after the logout.<br><br>To redirect a user
+            after logout, add a `redirect_uri` querystring parameter with the
+            target URL as the value. We suggest that you encode the target URL
+            being passed in.<br><br>You will need to add the non-encoded
+            `redirect_uri` URL as an Allowed Logout URLs in the application
+            settings.
+          required: false
+          schema:
+            type: integer
+            format: int64
+          allowEmptyValue: false
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            The `client_id` of your application.<br><br>If the `client_id`
+            parameter is included, the returnTo URL must be listed in the
+            Allowed Logout URLs set at the application level (see Setting
+            Allowed Logout URLs at the App Level)<br><br>If the `client_id`
+            parameter is NOT included, the `returnTo` URL must be listed in the
+            Allowed Logout URLs set at the tenant level (see Setting Allowed
+            Logout URLs at the Space Level)
+      responses:
+        '200':
+          description: Return `OK` if `returnTo` is not installed or not allowed.
+        '302':
+          description: >-
+            Redirect to the URL defined in the parameter `returnTo` if it is
+            specified and allowed.
+      security:
+        - CookieAuth: []
+    description: >-
+      The Auth1 logout endpoint logs you out from Auth1 and, optionally, from
+      your identity provider. It does not log you out of your application! This
+      is something that you must implement on your side. You need to log out the
+      user from your application by clearing their session.
+  /passwordless/start:
+    post:
+      tags:
+      - Passwordless
+      summary: ''
+      description: >-
+        Send a verification code using email or send a link using email or send a
+        verification code using SMS.
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            How to send the code/link to the user. Use `email` to send the
+            code/link using email, or `sms` to use SMS
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s email address, when `connection=email`'
+        - name: phone_number
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s phone number, when `connection=sms`'
+        - name: send
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Use `link` to send a link or `code` to send a verification code. If
+            null, a link will be sent
+        - name: authParams
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            Use this to append or override the link parameters (like scope,
+            redirect_uri, protocol, response_type), when you send a link using
+            email
+      operationId: passwordlessStart
+      responses:
+        '200':
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /passwordless/verify:
+    post:
+      tags:
+      - Passwordless
+      summary: ''
+      description: 'Verify passwordless authentication code'
+      parameters:
+        - name: verification_code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'Verification code from sms, email or verification link'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            How to send the code/link to the user. Use `email` to send the
+            code/link using email, or `sms` to use SMS
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s email address, when `connection=email`'
+        - name: phone_number
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s phone number, when `connection=sms`'
+      operationId: passwordlessVerify
+      responses:
+        '200':
+          description: 'Return user Access Token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /passwordless/verify_redirect:
+    get:
+      tags:
+      - Passwordless
+      summary: ''
+      description: 'Verify passwordless authentication code and redirect to the url'
+      parameters:
+        - name: verification_code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'Verification code from sms, email or verification link'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            How to send the code/link to the user. Use `email` to send the
+            code/link using email, or `sms` to use SMS
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s email address, when `connection=email`'
+        - name: phone_number
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Set this to the user''s phone number, when `connection=sms`'
+        - name: redirect_uri
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            URL to redirect the user after verification. If URI is not set, then
+            the user object will be returned.
+      operationId: passwordlessVerifyRedirect
+      responses:
+        '302':
+          description: 'The one-time token will be transferred through the get parameter token.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OTP'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /passwordless/token:
+    get:
+      tags:
+      - Passwordless
+      summary: ''
+      description: 'Get user Access Token by one-time password'
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'One-time passwordless token'
+      operationId: passwordlessToken
+      responses:
+        '200':
+          description: 'Return user access tokens.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /userinfo:
+    get:
+      tags:
+      - Get User Info
+      summary: ''
+      description: 'Given the Access Token obtained during login, this endpoint returns a user''s profile.'
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `Access Token` obtained during login'
+      operationId: userInfo
+      responses:
+        '200':
+          description: 'Return user info.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /token:
+    get:
+      tags:
+      - Get User Info
+      summary: ''
+      description: 'Given the Access Token obtained during OTP.'
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `Access Token` obtained during login'
+      operationId: token
+      responses:
+        '200':
+          description: 'Return Access Token.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /change_password/start:
+    post:
+      tags:
+      - Change Password
+      summary: ''
+      description: 'Given a user''s `email` address and a `connection`, Auth1 will send a change password email.'
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of the database connection configured to your client'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s email address'
+      operationId: changePasswordStart                                                        
+      responses:
+        '200':
+          description: 'Return result.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /change_password/verify:
+    post:
+      tags:
+      - Change Password
+      summary: ''
+      description: 'Verify change password code'
+      parameters:
+        - name: verification_code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'Code from email or verification link'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of the database connection configured to your client'
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s email address'
+        - name: password
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The new password'
+      operationId: changePasswordVerify
+      responses:
+        '200':
+          description: 'Return user Access Token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /signup:
+    post:
+      tags:
+      - Signup
+      summary: ''
+      description: 'Verify change password code'
+      parameters:
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of the database connection configured to your client'
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s email address'
+        - name: password
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s desired password'      
+      operationId: dbconnectionsSignup
+      responses:
+        '200':
+          description: 'Return user Access Token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /authorize:
+    get:
+      tags:
+      - Login
+      summary: ''
+      description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings'
+      parameters:
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of a social identity provider configured to your application, for example google-oauth2 or facebook'
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The URL to which will redirect the browser after authorization has been granted by the user'
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'An opaque value the applications adds to the initial request that the authorization server includes when redirecting the back to the application. This value must be used by the application to prevent CSRF attacks.'
+        - name: ADDITIONAL_PARAMETERS
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
+      operationId: authorize
+      responses:
+        '302':
+          description: 'Redirect to destination URI with OTP'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OTP'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /login:
+    post:
+      tags:
+      - Login
+      summary: ''
+      description: 'Use this endpoint to authenticate a user with database connection.'
+      parameters:
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of the connection configured to your application'
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s email address'
+        - name: password
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'The user''s desired password'
+        - name: captcha
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Captcha'
+      operationId: login
+      responses:
+        '200':
+          description: 'Get user Access Token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+externalDocs:
+  description: ''
+  url: 'https://auth.protocol.one/openapi'
+components:
+  schemas:
+    CommonResult:
+      type: object
+      properties:
+        result:
+          type: boolean
+          example: true
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Bad request
+        error_message:
+          type: string
+          example: The connection was not found
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: b62klDf0HeiJdNMv8K263nfE
+        email:
+          type: string
+          example: test@test.com
+        email_verified:
+          type: boolean
+          example: false
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: b62klDf0HeiJdNMv8K263nfE
+        email:
+          type: string
+          example: test@test.com
+        email_verified:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          example: "2016-11-02T15:05:21.311Z"
+        updated_at:
+          type: string
+          example: "2016-12-05T15:15:40.545Z"
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: oDnPKc1a...vWE36Lh
+        expires_in:
+          type: integer
+          format: int32
+          example: 3600
+        id_token:
+          type: string
+          description: Refresh token
+          example: oDnPKc1a...vWE36Lh
+    OTP:
+      type: object
+      description: 'One-time password'
+      properties:
+        token:
+          type: string
+          example: oDnPKc1a...vWE36Lh
+  requestBodies: {}
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: X-AUTH1-TOKEN
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  links: {}
+  callbacks: {}
+security:
+  - CookieAuth: []
+  - BearerAuth: []
