@@ -3,9 +3,9 @@ servers:
 # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
     url: https://virtserver.swaggerhub.com/ProtocolOne/Authentication/1.0.0
-  - url: 'https://auth.protocol.one'
+  - url: 'https://auth-one.protocol.one'
 info:
-  description: Basic methods for registration and authentication
+  description: The Authentication API enables you to manage all aspects of user identity when you use Auth-One. It offers endpoints so your users can log in, sign up, log out, access APIs, and more.
   version: 1.0.0
   title: ProtocolOne Authentication API
   termsOfService: ''
@@ -21,7 +21,7 @@ tags:
   - name: Logout
     description: Use this endpoint to logout a user
   - name: Passwordless
-    description: One-time code sent through email or SMS, every time the user logs in
+    description: One-Time Code sent through email or SMS, every time the user logs in
   - name: Change Password
     description: Send message to change password
   - name: Get User Info
@@ -35,17 +35,14 @@ paths:
     get:
       tags:
         - Logout
-      summary: Clears all single sign-on cookies set by Auth1 for the user
+      summary: Clears all single sign-on cookies set by Auth-One for the user
       description: >-
         Redirecting the user to this URL clears all single sign-on cookies set
-        by Auth1 for the user.<br><br>The Auth1 logout endpoint logs you out
-        from Auth1 and, optionally, from your identity provider. It does not log
+        by Auth-One for the user.<br><br>The Auth-One logout endpoint logs you out
+        from Auth-One and, optionally, from your identity provider. It does not log
         you out of your application! This is something that you must implement
         on your side. You need to log out the user from your application by
-        clearing their session.<br><br>SAML logout is configured differently
-        depending on whether Auth1 acts as the Service Provider (i.e. when you
-        create a SAML connection) or when Auth1 acts as the Identity Provider
-        (i.e. when you have an application with the SAML2 Web App addon).
+        clearing their session.
       operationId: logout
       parameters:
         - name: redirect_uri
@@ -57,14 +54,14 @@ paths:
             being passed in.<br><br>You will need to add the non-encoded
             `redirect_uri` URL as an Allowed Logout URLs in the application
             settings.
-          required: false
+          required: true
           schema:
             type: integer
             format: int64
           allowEmptyValue: false
         - name: client_id
           in: query
-          required: false
+          required: true
           schema:
             type: string
           description: >-
@@ -76,16 +73,13 @@ paths:
             Allowed Logout URLs set at the tenant level (see Setting Allowed
             Logout URLs at the Space Level)
       responses:
-        '200':
-          description: Return `OK` if `returnTo` is not installed or not allowed.
         '302':
           description: >-
-            Redirect to the URL defined in the parameter `returnTo` if it is
-            specified and allowed.
+            Redirect to the URL defined in the parameter `redirect_uri`. If URL is not specified or not allowed user will be redirect to login page.
       security:
         - CookieAuth: []
     description: >-
-      The Auth1 logout endpoint logs you out from Auth1 and, optionally, from
+      The Auth-One logout endpoint logs you out from Auth-One and, optionally, from
       your identity provider. It does not log you out of your application! This
       is something that you must implement on your side. You need to log out the
       user from your application by clearing their session.
@@ -95,7 +89,7 @@ paths:
       - Passwordless
       summary: ''
       description: >-
-        Send a verification code using email or send.
+        Send a verification code using email or sms.
       parameters:
         - name: client_id
           in: query
@@ -114,7 +108,7 @@ paths:
       operationId: passwordlessStart
       responses:
         '200':
-          description: Return One-time token for verification method
+          description: Return One-Time Token for verification method
           content:
             application/json:
               schema:
@@ -151,17 +145,17 @@ paths:
           required: true
           schema:
             type: string
-          description: 'Verification code from sms or email (One-time password)'
+          description: 'Verification code from sms or email (One-Time Code)'
         - name: token
           in: query
-          required: false
+          required: true
           schema:
             type: string
-          description: 'One-time token'
+          description: 'One-Time Token'
       operationId: passwordlessVerify
       responses:
         '200':
-          description: 'Return user Access Token'
+          description: 'User Access Token'
           content:
             application/json:
               schema:
@@ -241,7 +235,7 @@ paths:
       tags:
       - Change Password
       summary: ''
-      description: 'Given a user''s `email` address and a `connection`, Auth1 will send a change password email.'
+      description: 'Given a user''s `email` address and a `connection`, Auth-One will send a verification code to the email address.'
       parameters:
         - name: client_id
           in: query
@@ -257,14 +251,14 @@ paths:
           description: 'The name of the database connection configured to your client'
         - name: email
           in: query
-          required: false
+          required: true
           schema:
             type: string
           description: 'The user''s email address'
       operationId: changePasswordStart                                                        
       responses:
         '200':
-          description: Return One-time token for verification method
+          description: Return One-Time Token for verification method
           content:
             application/json:
               schema:
@@ -302,20 +296,20 @@ paths:
           description: 'Verification code from email'
         - name: token
           in: query
-          required: false
+          required: true
           schema:
             type: string
-          description: 'One-time token'
+          description: 'One-Time Token'
         - name: password
           in: query
-          required: false
+          required: true
           schema:
             type: string
           description: 'The new password'
       operationId: changePasswordVerify
       responses:
         '200':
-          description: 'Return user Access Token'
+          description: 'User Access Token'
           content:
             application/json:
               schema:
@@ -347,20 +341,20 @@ paths:
           description: 'The name of the database connection configured to your client'
         - name: email
           in: query
-          required: false
+          required: true
           schema:
             type: string
           description: 'The user''s email address'
         - name: password
           in: query
-          required: false
+          required: true
           schema:
             type: string
           description: 'The user''s desired password'      
       operationId: signup
       responses:
         '200':
-          description: 'Return user Access Token'
+          description: 'User Access Token'
           content:
             application/json:
               schema:
@@ -411,7 +405,7 @@ paths:
       operationId: authorize
       responses:
         '302':
-          description: 'Redirect to destination URI with OTP'
+          description: 'Redirect to destination URI with One-Time Token'
           content:
             application/json:
               schema:
@@ -443,6 +437,57 @@ paths:
           description: 'The name of the connection configured to your application'
         - name: email
           in: query
+          required: true
+          schema:
+            type: string
+          description: 'The user''s email address'
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The user''s desired password'
+        - name: captcha
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Captcha'
+      operationId: login
+      responses:
+        '200':
+          description: 'User Access Token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWTToken'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /mfa/list:
+    get:
+      tags:
+      - Multi-Factor Authentication
+      summary: ''
+      description: 'Use this endpoint to authenticate a user with database connection.'
+      parameters:
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of the connection configured to your application'
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: email
+          in: query
           required: false
           schema:
             type: string
@@ -462,7 +507,7 @@ paths:
       operationId: login
       responses:
         '200':
-          description: 'Get user Access Token'
+          description: 'User Access Token'
           content:
             application/json:
               schema:
@@ -473,158 +518,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '403':
-          description: MFA required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /mfa/challenge:
-    post:
-      tags:
-      - Multi-Factor Authentication
-      summary: ''
-      description: 'Request a challenge based on the challenge types supported by the application and user.'
-      parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: mfa_token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'MFA token from authenticate response'
-        - name: challenge_type
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: 'Set `otp` for use one-time password or set `oob` for use out-of-band message (sms). If the parameter is not set, then priority is given to the type of `otp`, if it is connected.'
-      operationId: mfaChallenge
-      responses:
-        '200':
-          description: 'Get user Access Token'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JWTToken'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /mfa/verify:
-    post:
-      tags:
-      - Multi-Factor Authentication
-      summary: ''
-      description: 'Use this endpoint to authenticate a user with MFA.'
-      parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: mfa_token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'MFA token from authenticate response'
-        - name: code
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: 'OTP, OOB or Recovery code'
-      operationId: mfaVerify
-      responses:
-        '200':
-          description: 'Get user Access Token'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JWTToken'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /mfa/add:
-    post:
-      tags:
-      - Multi-Factor Authentication
-      summary: ''
-      description: 'Add authenticator to the user.'
-      parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: authenticator_types
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'Set `otp` for use one-time password or set `oob` for use out-of-band message (sms)'
-        - name: oob_channel
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'The type of OOB channels supported by the client. An array with values `auth1` or `sms`. Required if authenticator_types include `oob`'
-        - name: phone_number
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'The phone number to use for SMS. Required if `oob_channel` includes `sms`'
-      operationId: mfaAdd
-      responses:
-        '200':
-          description: 'Get added MFA settings'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NewMFA'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-        - BearerAuth: []
-externalDocs:
-  description: ''
-  url: 'https://auth.protocol.one/openapi'
 components:
   schemas:
     Error:
@@ -632,14 +525,18 @@ components:
       properties:
         error:
           type: string
-          example: bad_request
+          example: Bad request
+          description: For the signup and login
         error_message:
           type: string
           example: The connection was not found
-        mfa_request:
-          type: string
-          example: abcde...dasg
-          description: This is an optional parameter and appears when you need to go through multi-factor authentication. The parameter value is a token that should be transferred to the MFA method.
+        payload:
+          type: object
+          example: '{"mfa_request": "kjzxcv8s9zx98lczvw700zx"}'
+          properties:
+            mfa_request:
+              type: string
+              description: This is an optional property and appears when you need to go through multi-factor authentication. The parameter value is a `mfa_token` that should be transferred to the MFA methods.
     User:
       type: object
       properties:
@@ -664,17 +561,19 @@ components:
         access_token:
           type: string
           example: oDnPKc1a...vWE36Lh
+          description: JWT token
         expires_in:
           type: integer
           format: int32
           example: 3600
+          description: UNIX timestamp
         id_token:
           type: string
           description: Refresh token
           example: oDnPKc1a...vWE36Lh
-    OneTimePassword:
+    OneTimeCode:
       type: object
-      description: 'One-Time Password'
+      description: 'One-Time Code'
       properties:
         token:
           type: integer
@@ -686,35 +585,12 @@ components:
         token:
           type: string
           example: oDnPKc1a...vWE36Lh
-    NewMFA:
-      type: object
-      properties:
-        secret:
-          type: string
-          example: oDnPKc1a...vWE36Lh
-          description: Use for OTP authentificator
-        oob_channel:
-          type: string
-          example: sms
-          description: Use for OBB authentificator. Must be `sms` or `auth1`
-        barcode_uri:
-          type: string
-          example: otpauth://...
-        authenticator_type:
-          type: string
-          description: '`otp` or `oob`'
-          example: otp
-        recovery_codes:
-          type: array
-          items:
-            type: string
-          example: ["ABCDEFGDRFK75ABYR7PH8TJA"]
   requestBodies: {}
   securitySchemes:
     CookieAuth:
       type: apiKey
       in: cookie
-      name: X-AUTH1-TOKEN-{CLIENT_ID}
+      name: X-AUTH-ONE-TOKEN-{CLIENT_ID}
     BearerAuth:
       type: http
       scheme: bearer
