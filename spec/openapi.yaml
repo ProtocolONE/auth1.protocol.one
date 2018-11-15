@@ -75,11 +75,11 @@ paths:
       responses:
         '302':
           description: >-
-            Redirect to the URL defined in the parameter `redirect_uri`. 
-            If URL is not specified or not allowed user will be redirect to 
-            login page. Adds to the request the parameter `auth_one_ott` with 
-            the value of a one-time token. Allows it to receive a one-time user 
-            Access Token value. For example: 
+            Redirect to the URL defined in the parameter `redirect_uri`.
+            If URL is not specified or not allowed user will be redirect to
+            login page. Adds to the request the parameter `auth_one_ott` with
+            the value of a one-time token. Allows it to receive a one-time user
+            Access Token value. For example:
             `https://YOUR_DOMAIN/page?auth_one_ott=zcv987z...987dre987zxc`
       security:
         - CookieAuth: []
@@ -211,7 +211,7 @@ paths:
           schema:
             type: string
           description: 'The user''s email address'
-      operationId: changePasswordStart                                                        
+      operationId: changePasswordStart
       responses:
         '200':
           description: Return One-Time Token for verification method
@@ -307,7 +307,7 @@ paths:
           required: true
           schema:
             type: string
-          description: 'The user''s desired password'      
+          description: 'The user''s desired password'
       operationId: signup
       responses:
         '200':
@@ -328,7 +328,7 @@ paths:
       tags:
       - Login
       summary: 'Authenticate by social provider'
-      description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings.'
+      description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings.<br><br>You can use a special endpoint for `redirect_uri` if you want to get the Access Token of a user via JS PostMessage or WebSocket. See more on <a href="#/Login/authorize">/authorize/result</a> page'
       parameters:
         - name: client_id
           in: query
@@ -364,9 +364,9 @@ paths:
       responses:
         '302':
           description: >-
-            Redirect to destination URI with One-Time Token. Adds to the request 
-            the parameter `auth_one_ott` with the value of a one-time token. 
-            Allows it to receive a one-time user Access Token value. For example: 
+            Redirect to destination URI with One-Time Token. Adds to the request
+            the parameter `auth_one_ott` with the value of a one-time token.
+            Allows it to receive a one-time user Access Token value. For example:
             `https://YOUR_DOMAIN/page?auth_one_ott=zcv987z...987dre987zxc`
         '400':
           description: Bad Request
@@ -375,6 +375,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security: []
+  /authorize/result:
+    get:
+      tags:
+      - Login
+      operationId: authorizeResult
   /login:
     post:
       tags:
@@ -432,7 +437,7 @@ paths:
       tags:
       - Passwordless
       summary: 'Send a verification code using email or sms'
-      description: 
+      description:
       parameters:
         - name: client_id
           in: query
