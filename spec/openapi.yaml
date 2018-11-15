@@ -323,63 +323,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security: []
-  /authorize:
-    get:
-      tags:
-      - Login
-      summary: 'Authenticate by social provider'
-      description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings.<br><br>You can use a special endpoint for `redirect_uri` if you want to get the Access Token of a user via JS PostMessage or WebSocket. See more on <a href="#/Login/authorize">/authorize/result</a> page'
-      parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
-        - name: redirect_uri
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The URL to which will redirect the browser after authorization has been granted by the user'
-        - name: state
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'An opaque value the applications adds to the initial request that the authorization server includes when redirecting the back to the application. This value must be used by the application to prevent CSRF attacks.'
-        - name: ADDITIONAL_PARAMETERS
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
-      operationId: authorize
-      responses:
-        '302':
-          description: >-
-            Redirect to destination URI with One-Time Token. Adds to the request
-            the parameter `auth_one_ott` with the value of a one-time token.
-            Allows it to receive a one-time user Access Token value. For example:
-            `https://YOUR_DOMAIN/page?auth_one_ott=zcv987z...987dre987zxc`
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security: []
-  /authorize/result:
-    get:
-      tags:
-      - Login
-      operationId: authorizeResult
   /login:
     post:
       tags:
@@ -431,6 +374,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+      security: []
+  /authorize:
+    get:
+      tags:
+      - Login
+      summary: 'Authenticate by social provider'
+      description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings.<br><br>You can use a special endpoint for `redirect_uri` if you want to get the Access Token of a user via JS PostMessage or WebSocket. See more on <a href="#/Login/authorizeResult">authorizeResult</a> page'
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The URL to which will redirect the browser after authorization has been granted by the user'
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'An opaque value the applications adds to the initial request that the authorization server includes when redirecting the back to the application. This value must be used by the application to prevent CSRF attacks.'
+        - name: ADDITIONAL_PARAMETERS
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
+      operationId: authorize
+      responses:
+        '302':
+          description: >-
+            Redirect to destination URI with One-Time Token. Adds to the request
+            the parameter `auth_one_ott` with the value of a one-time token.
+            Allows it to receive a one-time user Access Token value. For example:
+            `https://YOUR_DOMAIN/page?auth_one_ott=zcv987z...987dre987zxc`
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+  /authorize/result:
+    get:
+      tags:
+      - Login
+      summary: 'Send social authorize result'
+      description: 'Send social authorize result via JS PostMessage or WebSocket protocol.<br><br>The result will be sent as a JSON.stringify object with the following structure: `{"event":"EVENT_NAME", "token":{}}` where the name of the event can be `oauthCompletedSuccessfully` or `oauthCompletedWithError`, and the token upon successful authentication contains a JWTToken object.'
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: connection
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
+        - name: auth_one_ott
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'One-Time Token'
+        - name: wsUrl
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 'If you want to receive an answer via WebSocket, set the value of this parameter as the address of connection to your WebSocket server, for example: `wss://127.0.0.1:123`. The parameter must be encoded with the encodeURIComponent, for example `wss%3A%2F%2F127.0.0.1%3A123`'
+      responses:
+        '200':
+          description: Bad Request
+          content:
+            plain/text:
+              schema:
+                type: string
+                example: pong
+      operationId: authorizeResult
       security: []
   /passwordless/start:
     post:
