@@ -35,7 +35,7 @@ paths:
     get:
       tags:
         - Logout
-      summary: Clears all single sign-on cookies set by Auth-One for the user
+      summary: 'Clears all single sign-on cookies set by Auth-One for the user'
       description: >-
         Redirecting the user to this URL clears all single sign-on cookies set
         by Auth-One for the user.<br><br>The Auth-One logout endpoint logs you out
@@ -92,7 +92,7 @@ paths:
     get:
       tags:
       - Get User Info
-      summary: ''
+      summary: 'Get user info by Access Token'
       description: 'Given the Access Token obtained during login, this endpoint returns a user''s profile.'
       parameters:
         - name: access_token
@@ -121,8 +121,8 @@ paths:
     get:
       tags:
       - JWT Token
-      summary: ''
-      description: 'Get new user Access Token by Refresh Token'
+      summary: 'Get new user Access Token by Refresh Token'
+      description: ''
       parameters:
         - name: client_id
           in: query
@@ -156,8 +156,8 @@ paths:
     get:
       tags:
       - JWT Token
-      summary: ''
-      description: 'Get user Access Token by One-Time Token'
+      summary: 'Get user Access Token by One-Time Token'
+      description: ''
       parameters:
         - name: client_id
           in: query
@@ -171,7 +171,7 @@ paths:
           schema:
             type: string
           description: 'One-Time Token (for example, the parameter `auth_one_ott` passed during authentication with redirect)'
-      operationId: tokenRefresh
+      operationId: tokenOTT
       responses:
         '200':
           description: 'User Access Tokens'
@@ -190,7 +190,7 @@ paths:
     post:
       tags:
       - Change Password
-      summary: ''
+      summary: 'Send verification code for the change password'
       description: 'Given a user''s `email` address and a `connection`, Auth-One will send a verification code to the email address.'
       parameters:
         - name: client_id
@@ -230,8 +230,8 @@ paths:
     post:
       tags:
       - Change Password
-      summary: ''
-      description: 'Verify change password code'
+      summary: 'Verify change password code'
+      description: ''
       parameters:
         - name: client_id
           in: query
@@ -370,6 +370,12 @@ paths:
                 $ref: '#/components/schemas/JWTToken'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'MFA required. The `error` will be the value `mfa_required` and the `error_message` will be contains token.'
           content:
             application/json:
               schema:
@@ -555,7 +561,7 @@ paths:
     post:
       tags:
       - Multi-Factor Authentication
-      summary: ''
+      summary: 'Set a MFA challenge types'
       description: 'Request a challenge based on the challenge types supported by the application and user.'
       parameters:
         - name: client_id
@@ -601,7 +607,7 @@ paths:
     post:
       tags:
       - Multi-Factor Authentication
-      summary: ''
+      summary: 'Authenticate a user with MFA'
       description: 'Use this endpoint to authenticate a user with MFA.'
       parameters:
         - name: client_id
@@ -647,8 +653,8 @@ paths:
     post:
       tags:
       - Multi-Factor Authentication
-      summary: ''
-      description: 'Add authenticator to the user.'
+      summary: 'Add authenticator to the user'
+      description: ''
       parameters:
         - name: client_id
           in: query
