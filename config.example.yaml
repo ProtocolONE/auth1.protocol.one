@@ -1,0 +1,7 @@
+Server:
+  Port: 8080
+  Debug: true
+  TimeoutRead: 15
+  TimeoutWrite: 5
+LogConfig:
+  Level: "debug"
