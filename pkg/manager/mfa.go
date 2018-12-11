@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"auth-one-api/pkg/api/models"
+	"auth-one-api/pkg/models"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +45,7 @@ func (m *MFAManager) MFAVerify(form *models.MfaVerifyForm) (token *models.JWTTok
 	}, nil
 }
 
-func (m *MFAManager) MFAAdd(form *models.MfaAddForm) (token *models.MfaAuthentificator, error *models.CommonError) {
+func (m *MFAManager) MFAAdd(form *models.MfaAddForm) (token *models.MfaAuthenticator, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
@@ -62,7 +62,7 @@ func (m *MFAManager) MFAAdd(form *models.MfaAddForm) (token *models.MfaAuthentif
 		return nil, &models.CommonError{Code: `phone_number`, Message: `Phone number channel is incorrect`}
 	}
 
-	return &models.MfaAuthentificator{
+	return &models.MfaAuthenticator{
 		Secret:        `secret`,
 		Type:          `authenticatortype`,
 		ObbChannel:    `oobchannel`,

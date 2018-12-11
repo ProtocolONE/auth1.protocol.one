@@ -1,9 +1,9 @@
 package route
 
 import (
-	"auth-one-api/pkg/api/manager"
-	"auth-one-api/pkg/api/models"
 	"auth-one-api/pkg/helper"
+	"auth-one-api/pkg/manager"
+	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
@@ -18,9 +18,9 @@ func MFAInit(cfg Config) error {
 		Manager: manager.InitMFAManager(cfg.Logger),
 	}
 
-	cfg.Http.POST("/mfa/challenge", route.MFAChallenge)
-	cfg.Http.POST("/mfa/verify", route.MFAVerify)
-	cfg.Http.POST("/mfa/add", route.MFAAdd)
+	cfg.Echo.POST("/mfa/challenge", route.MFAChallenge)
+	cfg.Echo.POST("/mfa/verify", route.MFAVerify)
+	cfg.Echo.POST("/mfa/add", route.MFAAdd)
 
 	return nil
 }
@@ -31,7 +31,7 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -40,7 +40,7 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -48,7 +48,7 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 
 	e := l.Manager.MFAChallenge(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.HTML(http.StatusNoContent, ``)
@@ -60,7 +60,7 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -69,7 +69,7 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -77,7 +77,7 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 
 	token, e := l.Manager.MFAVerify(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -89,7 +89,7 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -98,7 +98,7 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -106,7 +106,7 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 
 	authenticator, e := l.Manager.MFAAdd(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, authenticator)

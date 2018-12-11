@@ -1,24 +1,12 @@
 package route
 
 import (
-	"auth-one-api/pkg/api/manager"
-	"auth-one-api/pkg/api/models"
 	"auth-one-api/pkg/helper"
+	"auth-one-api/pkg/manager"
+	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
-)
-
-const (
-	BadRequiredHttpCode     = 400
-	BadRequiredCodeCommon   = `invalid_argument`
-	BadRequiredCodeField    = `field:%s`
-	MFARequiredHttpCode     = 403
-	MFARequiredCode         = `mfa_required`
-	CaptchaRequiredCode     = 428
-	CaptchaRequiredMessage  = `captcha_required`
-	TemporaryLockedHttpCode = 423
-	TemporaryLockedCode     = `login_temporary_locked`
 )
 
 type (
@@ -31,12 +19,12 @@ type (
 func LoginInit(cfg Config) error {
 	route := &Login{
 		Manager: manager.InitLoginManager(cfg.Logger),
-		Http:    cfg.Http,
+		Http:    cfg.Echo,
 	}
 
-	cfg.Http.GET("/authorize/result", route.AuthorizeResult)
-	cfg.Http.GET("/authorize", route.Authorize)
-	cfg.Http.POST("/login", route.Login)
+	cfg.Echo.GET("/authorize/result", route.AuthorizeResult)
+	cfg.Echo.GET("/authorize", route.Authorize)
+	cfg.Echo.POST("/login", route.Login)
 
 	return nil
 }
@@ -47,7 +35,7 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -56,7 +44,7 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -64,12 +52,12 @@ func (l *Login) Authorize(ctx echo.Context) error {
 
 	ott, err := l.Manager.Authorize(form)
 	if err != nil {
-		return ctx.HTML(BadRequiredHttpCode, err.GetMessage())
+		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
 	req, e := http.NewRequest("GET", form.RedirectUri, nil)
 	if e != nil {
-		return ctx.HTML(BadRequiredHttpCode, err.GetMessage())
+		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
 	q := req.URL.Query()
@@ -85,7 +73,7 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -94,7 +82,7 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -102,7 +90,7 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 
 	err := l.Manager.AuthorizeResult(form)
 	if err != nil {
-		return ctx.HTML(BadRequiredHttpCode, err.GetMessage())
+		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
 	return ctx.HTML(http.StatusOK, form.WsUrl)
@@ -114,7 +102,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -123,7 +111,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -131,25 +119,25 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 
 	token, e := l.Manager.Login(form)
 	if e != nil {
-		httpCode := BadRequiredHttpCode
+		httpCode := http.StatusBadRequest
 		code := BadRequiredCodeCommon
 		message := fmt.Sprint(e)
 
 		switch e.(type) {
 		case *models.CaptchaRequiredError:
-			httpCode = CaptchaRequiredCode
-			code = CaptchaRequiredMessage
+			httpCode = http.StatusPreconditionRequired
+			code = CaptchaRequiredCode
 		case *models.MFARequiredError:
-			httpCode = MFARequiredHttpCode
+			httpCode = http.StatusForbidden
 			code = MFARequiredCode
 		case *models.TemporaryLockedError:
-			httpCode = TemporaryLockedHttpCode
+			httpCode = http.StatusLocked
 			code = TemporaryLockedCode
 		case *models.CommonError:
 			code = e.GetCode()
 			message = e.GetMessage()
 		default:
-			code = `unknown_error`
+			code = UnknownErrorCode
 			message = `Unknown error`
 		}
 

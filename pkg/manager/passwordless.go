@@ -1,21 +1,18 @@
 package manager
 
 import (
-	"auth-one-api/pkg/api/models"
+	"auth-one-api/pkg/models"
 	"github.com/sirupsen/logrus"
 )
 
-type ChangePasswordManager Config
+type PasswordLessManager Config
 
-func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) (ott *models.OneTimeToken, error *models.CommonError) {
+func (m *PasswordLessManager) PasswordLessStart(form *models.PasswordLessStartForm) (ott *models.OneTimeToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
 	if form.Connection == `incorrect` {
 		return nil, &models.CommonError{Code: `connection`, Message: `Connection is incorrect`}
-	}
-	if form.Email == `login@incorrect.com` {
-		return nil, &models.CommonError{Code: `email`, Message: `Login is incorrect`}
 	}
 
 	return &models.OneTimeToken{
@@ -23,7 +20,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	}, nil
 }
 
-func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) (token *models.JWTToken, error *models.CommonError) {
+func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerifyForm) (token *models.JWTToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
@@ -36,9 +33,6 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if form.Token == `incorrect` {
 		return nil, &models.CommonError{Code: `token`, Message: `Token is incorrect`}
 	}
-	if form.Password == `incorrect` {
-		return nil, &models.CommonError{Code: `password`, Message: `Password is incorrect`}
-	}
 
 	return &models.JWTToken{
 		RefreshToken: `refreshtoken`,
@@ -47,8 +41,8 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}, nil
 }
 
-func InitChangePasswordManager(logger *logrus.Entry) ChangePasswordManager {
-	m := ChangePasswordManager{
+func InitPasswordLessManager(logger *logrus.Entry) PasswordLessManager {
+	m := PasswordLessManager{
 		Logger: logger,
 	}
 

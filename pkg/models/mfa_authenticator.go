@@ -1,6 +1,6 @@
 package models
 
-type MfaAuthentificator struct {
+type MfaAuthenticator struct {
 	Secret        string   `json:"secret"`
 	ObbChannel    string   `json:"oob_channel,omitempty"`
 	BarcodeUri    string   `json:"barcode_uri,omitempty"`

@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"auth-one-api/pkg/api/models"
+	"auth-one-api/pkg/models"
 	"github.com/sirupsen/logrus"
 )
 

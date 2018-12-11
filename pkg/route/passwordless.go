@@ -1,9 +1,9 @@
 package route
 
 import (
-	"auth-one-api/pkg/api/manager"
-	"auth-one-api/pkg/api/models"
 	"auth-one-api/pkg/helper"
+	"auth-one-api/pkg/manager"
+	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
@@ -18,8 +18,8 @@ func PasswordLessInit(cfg Config) error {
 		Manager: manager.InitPasswordLessManager(cfg.Logger),
 	}
 
-	cfg.Http.POST("/passwordless/start", route.PasswordLessStart)
-	cfg.Http.POST("/passwordless/verify", route.PasswordLessVerify)
+	cfg.Echo.POST("/passwordless/start", route.PasswordLessStart)
+	cfg.Echo.POST("/passwordless/verify", route.PasswordLessVerify)
 
 	return nil
 }
@@ -30,7 +30,7 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -39,7 +39,7 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -47,7 +47,7 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 
 	token, e := l.Manager.PasswordLessStart(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -59,7 +59,7 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -68,7 +68,7 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -76,7 +76,7 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 
 	token, e := l.Manager.PasswordLessVerify(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)

@@ -81,6 +81,12 @@ paths:
             the value of a one-time token. Allows it to receive a one-time user
             Access Token value. For example:
             `https://YOUR_DOMAIN/page?auth_one_ott=zcv987z...987dre987zxc`
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - CookieAuth: []
     description: >-
@@ -111,6 +117,12 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -472,6 +484,12 @@ paths:
               schema:
                 type: string
                 example: pong
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       operationId: authorizeResult
       security: []
   /passwordless/start:
@@ -693,7 +711,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MFARequest'
+                $ref: '#/components/schemas/MfaAuthenticator'
         '400':
           description: Bad Request
           content:
@@ -763,7 +781,7 @@ components:
         token:
           type: string
           example: oDnPKc1a...vWE36Lh
-    MFARequest:
+    MfaAuthenticator:
       type: object
       properties:
         secret:
@@ -794,7 +812,7 @@ components:
       name: X-AUTH-ONE-TOKEN-{CLIENT_ID}
     BearerAuth:
       type: http
-      scheme: bearer
+      scheme: Bearer
       bearerFormat: JWT
   links: {}
   callbacks: {}

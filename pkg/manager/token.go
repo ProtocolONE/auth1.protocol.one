@@ -1,13 +1,13 @@
 package manager
 
 import (
-	"auth-one-api/pkg/api/models"
+	"auth-one-api/pkg/models"
 	"github.com/sirupsen/logrus"
 )
 
 type TokenManager Config
 
-func (m *TokenManager) Refresh() (token *models.JWTToken, error *models.CommonError) {
+func (m *TokenManager) Refresh(form *models.TokenRefreshForm) (token *models.JWTToken, error *models.CommonError) {
 	return &models.JWTToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,

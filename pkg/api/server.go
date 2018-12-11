@@ -1,9 +1,9 @@
 package api
 
 import (
-	"auth-one-api/pkg/api/models"
-	"auth-one-api/pkg/api/route"
 	"auth-one-api/pkg/config"
+	"auth-one-api/pkg/models"
+	"auth-one-api/pkg/route"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/sirupsen/logrus"
@@ -74,7 +74,7 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
-		Http:   s.Echo,
+		Echo:   s.Echo,
 		Logger: s.Log,
 	}
 

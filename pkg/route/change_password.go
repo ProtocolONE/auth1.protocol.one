@@ -1,9 +1,9 @@
 package route
 
 import (
-	"auth-one-api/pkg/api/manager"
-	"auth-one-api/pkg/api/models"
 	"auth-one-api/pkg/helper"
+	"auth-one-api/pkg/manager"
+	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
@@ -18,8 +18,8 @@ func ChangePasswordInit(cfg Config) error {
 		Manager: manager.InitChangePasswordManager(cfg.Logger),
 	}
 
-	cfg.Http.POST("/dbconnections/change_password", route.ChangePasswordStart)
-	cfg.Http.POST("/dbconnections/change_password/verify", route.ChangePasswordVerify)
+	cfg.Echo.POST("/dbconnections/change_password", route.ChangePasswordStart)
+	cfg.Echo.POST("/dbconnections/change_password/verify", route.ChangePasswordVerify)
 
 	return nil
 }
@@ -30,7 +30,7 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -39,7 +39,7 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -47,7 +47,7 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 
 	token, e := l.Manager.ChangePasswordStart(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -59,7 +59,7 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -68,7 +68,7 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -76,7 +76,7 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 
 	token, e := l.Manager.ChangePasswordVerify(form)
 	if e != nil {
-		return helper.NewErrorResponse(ctx, BadRequiredHttpCode, e.GetCode(), e.GetMessage())
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)

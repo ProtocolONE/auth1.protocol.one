@@ -1,9 +1,9 @@
 package route
 
 import (
-	"auth-one-api/pkg/api/manager"
-	"auth-one-api/pkg/api/models"
 	"auth-one-api/pkg/helper"
+	"auth-one-api/pkg/manager"
+	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
@@ -18,7 +18,7 @@ func LogoutInit(cfg Config) error {
 		Manager: manager.InitLogoutManager(cfg.Logger),
 	}
 
-	cfg.Http.GET("/logout", route.Logout)
+	cfg.Echo.GET("/logout", route.Logout)
 
 	return nil
 }
@@ -29,7 +29,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			BadRequiredCodeCommon,
 			`Invalid request parameters`,
 		)
@@ -38,7 +38,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 	if err := ctx.Validate(form); err != nil {
 		return helper.NewErrorResponse(
 			ctx,
-			BadRequiredHttpCode,
+			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			`This is required field`,
 		)
@@ -46,7 +46,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 
 	err := l.Manager.Logout(form)
 	if err != nil {
-		return ctx.HTML(BadRequiredHttpCode, err.GetMessage())
+		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
 	return ctx.Redirect(http.StatusOK, form.RedirectUri)

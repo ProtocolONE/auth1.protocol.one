@@ -6,6 +6,6 @@ import (
 )
 
 type Config struct {
-	Http   *echo.Echo
+	Echo   *echo.Echo
 	Logger *logrus.Entry
 }
