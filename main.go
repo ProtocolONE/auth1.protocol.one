@@ -1,7 +1,7 @@
 package main
 
 import (
-	"auth-one-api/cmd/authentication_server"
+	"auth-one-api/cmd"
 )
 
 func main() {

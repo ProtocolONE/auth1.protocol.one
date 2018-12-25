@@ -10,18 +10,14 @@ import (
 )
 
 var (
-	cfg      *config.Config
-	logger   *logrus.Entry
-	cfgFile  string
-	mCommand = &cobra.Command{
-		Use:   "authone",
-		Short: "Authenticate server by ProtocolOne",
-		Long:  `Authenticate server by ProtocolOne`,
-	}
+	cfg     *config.Config
+	logger  *logrus.Entry
+	cfgFile string
+	command = &cobra.Command{}
 )
 
 func Execute() {
-	if err := mCommand.Execute(); err != nil {
+	if err := command.Execute(); err != nil {
 		logger.Fatal(err)
 		fmt.Println(err)
 		os.Exit(1)
@@ -30,7 +26,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	mCommand.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/config.example.yaml)")
+	command.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/config.example.yaml)")
 }
 
 func initConfig() {
@@ -41,10 +37,10 @@ func initConfig() {
 		log.Fatal("Failed to load config: " + err.Error())
 	}
 
-	logger, err = config.ConfigureLogging(&cfg.LogConfig)
+	logger, err = config.ConfigureLogging(&cfg.Logger)
 	if err != nil {
 		log.Fatal("Failed to configure logging: " + err.Error())
 	}
 
-	logger.Debugf("Config accepted")
+	logger.Debug("Config accepted")
 }

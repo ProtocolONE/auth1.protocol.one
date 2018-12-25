@@ -15,7 +15,7 @@ type Logout struct {
 
 func LogoutInit(cfg Config) error {
 	route := &Logout{
-		Manager: manager.InitLogoutManager(cfg.Logger),
+		Manager: manager.InitLogoutManager(cfg.Logger, cfg.Database),
 	}
 
 	cfg.Echo.GET("/logout", route.Logout)
@@ -44,7 +44,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 		)
 	}
 
-	err := l.Manager.Logout(form)
+	err := l.Manager.Logout(ctx.Response(), form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}

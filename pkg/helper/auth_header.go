@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-type AuthHeader struct {
-	Token string
-}
-
 func GetTokenFromAuthHeader(header string) (token string, err error) {
 	i := strings.Index(header, ` `)
 	if -1 == i {

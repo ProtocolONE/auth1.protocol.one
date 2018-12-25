@@ -24,7 +24,7 @@ func (m *MFAManager) MFAChallenge(form *models.MfaChallengeForm) (error *models.
 	return nil
 }
 
-func (m *MFAManager) MFAVerify(form *models.MfaVerifyForm) (token *models.JWTToken, error *models.CommonError) {
+func (m *MFAManager) MFAVerify(form *models.MfaVerifyForm) (token *models.AuthToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
@@ -38,7 +38,7 @@ func (m *MFAManager) MFAVerify(form *models.MfaVerifyForm) (token *models.JWTTok
 		return nil, &models.CommonError{Code: `mfa_token`, Message: `Token is incorrect`}
 	}
 
-	return &models.JWTToken{
+	return &models.AuthToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,

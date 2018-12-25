@@ -14,7 +14,7 @@ type UserInfo struct {
 
 func UserInfoInit(cfg Config) error {
 	route := &UserInfo{
-		Manager: manager.InitUserInfoManager(cfg.Logger),
+		Manager: manager.InitUserInfoManager(cfg.Logger, cfg.Database),
 	}
 
 	cfg.Echo.GET("/userinfo", route.UserInfo)

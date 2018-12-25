@@ -2,8 +2,10 @@ package api
 
 import (
 	"auth-one-api/pkg/config"
+	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"auth-one-api/pkg/route"
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/sirupsen/logrus"
@@ -15,26 +17,42 @@ import (
 
 type (
 	ServerConfig struct {
-		ServerConfig *config.ServerConfig
-		Log          *logrus.Entry
-		Jwt          *config.Jwt
+		ApiConfig      *config.ApiConfig
+		Logger         *logrus.Entry
+		JwtConfig      *config.JwtConfig
+		DatabaseConfig *config.DatabaseConfig
+		RedisConfig    *config.RedisConfig
 	}
 
 	Server struct {
 		Log          *logrus.Entry
 		Echo         *echo.Echo
-		ServerConfig *config.ServerConfig
+		ServerConfig *config.ApiConfig
+		DbHandler    *database.Handler
+		RedisHandler *redis.Client
 	}
 )
 
 func NewServer(config *ServerConfig) (*Server, error) {
-	server := &Server{
-		Log:          config.Log,
-		Echo:         echo.New(),
-		ServerConfig: config.ServerConfig,
+	db, err := database.NewConnection(config.DatabaseConfig)
+	if err != nil {
+		config.Logger.Fatalf("Database connection failed with error: %s\n", err)
 	}
 
-	server.Echo.Logger = Logger{config.Log.Logger}
+	client := redis.NewClient(&redis.Options{
+		Addr:     config.RedisConfig.Addr,
+		Password: config.RedisConfig.Password,
+	})
+
+	server := &Server{
+		Log:          config.Logger,
+		Echo:         echo.New(),
+		DbHandler:    &database.Handler{Name: config.DatabaseConfig.Database, Session: db},
+		RedisHandler: client,
+		ServerConfig: config.ApiConfig,
+	}
+
+	server.Echo.Logger = Logger{config.Logger.Logger}
 	server.Echo.Use(LoggerHandler)
 
 	server.Echo.Use(middleware.Logger())
@@ -74,8 +92,10 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
-		Echo:   s.Echo,
-		Logger: s.Log,
+		Echo:     s.Echo,
+		Logger:   s.Log,
+		Database: s.DbHandler,
+		Redis:    s.RedisHandler,
 	}
 
 	if err := route.LogoutInit(routeConfig); err != nil {
@@ -100,6 +120,9 @@ func (s *Server) setupRoutes() error {
 		return err
 	}
 	if err := route.TokenInit(routeConfig); err != nil {
+		return err
+	}
+	if err := route.ManageInit(routeConfig); err != nil {
 		return err
 	}
 

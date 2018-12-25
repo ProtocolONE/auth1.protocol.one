@@ -1,7 +1,15 @@
-Server:
+Api:
   Port: 8080
   Debug: true
   TimeoutRead: 15
   TimeoutWrite: 5
-LogConfig:
+Logger:
   Level: "debug"
+Database:
+  Host: "127.0.0.1"
+  Database: "auth-one"
+  User: ""
+  Password: ""
+Redis:
+  Addr: "127.0.0.1:6379"
+  Password: ""

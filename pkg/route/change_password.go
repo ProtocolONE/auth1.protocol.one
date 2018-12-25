@@ -15,7 +15,7 @@ type ChangePassword struct {
 
 func ChangePasswordInit(cfg Config) error {
 	route := &ChangePassword{
-		Manager: manager.InitChangePasswordManager(cfg.Logger),
+		Manager: manager.InitChangePasswordManager(cfg.Logger, cfg.Database, cfg.Redis),
 	}
 
 	cfg.Echo.POST("/dbconnections/change_password", route.ChangePasswordStart)

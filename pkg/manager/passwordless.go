@@ -20,7 +20,7 @@ func (m *PasswordLessManager) PasswordLessStart(form *models.PasswordLessStartFo
 	}, nil
 }
 
-func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerifyForm) (token *models.JWTToken, error *models.CommonError) {
+func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerifyForm) (token *models.AuthToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
@@ -34,7 +34,7 @@ func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerify
 		return nil, &models.CommonError{Code: `token`, Message: `Token is incorrect`}
 	}
 
-	return &models.JWTToken{
+	return &models.AuthToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,

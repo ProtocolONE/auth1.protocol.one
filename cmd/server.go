@@ -5,21 +5,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var sCommand = &cobra.Command{
+var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Run AuthOne api server with given configuration",
 	Run:   runServer,
 }
 
 func init() {
-	mCommand.AddCommand(sCommand)
+	command.AddCommand(serverCmd)
 }
 
 func runServer(cmd *cobra.Command, args []string) {
 	serverConfig := api.ServerConfig{
-		Log:          logger,
-		Jwt:          &cfg.Jwt,
-		ServerConfig: &cfg.Server,
+		Logger:         logger,
+		JwtConfig:      &cfg.Jwt,
+		ApiConfig:      &cfg.Api,
+		DatabaseConfig: &cfg.Database,
+		RedisConfig:    &cfg.Redis,
 	}
 
 	server, err := api.NewServer(&serverConfig)

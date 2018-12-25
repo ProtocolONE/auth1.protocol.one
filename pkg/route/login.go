@@ -18,7 +18,7 @@ type (
 
 func LoginInit(cfg Config) error {
 	route := &Login{
-		Manager: manager.InitLoginManager(cfg.Logger),
+		Manager: manager.InitLoginManager(cfg.Logger, cfg.Database),
 		Http:    cfg.Echo,
 	}
 
@@ -117,7 +117,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 		)
 	}
 
-	token, e := l.Manager.Login(form)
+	token, e := l.Manager.Login(ctx, form)
 	if e != nil {
 		httpCode := http.StatusBadRequest
 		code := BadRequiredCodeCommon

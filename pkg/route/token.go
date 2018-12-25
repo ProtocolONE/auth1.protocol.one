@@ -25,7 +25,7 @@ func TokenInit(cfg Config) error {
 }
 
 func (l *Token) TokenRefresh(ctx echo.Context) error {
-	form := new(models.TokenRefreshForm)
+	form := new(models.RefreshTokenForm)
 
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(
@@ -54,7 +54,7 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 }
 
 func (l *Token) TokenOTT(ctx echo.Context) error {
-	form := new(models.TokenOttForm)
+	form := new(models.OneTimeTokenForm)
 
 	if err := ctx.Bind(form); err != nil {
 		return helper.NewErrorResponse(

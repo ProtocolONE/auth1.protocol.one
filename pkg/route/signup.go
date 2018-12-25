@@ -15,10 +15,10 @@ type SignUp struct {
 
 func SignUpInit(cfg Config) error {
 	route := &SignUp{
-		Manager: manager.InitSignUpManager(cfg.Logger),
+		Manager: manager.InitSignUpManager(cfg.Logger, cfg.Database),
 	}
 
-	cfg.Echo.GET("/logout", route.SignUp)
+	cfg.Echo.POST("/signup", route.SignUp)
 
 	return nil
 }
@@ -44,7 +44,7 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 		)
 	}
 
-	token, e := l.Manager.SignUp(form)
+	token, e := l.Manager.SignUp(ctx, form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}

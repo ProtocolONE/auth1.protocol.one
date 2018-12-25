@@ -1,14 +1,16 @@
 package models
 
-type ErrorInterface interface {
-	GetCode() string
-	GetMessage() string
-}
+type (
+	ErrorInterface interface {
+		GetCode() string
+		GetMessage() string
+	}
 
-type CommonError struct {
-	Code    string `json:"error,omitempty"`
-	Message string `json:"error_message,omitempty"`
-}
+	CommonError struct {
+		Code    string `json:"error,omitempty"`
+		Message string `json:"error_message,omitempty"`
+	}
+)
 
 func (m *CommonError) Error() string {
 	return m.Message

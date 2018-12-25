@@ -8,23 +8,37 @@ import (
 )
 
 type (
-	ServerConfig struct {
+	ApiConfig struct {
 		Port         int
 		Debug        bool
 		TimeoutRead  int
 		TimeoutWrite int
 	}
 
-	Jwt struct {
+	JwtConfig struct {
 		SignatureSecret       *rsa.PublicKey
 		SignatureSecretBase64 string
 		Algorithm             string
 	}
 
+	DatabaseConfig struct {
+		Host     string
+		Database string
+		User     string
+		Password string
+	}
+
+	RedisConfig struct {
+		Addr     string
+		Password string
+	}
+
 	Config struct {
-		Server    ServerConfig
-		Jwt       Jwt
-		LogConfig LoggingConfig
+		Api      ApiConfig
+		Jwt      JwtConfig
+		Logger   LoggingConfig
+		Database DatabaseConfig
+		Redis    RedisConfig
 	}
 )
 

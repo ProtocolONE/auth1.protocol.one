@@ -7,15 +7,15 @@ import (
 
 type TokenManager Config
 
-func (m *TokenManager) Refresh(form *models.TokenRefreshForm) (token *models.JWTToken, error *models.CommonError) {
-	return &models.JWTToken{
+func (m *TokenManager) Refresh(form *models.RefreshTokenForm) (token *models.AuthToken, error *models.CommonError) {
+	return &models.AuthToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,
 	}, nil
 }
 
-func (m *TokenManager) OTT(form *models.TokenOttForm) (token *models.JWTToken, error *models.CommonError) {
+func (m *TokenManager) OTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
 		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
 	}
@@ -23,7 +23,7 @@ func (m *TokenManager) OTT(form *models.TokenOttForm) (token *models.JWTToken, e
 		return nil, &models.CommonError{Code: `token`, Message: `Token is incorrect`}
 	}
 
-	return &models.JWTToken{
+	return &models.AuthToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,
