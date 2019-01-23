@@ -18,35 +18,35 @@ type (
 	}
 )
 
-func NewCookie(a *Application, u *User) *Cookie {
+func NewCookie(app *Application, user *User) *Cookie {
 	return &Cookie{
-		ApplicationId: a.Id,
-		UserId:        u.ID,
+		ApplicationId: app.ID,
+		UserId:        user.ID,
 	}
 }
 
-func (c *Cookie) Crypt(cs *CookieSettings) (*http.Cookie, error) {
+func (c *Cookie) Crypt(cookieSettings *CookieSettings) (*http.Cookie, error) {
 	cookieHandler := securecookie.New(
 		securecookie.GenerateRandomKey(64),
 		securecookie.GenerateRandomKey(32))
-	encoded, err := cookieHandler.Encode(cs.Name, c)
+	encoded, err := cookieHandler.Encode(cookieSettings.Name, c)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Cookie{
-		Name:   cs.Name,
+		Name:   cookieSettings.Name,
 		Value:  encoded,
 		Path:   "/",
 		Secure: true,
 		//Expires: time.Now().Add(time.Duration(cs.TTL)*time.Second),
-		MaxAge: cs.TTL,
+		MaxAge: cookieSettings.TTL,
 	}, nil
 }
 
-func (c *Cookie) Clear(cs *CookieSettings) *http.Cookie {
+func (c *Cookie) Clear(cookieSettings *CookieSettings) *http.Cookie {
 	return &http.Cookie{
-		Name:   cs.Name,
+		Name:   cookieSettings.Name,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,

@@ -2,10 +2,10 @@ package manager
 
 import (
 	"auth-one-api/pkg/database"
+	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
-	"github.com/dgrijalva/jwt-go"
+	"fmt"
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/random"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
@@ -15,83 +15,97 @@ import (
 type SignUpManager Config
 
 func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token *models.AuthToken, error *models.CommonError) {
-	if form.Connection == `incorrect` {
-		return nil, &models.CommonError{Code: `connection`, Message: `Connection is incorrect`}
+	as := models.NewApplicationService(m.Database)
+	a, err := as.Get(bson.ObjectIdHex(form.ClientID))
+	if err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to get application [%s] with error: %s", form.ClientID, err.Error()))
+		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ps := &models.PasswordSettings{
-		BcryptCost:     10,
-		Min:            4,
-		Max:            10,
-		RequireNumber:  true,
-		RequireSpecial: true,
-		RequireUpper:   true,
+	ps, err := as.LoadPasswordSettings()
+	if err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to load password settings an application [%s] with error: %s", form.ClientID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 	if false == ps.IsValid(form.Password) {
-		return nil, &models.CommonError{Code: `password`, Message: `Password is incorrect`}
+		return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 	}
 
 	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: ps.BcryptCost})
 	ep, err := be.Digest(form.Password)
 	if err != nil {
-		return nil, &models.CommonError{Code: `password`, Message: `Unable to crypt password`}
+		m.Logger.Warning(fmt.Sprintf("Unable to crypt password [%s] an application [%s] with error: %s", form.Password, form.ClientID, err.Error()))
+		return nil, &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
-	a, err := models.NewApplicationService(m.Database).Get(bson.ObjectIdHex(form.ClientId))
-	if err != nil {
-		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
+	uis := models.NewUserIdentityService(m.Database)
+	ui, err := uis.Get(a, models.UserIdentityProviderPassword, "", form.Email)
+	if ui != nil || (err != nil && err.Error() != "not found") {
+		if err != nil {
+			m.Logger.Warning(fmt.Sprintf("Unable to get user with identity [%s] an application [%s] with error: %s", form.Email, form.ClientID, err.Error()))
+		}
+		return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 	}
 
 	us := models.NewUserService(m.Database)
-	if u, _ := us.GetUserByEmail(*a, form.Email); u != nil {
-		return nil, &models.CommonError{Code: `email`, Message: `Login is incorrect`}
-	}
-
 	u := &models.User{
-		ID:        bson.NewObjectId(),
-		Email:     form.Email,
-		Password:  ep,
-		AppID:     a.Id,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            bson.NewObjectId(),
+		AppID:         a.ID,
+		Email:         form.Email,
+		EmailVerified: false,
+		Blocked:       false,
+		LastIp:        ctx.RealIP(),
+		LastLogin:     time.Now(),
+		LoginsCount:   1,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
-	if err := us.CreateUser(u); err != nil {
-		return nil, &models.CommonError{Code: `common`, Message: `Unable to create user`}
-	}
-
-	js := models.NewJwtTokenService(&models.JwtSettings{
-		Key:    []byte("k33)%(7cltD:q.N4AyuXfjAuK{zO,nzP"),
-		Method: jwt.SigningMethodHS256,
-		TTL:    3600,
-	})
-	at, err := js.Create(u)
-
-	l := 256
-	rt := &models.RefreshToken{
-		Value:     random.New().String(uint8(l)),
-		TTL:       2592000,
-		UserAgent: ctx.Request().UserAgent(),
-		IP:        ctx.Request().RemoteAddr,
-	}
-	als := models.NewAuthLogService(m.Database)
-	if err := als.Add(rt); err != nil {
-		return nil, &models.CommonError{Code: `common`, Message: `Unable to add auth log`}
+	if err := us.Create(u); err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to create user with identity [%s] an application [%s] with error: %s", form.Email, form.ClientID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
 	}
 
-	c, err := models.NewCookie(a, u).Crypt(&models.CookieSettings{
-		Name: "X-AUTH-ONE-TOKEN",
-		TTL:  3600,
-	})
+	ui = &models.UserIdentity{
+		ID:         bson.NewObjectId(),
+		UserID:     u.ID,
+		AppID:      a.ID,
+		ExternalID: form.Email,
+		Provider:   models.UserIdentityProviderPassword,
+		Connection: "initial",
+		Credential: ep,
+		Email:      form.Email,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	if err := uis.Create(ui); err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to create user identity [%s] an application [%s] with error: %s", form.Email, form.ClientID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
+	}
+
+	t, err := helper.CreateAuthToken(ctx, as, u)
 	if err != nil {
-		return nil, &models.CommonError{Code: `common`, Message: `Unable to create cookie`}
+		m.Logger.Warning(fmt.Sprintf("Unable to create user [%s] auth token an application [%s] with error: %s", u.ID, a.ID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
+	}
+
+	als := models.NewAuthLogService(m.Database)
+	if err := als.Add(ctx, u, t.RefreshToken); err != nil {
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
+	}
+
+	cs, err := as.LoadSessionSettings()
+	if err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to add user [%s] auth log an application [%s] with error: %s", u.ID, a.ID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
+	}
+	c, err := models.NewCookie(a, u).Crypt(cs)
+	if err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to create user [%s] cookie an application [%s] with error: %s", u.ID, a.ID, err.Error()))
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
 	http.SetCookie(ctx.Response(), c)
 
-	return &models.AuthToken{
-		RefreshToken: rt.Value,
-		AccessToken:  at,
-		ExpiresIn:    time.Now().Unix() + int64(js.TTL),
-	}, nil
+	return t, nil
 }
 
 func InitSignUpManager(logger *logrus.Entry, h *database.Handler) SignUpManager {

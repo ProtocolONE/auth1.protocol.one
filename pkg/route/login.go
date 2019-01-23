@@ -18,10 +18,11 @@ type (
 
 func LoginInit(cfg Config) error {
 	route := &Login{
-		Manager: manager.InitLoginManager(cfg.Logger, cfg.Database),
+		Manager: manager.InitLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
 		Http:    cfg.Echo,
 	}
 
+	cfg.Echo.GET("/authorize/link", route.AuthorizeLink)
 	cfg.Echo.GET("/authorize/result", route.AuthorizeResult)
 	cfg.Echo.GET("/authorize", route.Authorize)
 	cfg.Echo.POST("/login", route.Login)
@@ -37,7 +38,7 @@ func (l *Login) Authorize(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -46,25 +47,25 @@ func (l *Login) Authorize(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	ott, err := l.Manager.Authorize(form)
-	if err != nil {
+	if err := l.Manager.Authorize(ctx, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	req, e := http.NewRequest("GET", form.RedirectUri, nil)
+	/*req, e := http.NewRequest("GET", form.RedirectUri, nil)
 	if e != nil {
-		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
+		return ctx.HTML(http.StatusBadRequest, e.GetMessage())
 	}
 
 	q := req.URL.Query()
 	q.Add(`auth_one_ott`, ott.Token)
-	req.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = q.Encode()*/
 
-	return ctx.Redirect(http.StatusOK, req.URL.String())
+	//return ctx.Redirect(http.StatusOK, req.URL.String())
+	return nil
 }
 
 func (l *Login) AuthorizeResult(ctx echo.Context) error {
@@ -75,7 +76,7 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -84,16 +85,49 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	err := l.Manager.AuthorizeResult(form)
+	t, err := l.Manager.AuthorizeResult(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	return ctx.HTML(http.StatusOK, form.WsUrl)
+	if t != nil {
+		return ctx.JSON(http.StatusOK, t)
+	} else {
+		return ctx.HTML(http.StatusOK, "")
+	}
+}
+
+func (l *Login) AuthorizeLink(ctx echo.Context) error {
+	form := new(models.AuthorizeLinkForm)
+
+	if err := ctx.Bind(form); err != nil {
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			BadRequiredCodeCommon,
+			models.ErrorInvalidRequestParameters,
+		)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			models.ErrorRequiredField,
+		)
+	}
+
+	t, err := l.Manager.AuthorizeLink(ctx, form)
+	if err != nil {
+		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
+	}
+
+	return ctx.JSON(http.StatusOK, t)
 }
 
 func (l *Login) Login(ctx echo.Context) (err error) {
@@ -104,7 +138,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -113,7 +147,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -138,7 +172,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 			message = e.GetMessage()
 		default:
 			code = UnknownErrorCode
-			message = `Unknown error`
+			message = models.ErrorUnknownError
 		}
 
 		return helper.NewErrorResponse(ctx, httpCode, code, message)

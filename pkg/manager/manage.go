@@ -4,6 +4,7 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"time"
@@ -65,7 +66,7 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 	}
 
 	a := &models.Application{
-		Id:          bson.NewObjectId(),
+		ID:          bson.NewObjectId(),
 		SpaceId:     s.Id,
 		Name:        form.Application.Name,
 		Description: form.Application.Description,
@@ -125,4 +126,21 @@ func InitManageManager(logger *logrus.Entry, db *database.Handler) ManageManager
 	}
 
 	return m
+}
+
+func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvider, error) {
+	ms := models.NewMfaService(m.Database)
+	p := &models.MfaProvider{
+		ID:      bson.NewObjectId(),
+		AppID:   f.AppId,
+		Name:    f.MfaProvider.Name,
+		Channel: f.MfaProvider.Channel,
+		Type:    f.MfaProvider.Type,
+	}
+	if err := ms.Add(p); err != nil {
+		m.Logger.Warning(fmt.Sprintf("Unable to add MFA provider [%s] an application [%s] with error: %s", f.MfaProvider.Name, f.AppId, err.Error()))
+		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
+	}
+
+	return p, nil
 }

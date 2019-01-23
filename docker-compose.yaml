@@ -1,0 +1,34 @@
+version: "3.6"
+
+services:
+  auth1-mongo:
+    image: mongo:4.1.3
+    container_name: auth1-mongo
+    restart: always
+    networks:
+      - p1devnet
+    volumes:
+      - auth1-mongo:/data/db
+    ports:
+      - "3002:27017"
+
+  auth1-redis:
+    image: redis:5.0.3
+    container_name: auth1-redis
+    restart: always
+    networks:
+      - p1devnet
+    volumes:
+      - auth1-redis:/data/redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  auth1-mongo:
+    external: true
+  auth1-redis:
+    external: true
+
+networks:
+  p1devnet:
+    external: true

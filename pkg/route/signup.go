@@ -31,7 +31,7 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -40,7 +40,7 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 

@@ -15,7 +15,7 @@ type MFA struct {
 
 func MFAInit(cfg Config) error {
 	route := &MFA{
-		Manager: manager.InitMFAManager(cfg.Logger),
+		Manager: manager.InitMFAManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.MfaService),
 	}
 
 	cfg.Echo.POST("/mfa/challenge", route.MFAChallenge)
@@ -33,7 +33,7 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -42,7 +42,7 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -62,7 +62,7 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -71,11 +71,11 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	token, e := l.Manager.MFAVerify(form)
+	token, e := l.Manager.MFAVerify(ctx, form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
@@ -91,7 +91,7 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -100,11 +100,11 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	authenticator, e := l.Manager.MFAAdd(form)
+	authenticator, e := l.Manager.MFAAdd(ctx, form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}

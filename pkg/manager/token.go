@@ -17,7 +17,7 @@ func (m *TokenManager) Refresh(form *models.RefreshTokenForm) (token *models.Aut
 
 func (m *TokenManager) OTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
-		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
+		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 	if form.Token == `incorrect` {
 		return nil, &models.CommonError{Code: `token`, Message: `Token is incorrect`}

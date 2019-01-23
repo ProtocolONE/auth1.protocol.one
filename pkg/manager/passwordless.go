@@ -9,10 +9,10 @@ type PasswordLessManager Config
 
 func (m *PasswordLessManager) PasswordLessStart(form *models.PasswordLessStartForm) (ott *models.OneTimeToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
-		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
+		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 	if form.Connection == `incorrect` {
-		return nil, &models.CommonError{Code: `connection`, Message: `Connection is incorrect`}
+		return nil, &models.CommonError{Code: `connection`, Message: models.ErrorConnectionIncorrect}
 	}
 
 	return &models.OneTimeToken{
@@ -22,10 +22,10 @@ func (m *PasswordLessManager) PasswordLessStart(form *models.PasswordLessStartFo
 
 func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerifyForm) (token *models.AuthToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
-		return nil, &models.CommonError{Code: `client_id`, Message: `Client ID is incorrect`}
+		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 	if form.Connection == `incorrect` {
-		return nil, &models.CommonError{Code: `connection`, Message: `Connection is incorrect`}
+		return nil, &models.CommonError{Code: `connection`, Message: models.ErrorConnectionIncorrect}
 	}
 	if form.Code == `incorrect` {
 		return nil, &models.CommonError{Code: `verification_code`, Message: `Verification code is incorrect`}

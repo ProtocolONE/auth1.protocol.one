@@ -2,55 +2,26 @@ package manager
 
 import (
 	"auth-one-api/pkg/database"
+	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
+	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 )
 
 type UserInfoManager Config
 
-func (m *UserInfoManager) UserInfo(tokenSource string) (token *models.AuthToken, error *models.AuthTokenError) {
-	if `incorrect` == tokenSource {
-		return nil, &models.AuthTokenError{Code: `auth_token_invalid`, Message: `Invalid authenticate token`}
-	}
-
-	// create a new service
-	/*jwtService := micro.NewService()
-	jwtService.Init()
-	jwtClient := jwt.NewJwtService("go.auth.jwt", jwtService.Client())
-	jwtRsp, err := jwtClient.Create(context.Background(), &jwt.JwtCreateRequest{
-		Algorithm: "sample",
-	})
-
+func (m *UserInfoManager) UserInfo(ctx echo.Context) (t *models.UserProfile, error *models.AuthTokenError) {
+	as := models.NewApplicationService(m.Database)
+	c, err := helper.GetTokenFromAuthHeader(*as, ctx.Request().Header)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return nil, &models.AuthTokenError{Code: `auth_token_invalid`, Message: err.Error()}
 	}
 
-	spaceService := micro.NewService()
-	spaceService.Init()
-	cl := space.NewSpaceService("go.auth.space", spaceService.Client())
-
-	rsp, err := cl.Add(context.Background(), &space.SpaceAddRequest{
-		Name:        jwtRsp.Token,
-		Description: "TestDesc",
-	})
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(rsp.Id)*/
-	/*objectId := bson.ObjectId(1)
-	space, err := m.Database.Repository(mongo.TableSpace).FindSpaceById(objectId)
-
-	fmt.Printf("%+v",space)
-	fmt.Printf("%+v",err)*/
-
-	return &models.AuthToken{
-		RefreshToken: `refreshtoken`,
-		AccessToken:  `accesstoken`,
-		ExpiresIn:    1575983364,
+	return &models.UserProfile{
+		ID:            c.UserId,
+		AppID:         c.AppId,
+		Email:         c.Email,
+		EmailVerified: c.EmailConfirmed,
 	}, nil
 }
 

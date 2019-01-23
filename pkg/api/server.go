@@ -5,9 +5,12 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"auth-one-api/pkg/route"
+	"github.com/ProtocolONE/mfa-service/pkg"
+	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/micro/go-micro"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
@@ -30,6 +33,7 @@ type (
 		ServerConfig *config.ApiConfig
 		DbHandler    *database.Handler
 		RedisHandler *redis.Client
+		MfaService   proto.MfaService
 	}
 )
 
@@ -39,16 +43,21 @@ func NewServer(config *ServerConfig) (*Server, error) {
 		config.Logger.Fatalf("Database connection failed with error: %s\n", err)
 	}
 
-	client := redis.NewClient(&redis.Options{
+	r := redis.NewClient(&redis.Options{
 		Addr:     config.RedisConfig.Addr,
 		Password: config.RedisConfig.Password,
 	})
+
+	service := micro.NewService()
+	service.Init()
+	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
 	server := &Server{
 		Log:          config.Logger,
 		Echo:         echo.New(),
 		DbHandler:    &database.Handler{Name: config.DatabaseConfig.Database, Session: db},
-		RedisHandler: client,
+		RedisHandler: r,
+		MfaService:   ms,
 		ServerConfig: config.ApiConfig,
 	}
 
@@ -92,10 +101,11 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
-		Echo:     s.Echo,
-		Logger:   s.Log,
-		Database: s.DbHandler,
-		Redis:    s.RedisHandler,
+		Echo:       s.Echo,
+		Logger:     s.Log,
+		Database:   s.DbHandler,
+		Redis:      s.RedisHandler,
+		MfaService: s.MfaService,
 	}
 
 	if err := route.LogoutInit(routeConfig); err != nil {

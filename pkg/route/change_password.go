@@ -32,7 +32,7 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -41,16 +41,15 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	token, e := l.Manager.ChangePasswordStart(form)
-	if e != nil {
+	if e := l.Manager.ChangePasswordStart(form); e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
-	return ctx.JSON(http.StatusOK, token)
+	return ctx.NoContent(http.StatusOK)
 }
 
 func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
@@ -61,7 +60,7 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -70,14 +69,13 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
-	token, e := l.Manager.ChangePasswordVerify(form)
-	if e != nil {
+	if e := l.Manager.ChangePasswordVerify(form); e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
-	return ctx.JSON(http.StatusOK, token)
+	return ctx.NoContent(http.StatusOK)
 }

@@ -1,23 +1,48 @@
 package helper
 
 import (
+	"auth-one-api/pkg/models"
 	"errors"
+	"fmt"
+	"net/http"
 	"strings"
 )
 
-func GetTokenFromAuthHeader(header string) (token string, err error) {
-	i := strings.Index(header, ` `)
+func GetTokenFromAuthHeader(as models.ApplicationService, headers http.Header) (token *models.JwtClaim, err error) {
+	authHeader := headers.Get(`Authorization`)
+	i := strings.Index(authHeader, ` `)
 	if -1 == i {
-		return ``, errors.New(`invalid authenticate header`)
+		return nil, errors.New(`invalid authenticate header`)
 	}
 
-	s := strings.Split(header, ` `)
-	if `Bearer` != s[0] {
-		return ``, errors.New(`invalid authenticate header name`)
+	s := strings.Split(authHeader, ` `)
+	if "Bearer" != s[0] {
+		return nil, errors.New(`invalid authenticate header name`)
 	}
-	if `` == s[1] {
-		return ``, errors.New(`invalid authenticate header value`)
+	if "" == s[1] {
+		return nil, errors.New(`invalid authenticate header value`)
 	}
 
-	return s[1], nil
+	clientId := headers.Get("X-CLIENT-ID")
+	if "" == clientId {
+		return nil, errors.New(`invalid client id`)
+	}
+
+	ats, err := as.LoadAuthTokenSettings()
+	if err != nil {
+		return nil, errors.New("unable to load token settings")
+	}
+
+	jts := models.NewJwtTokenService(ats)
+	c, err := jts.Decode(s[1])
+	if err != nil {
+		return nil, errors.New("unable to load jwt settings")
+	}
+
+	if err = c.Valid(); err != nil {
+		fmt.Print(err)
+		return nil, errors.New("token is invalid")
+	}
+
+	return c, nil
 }

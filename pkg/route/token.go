@@ -32,7 +32,7 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -41,7 +41,7 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -61,7 +61,7 @@ func (l *Token) TokenOTT(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -70,7 +70,7 @@ func (l *Token) TokenOTT(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 

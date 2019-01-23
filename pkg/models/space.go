@@ -28,20 +28,20 @@ type (
 	}
 )
 
-func NewSpaceService(h *database.Handler) *SpaceService {
-	return &SpaceService{h.Session.DB(h.Name)}
+func NewSpaceService(dbHandler *database.Handler) *SpaceService {
+	return &SpaceService{dbHandler.Session.DB(dbHandler.Name)}
 }
 
-func (ss SpaceService) CreateSpace(s *Space) error {
-	if err := ss.db.C(database.TableSpace).Insert(s); err != nil {
+func (ss SpaceService) CreateSpace(space *Space) error {
+	if err := ss.db.C(database.TableSpace).Insert(space); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (ss SpaceService) UpdateSpace(s *Space) error {
-	if err := ss.db.C(database.TableSpace).UpdateId(s.Id, s); err != nil {
+func (ss SpaceService) UpdateSpace(space *Space) error {
+	if err := ss.db.C(database.TableSpace).UpdateId(space.Id, space); err != nil {
 		return err
 	}
 

@@ -31,7 +31,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -40,7 +40,7 @@ func (l *Logout) Logout(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -49,5 +49,5 @@ func (l *Logout) Logout(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	return ctx.Redirect(http.StatusOK, form.RedirectUri)
+	return ctx.Redirect(http.StatusPermanentRedirect, form.RedirectUri)
 }

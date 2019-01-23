@@ -3,7 +3,6 @@ package route
 import (
 	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/manager"
-	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
 )
@@ -23,18 +22,7 @@ func UserInfoInit(cfg Config) error {
 }
 
 func (l *UserInfo) UserInfo(ctx echo.Context) error {
-	authHeader := ctx.Request().Header.Get(`Authorization`)
-	tokenSource, err := helper.GetTokenFromAuthHeader(authHeader)
-	if err != nil {
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			`auth_header_invalid`,
-			fmt.Sprint(err),
-		)
-	}
-
-	token, e := l.Manager.UserInfo(tokenSource)
+	token, e := l.Manager.UserInfo(ctx)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusForbidden, InvalidAuthTokenCode, e.GetMessage())
 	}

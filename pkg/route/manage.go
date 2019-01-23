@@ -28,6 +28,7 @@ func ManageInit(cfg Config) error {
 	cfg.Echo.POST("/api/app", route.CreateApplication)
 	cfg.Echo.PUT("/api/app/:id", route.UpdateApplication)
 	cfg.Echo.GET("/api/app/:id", route.GetApplication)
+	cfg.Echo.POST("/api/mfa", route.AddMFA)
 
 	return nil
 }
@@ -40,7 +41,7 @@ func (l *Manage) CreateSpace(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -49,7 +50,7 @@ func (l *Manage) CreateSpace(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -80,7 +81,7 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -89,7 +90,7 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -105,12 +106,11 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 	a := &models.ApplicationForm{}
 
 	if err := ctx.Bind(a); err != nil {
-		fmt.Print(err)
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -119,7 +119,7 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
@@ -150,7 +150,7 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			BadRequiredCodeCommon,
-			`Invalid request parameters`,
+			models.ErrorInvalidRequestParameters,
 		)
 	}
 
@@ -159,13 +159,42 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 			ctx,
 			http.StatusBadRequest,
 			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			`This is required field`,
+			models.ErrorRequiredField,
 		)
 	}
 
 	app, err := l.Manager.UpdateApplication(id, a)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
+	}
+
+	return ctx.JSON(http.StatusOK, app)
+}
+
+func (l *Manage) AddMFA(ctx echo.Context) error {
+	f := &models.MfaApplicationForm{}
+
+	if err := ctx.Bind(f); err != nil {
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			BadRequiredCodeCommon,
+			models.ErrorInvalidRequestParameters,
+		)
+	}
+
+	if err := ctx.Validate(f); err != nil {
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			models.ErrorRequiredField,
+		)
+	}
+
+	app, err := l.Manager.AddMFA(f)
+	if err != nil {
+		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
 
 	return ctx.JSON(http.StatusOK, app)

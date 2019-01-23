@@ -4,12 +4,14 @@ import "unicode"
 
 type (
 	PasswordSettings struct {
-		BcryptCost     int
-		Min            int
-		Max            int
-		RequireNumber  bool
-		RequireUpper   bool
-		RequireSpecial bool
+		BcryptCost        int
+		Min               int
+		Max               int
+		RequireNumber     bool
+		RequireUpper      bool
+		RequireSpecial    bool
+		ChangeTokenLength int
+		ChangeTokenTTL    int
 	}
 )
 
