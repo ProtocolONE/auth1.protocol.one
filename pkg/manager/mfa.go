@@ -32,8 +32,9 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	}
 
 	rsp, err := m.MfaService.Check(context.TODO(), &proto.MfaCheckDataRequest{
-		UserID: mp.UserIdentity.UserID.String(),
-		Code:   form.Code,
+		ProviderID: mp.MfaProvider.ID.String(),
+		UserID:     mp.UserIdentity.UserID.String(),
+		Code:       form.Code,
 	})
 	fmt.Printf("%v", rsp)
 	if err != nil || rsp.Result != true {
@@ -106,10 +107,11 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 	}
 
 	rsp, err := m.MfaService.Create(context.TODO(), &proto.MfaCreateDataRequest{
-		AppName: a.Name,
-		UserID:  c.UserId.String(),
-		Email:   c.Email,
-		QrSize:  300,
+		ProviderID: p.ID.String(),
+		AppName:    a.Name,
+		UserID:     c.UserId.String(),
+		Email:      c.Email,
+		QrSize:     300,
 	})
 	if err != nil {
 		m.Logger.Warning(fmt.Sprintf("Unable to add MFA: %s", err.Error()))

@@ -59,10 +59,11 @@ type (
 	}
 
 	AuthorizeLinkForm struct {
-		ClientID string `query:"client_id" form:"client_id" validate:"required"`
-		Code     string `query:"code" form:"code" validate:"required"`
-		Action   string `query:"action" form:"action" validate:"required"`
-		Password string `query:"password" form:"password"`
+		ClientID    string `query:"client_id" form:"client_id" validate:"required"`
+		Code        string `query:"code" form:"code" validate:"required"`
+		Action      string `query:"action" form:"action" validate:"required"`
+		Password    string `query:"password" form:"password"`
+		AccessToken string `query:"access_token" form:"access_token"`
 	}
 
 	LoginForm struct {

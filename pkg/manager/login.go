@@ -71,7 +71,6 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		m.Logger.Warning(fmt.Sprintf("Unable to load identity profile an application [%s] with error: %s", f.ClientID, err.Error()))
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialData}
 	}
-	//fmt.Printf("%+v", cp)
 
 	us := models.NewUserService(m.Database)
 	uis := models.NewUserIdentityService(m.Database)
@@ -296,11 +295,49 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		}
 
 		ui, err := uis.Get(a, models.UserIdentityProviderPassword, "", sl.Email)
+
 		be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: ps.BcryptCost})
 		err = be.Compare(ui.Credential, form.Password)
 		if err != nil {
 			m.Logger.Warning(fmt.Sprintf("Unable to crypt password [%s] an application [%s] with error: %s", form.Password, form.ClientID, err.Error()))
 			return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+		}
+
+		ms := models.NewMfaService(m.Database)
+		mfa, err := ms.GetUserProviders(u)
+		if err != nil {
+			m.Logger.Warning(fmt.Sprintf("Unable to load MFA providers for user [%s] with error: %s", ui.UserID, err.Error()))
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		} else if len(mfa) > 0 {
+			if form.AccessToken != "" {
+				ats, err := as.LoadAuthTokenSettings()
+				if err != nil {
+					m.Logger.Warning(fmt.Sprintf("Unable to load auth token settings an application [%s] with error: %s", ui.AppID, err.Error()))
+					return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+				}
+
+				jts := models.NewJwtTokenService(ats)
+				if _, err = jts.Decode(form.AccessToken); err != nil {
+					m.Logger.Warning(fmt.Sprintf("Unable to decode access token an application [%s] with error: %s", ui.AppID, err.Error()))
+					return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
+				}
+			} else {
+				ottSettings := &models.OneTimeTokenSettings{
+					Length: 64,
+					TTL:    3600,
+				}
+				os := models.NewOneTimeTokenService(m.Redis, ottSettings)
+				ott, err := os.Create(&models.UserMfaToken{
+					UserIdentity: ui,
+					MfaProvider:  mfa[0],
+				})
+				if err != nil {
+					m.Logger.Warning(fmt.Sprintf("Unable to create one-time token an application [%s] with error: %s", ui.AppID, err.Error()))
+					return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+				}
+
+				return nil, &models.MFARequiredError{Message: ott.Token}
+			}
 		}
 
 		u, err = us.Get(ui.UserID)
@@ -356,9 +393,6 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	}
 	if form.Captcha == `incorrect` {
 		return nil, &models.CommonError{Code: `captcha`, Message: models.ErrorCaptchaIncorrect}
-	}
-	if form.Email == `mfa@required.com` {
-		return nil, &models.MFARequiredError{Message: models.ErrorMfaRequired}
 	}
 	if form.Email == `temporary@locked.com` {
 		return nil, &models.TemporaryLockedError{Message: models.ErrorAuthTemporaryLocked}

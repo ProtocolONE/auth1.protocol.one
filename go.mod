@@ -2,7 +2,7 @@ module auth-one-api
 
 require (
 	cloud.google.com/go v0.34.0 // indirect
-	github.com/ProtocolONE/mfa-service v0.0.0-20190122091237-dd4af1ecd5a9
+	github.com/ProtocolONE/mfa-service v0.0.0-20190123201551-2ce48741f8d5
 	github.com/ProtocolONE/p1pay.api v0.0.0-20181211184730-a02f1a33dd7f
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
@@ -17,7 +17,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/labstack/echo v3.3.5+incompatible
 	github.com/labstack/gommon v0.2.8
-	github.com/micro/go-micro v0.22.0
+	github.com/micro/go-micro v0.22.1
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
