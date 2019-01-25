@@ -1,0 +1,968 @@
+{
+	"info": {
+		"_postman_id": "6c9c8e7b-5683-4d24-940e-e0c8167a46c7",
+		"name": "AuthOne",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Management",
+			"item": [
+				{
+					"name": "Space",
+					"item": [
+						{
+							"name": "Create space",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\"\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/space",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"space"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update space",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\",\n    \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"space",
+										"5c221b985ffa56fdd05257de"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get space",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"space",
+										"5c221b985ffa56fdd05257de"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Application",
+					"item": [
+						{
+							"name": "Create application",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"app_id\": \"5c221b985ffa56fdd05257de\",\n\t\"mfa_provider\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\"\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/mfa",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"mfa"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update application",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"app",
+										"5c221cde5ffa56fdd05257df"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get application",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"app",
+										"5c221cde5ffa56fdd05257df"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "MFA",
+					"item": [
+						{
+							"name": "Add new MFA for application",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"app_id\": \"5c1bbe8b4c1efd4428629bde\",\n\t\"mfa_provider\": {\n    \t\"name\": \"Authy\",\n    \t\"channel\": \"auth1\",\n    \t\"type\": \"otp\"\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/mfa",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"mfa"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		},
+		{
+			"name": "Authenticate",
+			"item": [
+				{
+					"name": "Login by social provider",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/authorize?client_id=5c221cde5ffa56fdd05257df&connection=facebook&redirect_uri=https://auth1.eu.gamenet.ru/authorize/result&state",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"authorize"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "5c221cde5ffa56fdd05257df"
+								},
+								{
+									"key": "connection",
+									"value": "facebook"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "https://auth1.eu.gamenet.ru/authorize/result"
+								},
+								{
+									"key": "state",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login by password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1b434d4c1efd2c184d9561",
+									"type": "text"
+								},
+								{
+									"key": "connection",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "Qwerty1#",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/login",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login by social with link account",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/authorize/link?client_id=5c221cde5ffa56fdd05257df&code=f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e&action=link&password=Qwerty1-",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"authorize",
+								"link"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "5c221cde5ffa56fdd05257df"
+								},
+								{
+									"key": "code",
+									"value": "f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e"
+								},
+								{
+									"key": "action",
+									"value": "link"
+								},
+								{
+									"key": "password",
+									"value": "Qwerty1-"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SignUp",
+			"item": [
+				{
+					"name": "SignUp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1b434d4c1efd2c184d9561",
+									"type": "text"
+								},
+								{
+									"key": "connection",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "Qweqwe1@",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/signup",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"signup"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ChangePassword",
+			"item": [
+				{
+					"name": "Send action email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1b434d4c1efd2c184d9561",
+									"type": "text"
+								},
+								{
+									"key": "connection",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@test.com",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/dbconnections/change_password",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"dbconnections",
+								"change_password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1b434d4c1efd2c184d9561",
+									"type": "text"
+								},
+								{
+									"key": "connection",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "token",
+									"value": "9GXHUVXcrRPKxw7RxgrwFg6dCGEIo3qRQqgqmFF75UAYEhSrY2wZ8v8007QaFndH4yqxn1FgPdxYV03kqyVgc9kINnGcpXMEL4ngFHWhNjLbKE1SFc6GVIX2IB8XBk7X",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "Qwerty1#",
+									"type": "text"
+								},
+								{
+									"key": "password_repeat",
+									"value": "Qwerty1#",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/dbconnections/change_password/verify",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"dbconnections",
+								"change_password",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Logout",
+			"item": [
+				{
+					"name": "Logout",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://127.0.0.1:8080/logout?client_id=5c1b434d4c1efd2c184d9561&redirect_uri=test",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"logout"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "5c1b434d4c1efd2c184d9561"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "test"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "MFA",
+			"item": [
+				{
+					"name": "Add MFA to user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-CLIENT-ID",
+								"value": "5c1bbe8b4c1efd4428629bde",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1bbe8b4c1efd4428629bde",
+									"type": "text"
+								},
+								{
+									"key": "provider_id",
+									"value": "5c4765944c1efd4194ec950f",
+									"type": "text"
+								},
+								{
+									"key": "authenticator_types",
+									"value": "auth1",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/mfa/add?",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"mfa",
+								"add"
+							],
+							"query": [
+								{
+									"key": "redirect_uri",
+									"value": "https://auth1.eu.gamenet.ru/authorize/result",
+									"disabled": true
+								},
+								{
+									"key": "state",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "MFA verify",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-CLIENT-ID",
+								"value": "5c1bbe8b4c1efd4428629bde",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1bbe8b4c1efd4428629bde",
+									"type": "text"
+								},
+								{
+									"key": "provider_id",
+									"value": "5c4765944c1efd4194ec950f",
+									"type": "text"
+								},
+								{
+									"key": "mfa_token",
+									"value": "ZTNipCQuSNmJG9vFihRHAGq5DHy9adim9BFYa43AeJR5j5p0FsCDVCzYmeMqEVsY",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "778945",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/mfa/verify?",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"mfa",
+								"verify"
+							],
+							"query": [
+								{
+									"key": "redirect_uri",
+									"value": "https://auth1.eu.gamenet.ru/authorize/result",
+									"disabled": true
+								},
+								{
+									"key": "state",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "UserInfo",
+			"item": [
+				{
+					"name": "Get user info",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI1YzQ2NGRkMDRjMWVmZDI0MjQ5YTFmYjUiLCJFbWFpbCI6InByMGhlYWRAbWFpbC5ydSIsIkVtYWlsQ29uZmlybWVkIjpmYWxzZSwiTmlja25hbWUiOiIiLCJleHAiOjM2MDAsImlzcyI6IlxcRk1cdWZmZmRMXHUwMDFlXHVmZmZkJCRcdWZmZmRcdTAwMWZcdWZmZmQifQ.cEqWUFty9NPbfNwgWdQtZXfEL_EdTFBjQET74dYf4vQ",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/userinfo",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"userinfo"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
