@@ -14,4 +14,4 @@ COPY . ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o $GOPATH/bin/auth1_auth .
 
-ENTRYPOINT $GOPATH/bin/auth1_auth server -c config.example.yaml
+ENTRYPOINT $GOPATH/bin/auth1_auth server -c etc/config.yaml

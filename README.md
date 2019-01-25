@@ -1,4 +1,4 @@
 # auth1
 
 ### Example to run
-`go run ./main.go server --config config.example.yaml`
+`go run ./main.go server --config etc/config.yaml`
