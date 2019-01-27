@@ -49,7 +49,7 @@ type (
 	AuthorizeForm struct {
 		ClientID    string `query:"client_id" form:"client_id" validate:"required"`
 		Connection  string `query:"connection" form:"connection" validate:"required"`
-		RedirectUri string `query:"redirect_uri" form:"redirect_uri" validate:"required"`
+		RedirectUri string `query:"redirect_uri" form:"redirect_uri"`
 		State       string `query:"state" form:"state"`
 	}
 

@@ -1,9 +1,9 @@
 openapi: 3.0.0
 servers:
 # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/ProtocolOne/Authentication/1.0.0
-  - url: 'https://auth-one.protocol.one'
+- description: SwaggerHub API Auto Mocking
+  url: https://virtserver.swaggerhub.com/ProtocolOne/Authentication/1.0.0
+- url: 'https://auth-one.protocol.one'
 info:
   description: The Authentication API enables you to manage all aspects of user identity when you use Auth-One. It offers endpoints so your users can log in, sign up, log out, access APIs, and more.
   version: 1.0.0
@@ -14,27 +14,27 @@ info:
     name: Vadim Sabirov
     url: 'https://protocol.one'
 tags:
-  - name: Signup
-    description: Create a new user
-  - name: Login
-    description: 'Authenticate user by login and password or by external providers'
-  - name: Logout
-    description: Use this endpoint to logout a user
-  - name: Passwordless
-    description: One-Time Code sent through email or SMS, every time the user logs in
-  - name: Change Password
-    description: Send message to change password
-  - name: Get User Info
-    description: Get user information by Access Token
-  - name: Multi-Factor Authentication
-    description: Management multifactor authentication the Multi-Factor Authentication
-  - name: JWT Token
-    description: JWT user's token
+- name: Signup
+  description: Create a new user
+- name: Login
+  description: 'Authenticate user by login and password or by external providers'
+- name: Logout
+  description: Use this endpoint to logout a user
+- name: Passwordless
+  description: One-Time Code sent through email or SMS, every time the user logs in
+- name: Change Password
+  description: Send message to change password
+- name: Get User Info
+  description: Get user information by Access Token
+- name: Multi-Factor Authentication
+  description: Management multifactor authentication the Multi-Factor Authentication
+- name: JWT Token
+  description: JWT user's token
 paths:
   /logout:
     get:
       tags:
-        - Logout
+      - Logout
       summary: 'Clears all single sign-on cookies set by Auth-One for the user'
       description: >-
         Redirecting the user to this URL clears all single sign-on cookies set
@@ -45,33 +45,33 @@ paths:
         clearing their session.
       operationId: logout
       parameters:
-        - name: redirect_uri
-          in: query
-          description: >-
-            URL to redirect the user after the logout.<br><br>To redirect a user
-            after logout, add a `redirect_uri` querystring parameter with the
-            target URL as the value. We suggest that you encode the target URL
-            being passed in.<br><br>You will need to add the non-encoded
-            `redirect_uri` URL as an Allowed Logout URLs in the application
-            settings.
-          required: true
-          schema:
-            type: integer
-            format: int64
-          allowEmptyValue: false
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: >-
-            The `client_id` of your application.<br><br>If the `client_id`
-            parameter is included, the returnTo URL must be listed in the
-            Allowed Logout URLs set at the application level (see Setting
-            Allowed Logout URLs at the App Level)<br><br>If the `client_id`
-            parameter is NOT included, the `returnTo` URL must be listed in the
-            Allowed Logout URLs set at the tenant level (see Setting Allowed
-            Logout URLs at the Space Level)
+      - name: redirect_uri
+        in: query
+        description: >-
+          URL to redirect the user after the logout.<br><br>To redirect a user
+          after logout, add a `redirect_uri` querystring parameter with the
+          target URL as the value. We suggest that you encode the target URL
+          being passed in.<br><br>You will need to add the non-encoded
+          `redirect_uri` URL as an Allowed Logout URLs in the application
+          settings.
+        required: true
+        schema:
+          type: integer
+          format: int64
+        allowEmptyValue: false
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: >-
+          The `client_id` of your application.<br><br>If the `client_id`
+          parameter is included, the returnTo URL must be listed in the
+          Allowed Logout URLs set at the application level (see Setting
+          Allowed Logout URLs at the App Level)<br><br>If the `client_id`
+          parameter is NOT included, the `returnTo` URL must be listed in the
+          Allowed Logout URLs set at the tenant level (see Setting Allowed
+          Logout URLs at the Space Level)
       responses:
         '302':
           description: >-
@@ -88,7 +88,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security:
-        - CookieAuth: []
+      - CookieAuth: []
     description: >-
       The Auth-One logout endpoint logs you out from Auth-One and, optionally, from
       your identity provider. It does not log you out of your application! This
@@ -101,12 +101,12 @@ paths:
       summary: 'Get user info by Access Token'
       description: 'Given the Access Token obtained during login, this endpoint returns a user''s profile.'
       parameters:
-        - name: access_token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `Access Token` obtained during login'
+      - name: access_token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `Access Token` obtained during login'
       operationId: userInfo
       responses:
         '200':
@@ -128,7 +128,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security:
-        - BearerAuth: []
+      - BearerAuth: []
   /token/refresh:
     get:
       tags:
@@ -136,18 +136,18 @@ paths:
       summary: 'Get new user Access Token by Refresh Token'
       description: ''
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'Refresh token'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'Refresh token'
       operationId: tokenRefresh
       responses:
         '200':
@@ -163,7 +163,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security:
-        - BearerAuth: []
+      - BearerAuth: []
   /token/ott:
     get:
       tags:
@@ -171,18 +171,18 @@ paths:
       summary: 'Get user Access Token by One-Time Token'
       description: ''
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'One-Time Token (for example, the parameter `auth_one_ott` passed during authentication with redirect)'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'One-Time Token (for example, the parameter `auth_one_ott` passed during authentication with redirect)'
       operationId: tokenOTT
       responses:
         '200':
@@ -205,24 +205,24 @@ paths:
       summary: 'Send verification code for the change password'
       description: 'Given a user''s `email` address and a `connection`, Auth-One will send a verification code to the email address.'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the database connection configured to your client'
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The user''s email address'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The name of the database connection configured to your client'
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The user''s email address'
       operationId: changePasswordStart
       responses:
         '200':
@@ -245,36 +245,36 @@ paths:
       summary: 'Verify change password code'
       description: ''
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the database connection configured to your client'
-        - name: verification_code
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'Verification code from email'
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'One-Time Token'
-        - name: password
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The new password'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The name of the database connection configured to your client'
+      - name: verification_code
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'Verification code from email'
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'One-Time Token'
+      - name: password
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The new password'
       operationId: changePasswordVerify
       responses:
         '200':
@@ -296,30 +296,30 @@ paths:
       - Signup
       summary: 'Create a new user using database connection'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the database connection configured to your client'
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The user''s email address'
-        - name: password
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The user''s desired password'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The name of the database connection configured to your client'
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The user''s email address'
+      - name: password
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The user''s desired password'
       operationId: signup
       responses:
         '200':
@@ -342,36 +342,36 @@ paths:
       summary: 'Authenticate by login and password'
       description: 'Use this endpoint to authenticate a user with database connection.'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: email
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The user''s email address'
-        - name: password
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The user''s desired password'
-        - name: captcha
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'Captcha'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The name of the connection configured to your application'
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The user''s email address'
+      - name: password
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The user''s desired password'
+      - name: captcha
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Captcha'
       operationId: login
       responses:
         '200':
@@ -400,36 +400,36 @@ paths:
       summary: 'Authenticate by social provider'
       description: 'Use this endpoint to authenticate a user with a social. It will return a 302 redirect to the social provider specified in connection. The `redirect_uri` value must be specified as a valid callback URL under your Application''s Settings.<br><br>You can use a special endpoint for `redirect_uri` if you want to get the Access Token of a user via JS PostMessage or WebSocket. See more on <a href="#/Login/authorizeResult">authorizeResult</a> page'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
-        - name: redirect_uri
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The URL to which will redirect the browser after authorization has been granted by the user'
-        - name: state
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'An opaque value the applications adds to the initial request that the authorization server includes when redirecting the back to the application. This value must be used by the application to prevent CSRF attacks.'
-        - name: ADDITIONAL_PARAMETERS
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
+      - name: redirect_uri
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The URL to which will redirect the browser after authorization has been granted by the user'
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'An opaque value the applications adds to the initial request that the authorization server includes when redirecting the back to the application. This value must be used by the application to prevent CSRF attacks.'
+      - name: ADDITIONAL_PARAMETERS
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
       operationId: authorize
       responses:
         '302':
@@ -445,37 +445,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security: []
-  /authorize/result:
+  /authorize/link:
     get:
       tags:
       - Login
-      summary: 'Send social authorize result'
-      description: 'Send social authorize result via JS PostMessage or WebSocket protocol.<br><br>The result will be sent as a JSON.stringify object with the following structure: `{"event":"EVENT_NAME", "token":{}}` where the name of the event can be `oauthCompletedSuccessfully` or `oauthCompletedWithError`, and the token upon successful authentication contains a JWTToken object.'
+      summary: 'Create a social authentication link with the authenticator by password (if found) or unlink'
+      description: 'Link social account to password account'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of a social identity provider configured to your application, for example `google-oauth2` or `facebook`'
-        - name: auth_one_ott
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'One-Time Token'
-        - name: wsUrl
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'If you want to receive an answer via WebSocket, set the value of this parameter as the address of connection to your WebSocket server, for example: `wss://127.0.0.1:123`. The parameter must be encoded with the encodeURIComponent, for example `wss%3A%2F%2F127.0.0.1%3A123`'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The ont-time token from social auth result'
+      - name: action
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'Set `link` if you want to link accounts or `new` to create a new account'
+      - name: password
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Password from account with password authenticator'
+      - name: access_token
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Authentication token, if MFA was connected to the main account'
       responses:
         '200':
           description: Bad Request
@@ -497,22 +503,22 @@ paths:
       tags:
       - Passwordless
       summary: 'Send a verification code using email or sms'
-      description:
+      description: ''
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: >-
-            How to send the code to the user. Use `email` to send the
-            code using email, or `sms` to use SMS
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: >-
+          How to send the code to the user. Use `email` to send the
+          code using email, or `sms` to use SMS
       operationId: passwordlessStart
       responses:
         '200':
@@ -534,32 +540,32 @@ paths:
       - Passwordless
       summary: 'Verify passwordless authentication code'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: >-
-            How to send the code to the user. Use `email` to send the
-            code using email, or `sms` to use SMS
-        - name: verification_code
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'Verification code from sms or email (One-Time Code)'
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'One-Time Token'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: connection
+        in: query
+        required: true
+        schema:
+          type: string
+        description: >-
+          How to send the code to the user. Use `email` to send the
+          code using email, or `sms` to use SMS
+      - name: verification_code
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'Verification code from sms or email (One-Time Code)'
+      - name: token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'One-Time Token'
       operationId: passwordlessVerify
       responses:
         '200':
@@ -582,30 +588,30 @@ paths:
       summary: 'Set a MFA challenge types'
       description: 'Request a challenge based on the challenge types supported by the application and user.'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: mfa_token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'MFA token from authenticate response'
-        - name: challenge_type
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: 'Set `otp` for use one-time password or set `oob` for use out-of-band message (sms). If the parameter is not set, then priority is given to the type of `otp`, if it is connected.'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: provider_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The identifier MFA configured to your application'
+      - name: mfa_token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'MFA token from authenticate response'
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Code from MFA authenticator'
       operationId: mfaChallenge
       responses:
         '200':
@@ -628,30 +634,30 @@ paths:
       summary: 'Authenticate a user with MFA'
       description: 'Use this endpoint to authenticate a user with MFA.'
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: mfa_token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'MFA token from authenticate response'
-        - name: code
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: 'OTP, OOB or Recovery code'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: provider_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The identifier MFA configured to your application'
+      - name: mfa_token
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'MFA token from authenticate response'
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'OTP, OOB or Recovery code'
       operationId: mfaVerify
       responses:
         '200':
@@ -674,36 +680,30 @@ paths:
       summary: 'Add authenticator to the user'
       description: ''
       parameters:
-        - name: client_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The `client_id` of your application'
-        - name: connection
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'The name of the connection configured to your application'
-        - name: authenticator_types
-          in: query
-          required: true
-          schema:
-            type: string
-          description: 'Set `otp` for use one-time password or set `oob` for use out-of-band message (sms)'
-        - name: oob_channel
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'The type of OOB channels supported by the client. An array with values `auth1` or `sms`. Required if authenticator_types include `oob`'
-        - name: phone_number
-          in: query
-          required: false
-          schema:
-            type: string
-          description: 'The phone number to use for SMS. Required if `oob_channel` includes `sms`'
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The `client_id` of your application'
+      - name: provider_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 'The identifier MFA configured to your application'
+      - name: code
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Verification code from the MFA authenticator'
+      - name: phone_number
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'The phone number to use for SMS. Required if `oob_channel` includes `sms`'
       operationId: mfaAdd
       responses:
         '200':
@@ -719,7 +719,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security:
-        - BearerAuth: []
+      - BearerAuth: []
 components:
   schemas:
     Error:
@@ -812,10 +812,10 @@ components:
       name: X-AUTH-ONE-TOKEN-{CLIENT_ID}
     BearerAuth:
       type: http
-      scheme: Bearer
+      scheme: bearer
       bearerFormat: JWT
   links: {}
   callbacks: {}
 security:
-  - CookieAuth: []
-  - BearerAuth: []
+- CookieAuth: []
+- BearerAuth: []

@@ -51,21 +51,13 @@ func (l *Login) Authorize(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.Authorize(ctx, form); err != nil {
+	str, err := l.Manager.Authorize(ctx, form)
+	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	/*req, e := http.NewRequest("GET", form.RedirectUri, nil)
-	if e != nil {
-		return ctx.HTML(http.StatusBadRequest, e.GetMessage())
-	}
-
-	q := req.URL.Query()
-	q.Add(`auth_one_ott`, ott.Token)
-	req.URL.RawQuery = q.Encode()*/
-
-	//return ctx.Redirect(http.StatusOK, req.URL.String())
-	return nil
+	fmt.Print(str)
+	return ctx.Redirect(http.StatusOK, str)
 }
 
 func (l *Login) AuthorizeResult(ctx echo.Context) error {

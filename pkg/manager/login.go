@@ -17,33 +17,31 @@ import (
 
 type LoginManager Config
 
-func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) models.ErrorInterface {
+func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, models.ErrorInterface) {
 	if form.Connection == `incorrect` {
-		return &models.CommonError{Message: models.ErrorConnectionIncorrect}
+		return "", &models.CommonError{Message: models.ErrorConnectionIncorrect}
 	}
 
 	as := models.NewApplicationService(m.Database)
 	a, err := as.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.Logger.Warning(fmt.Sprintf("Unable to get application [%s] with error: %s", form.ClientID, err.Error()))
-		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
 	uic, err := as.GetUserIdentityConnection(a, models.UserIdentityProviderSocial, form.Connection)
 	if err != nil {
 		m.Logger.Warning(fmt.Sprintf("Unable to load user identity settings an application [%s] with error: %s", form.ClientID, err.Error()))
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 
 	u, err := uic.GetAuthUrl(ctx, form)
 	if err != nil {
 		m.Logger.Warning(fmt.Sprintf("Unable to convert authorize form an application [%s] with error: %s", form.ClientID, err.Error()))
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	fmt.Print(u)
-
-	return nil
+	return u, nil
 }
 
 func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeResultForm) (token *models.AuthToken, error models.ErrorInterface) {
