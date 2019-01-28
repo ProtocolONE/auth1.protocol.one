@@ -40,37 +40,37 @@ type (
 	}
 
 	SignUpForm struct {
-		ClientID   string `form:"client_id" validate:"required"`
-		Connection string `form:"connection" validate:"required"`
-		Email      string `form:"email" validate:"required,email"`
-		Password   string `form:"password" validate:"required"`
+		ClientID   string `form:"client_id" json:"client_id" validate:"required"`
+		Connection string `form:"connection" json:"connection" validate:"required"`
+		Email      string `form:"email" json:"email" validate:"required,email"`
+		Password   string `form:"password" json:"password" validate:"required"`
 	}
 
 	AuthorizeForm struct {
-		ClientID    string `query:"client_id" form:"client_id" validate:"required"`
-		Connection  string `query:"connection" form:"connection" validate:"required"`
-		RedirectUri string `query:"redirect_uri" form:"redirect_uri"`
-		State       string `query:"state" form:"state"`
+		ClientID    string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
+		Connection  string `query:"connection" form:"connection" json:"connection" validate:"required"`
+		RedirectUri string `query:"redirect_uri" form:"redirect_uri" json:"redirect_uri"`
+		State       string `query:"state" form:"state" json:"state"`
 	}
 
 	AuthorizeResultForm struct {
-		Code  string `query:"code" form:"code" validate:"required"`
-		State string `query:"state" form:"state" validate:"required"`
+		Code  string `query:"code" form:"code" json:"code" validate:"required"`
+		State string `query:"state" form:"state" json:"state" validate:"required"`
 	}
 
 	AuthorizeLinkForm struct {
-		ClientID    string `query:"client_id" form:"client_id" validate:"required"`
-		Code        string `query:"code" form:"code" validate:"required"`
-		Action      string `query:"action" form:"action" validate:"required"`
-		Password    string `query:"password" form:"password"`
-		AccessToken string `query:"access_token" form:"access_token"`
+		ClientID    string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
+		Code        string `query:"code" form:"code" json:"code" validate:"required"`
+		Action      string `query:"action" form:"action" json:"action" validate:"required"`
+		Password    string `query:"password" form:"password" json:"password"`
+		AccessToken string `query:"access_token" form:"access_token" json:"access_token"`
 	}
 
 	LoginForm struct {
-		ClientID string `form:"client_id" validate:"required"`
-		Email    string `form:"email" validate:"required,email"`
-		Password string `form:"password" validate:"required"`
-		Captcha  string `form:"captcha"`
+		ClientID string `form:"client_id" validate:"required" json:"client_id"`
+		Email    string `form:"email" validate:"required,email" json:"email"`
+		Password string `form:"password" validate:"required" json:"password"`
+		Captcha  string `form:"captcha" json:"captcha"`
 	}
 )
 

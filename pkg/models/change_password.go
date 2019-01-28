@@ -8,11 +8,11 @@ type (
 	}
 
 	ChangePasswordVerifyForm struct {
-		ClientID       string `form:"client_id" validate:"required"`
-		Connection     string `form:"connection" validate:"required"`
-		Token          string `form:"token" validate:"required"`
-		Password       string `form:"password" validate:"required"`
-		PasswordRepeat string `form:"password_repeat" validate:"required"`
+		ClientID       string `form:"client_id" json:"client_id" validate:"required"`
+		Connection     string `form:"connection" json:"connection" validate:"required"`
+		Token          string `form:"token" json:"token" validate:"required"`
+		Password       string `form:"password" json:"password" validate:"required"`
+		PasswordRepeat string `form:"password_repeat" json:"password_repeat" validate:"required"`
 	}
 
 	ChangePasswordTokenSource struct {
