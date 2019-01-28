@@ -1,4 +1,4 @@
-{{- $endpoint := .Values.frontend -}}
+{{- $endpoint := .Values.backend -}}
 {{- $endpointSvc := printf "%s-%s" .Release.Name $endpoint.name}}
 apiVersion: extensions/v1beta1
 kind: Ingress
