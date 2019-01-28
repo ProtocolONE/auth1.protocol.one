@@ -1,0 +1,68 @@
+{{- $deployment := .Values.backend -}}
+{{- $deploymentName := printf "%s-%s" .Release.Name $deployment.name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $deploymentName }}
+  labels:
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: {{ $deployment.role }}
+  annotations: 
+    released: {{ .Release.Time}}    
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: {{ $deployment.role }}
+  replicas: {{ $deployment.replicas }} 
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: {{ $deployment.role }}
+    spec:
+      volumes:
+      - name: p1auth1-config
+        secret:
+          secretName: p1auth1-config
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+      - name: {{ $deployment.name }}
+        image: {{ $deployment.image }}:{{ $deployment.imageTag }}
+        env:
+        - name: MICRO_SERVER_ADDRESS
+          value: "0.0.0.0:{{ $deployment.port }}"
+        - name: MICRO_REGISTRY
+          value: "kubernetes"
+        - name: METRICS_PORT
+          value: "{{ $deployment.port }}"
+        - name: MICRO_SELECTOR
+          value: "static"
+        ports:
+        - containerPort: {{$deployment.port}}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ $deployment.port }}
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+          failureThreshold: 3
+          periodSeconds: 5
+        volumeMounts:
+        - name: p1auth1-config
+          mountPath: /etc
+          readOnly: true

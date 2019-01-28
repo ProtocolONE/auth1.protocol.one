@@ -1,0 +1,84 @@
+{{- if .Values.enableRedis }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  annotations:
+    "helm.sh/resource-policy": keep
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: {{ .Release.Name }}
+    role: redis
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: nfs-share
+    path: "/home/nfsroot/k8sdata/p1auth1-redis"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  annotations:
+    "helm.sh/resource-policy": keep
+  name: {{ .Release.Name }}-redis
+spec:
+  storageClassName: ""
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}  
+      role: redis
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: {{ .Release.Name }}
+    role: redis
+spec:
+  ports:
+  - port: 6379
+    protocol: TCP
+  selector:
+    app: {{ .Release.Name }}
+    role: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-redis
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      role: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        role: redis
+    spec:
+      volumes:
+      - name: {{ .Release.Name }}-redis
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-redis
+      containers:
+      - name: {{ .Release.Name }}
+        image: redis:3.2.12-alpine
+        args: ["--appendonly","yes", "--save", "900", "1", "--save", "30", "2"]
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: {{ .Release.Name }}-redis
+          mountPath: /data
+          readOnly: false
+{{- end }}
