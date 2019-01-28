@@ -21,8 +21,6 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  annotations:
-    "helm.sh/resource-policy": keep
   name: {{ .Release.Name }}-redis
 spec:
   storageClassName: ""
