@@ -6,12 +6,12 @@ import (
 )
 
 type TokenManager struct {
-	Logger *zap.Logger
+	logger *zap.Logger
 }
 
 func NewTokenManager(logger *zap.Logger) *TokenManager {
 	m := &TokenManager{
-		Logger: logger,
+		logger: logger,
 	}
 
 	return m
