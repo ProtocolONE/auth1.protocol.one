@@ -163,9 +163,11 @@ func (os *OneTimeTokenService) Get(token string, d interface{}) error {
 }
 
 func (os *OneTimeTokenService) Use(token string, d interface{}) error {
-	os.Get(token, &d)
-	os.Redis.Del(fmt.Sprintf(OneTimeTokenStoragePattern, token))
-	return nil
+	if err := os.Get(token, &d); err != nil {
+		return err
+	}
+
+	return os.Redis.Del(fmt.Sprintf(OneTimeTokenStoragePattern, token)).Err()
 }
 
 func GetRandString(length int) string {
