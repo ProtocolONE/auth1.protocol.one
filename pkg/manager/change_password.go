@@ -32,7 +32,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	if err != nil {
 		m.logger.Warn(
 			"Unable to receive client id",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
 		)
 
@@ -44,7 +44,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get user identity by email",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
 		)
 	}
@@ -58,7 +58,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	if err != nil {
 		m.logger.Warn(
 			"Unable to load password settings an application",
-			zap.Object("clientId", form),
+			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
 		)
 
@@ -69,7 +69,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	if err != nil {
 		m.logger.Warn(
 			"Unable to create one time token settings",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
 		)
 
@@ -100,7 +100,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get application",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 
@@ -111,7 +111,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get app password settings",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 
@@ -133,7 +133,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err := os.Use(form.Token, ts); err != nil {
 		m.logger.Warn(
 			"Unable to use token of application",
-			zap.Object("form", form),
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 
@@ -146,7 +146,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		m.logger.Warn(
 			"Unable to get user identity for the application",
 			zap.String("email", ts.Email),
-			zap.Object("form", form),
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 	}
@@ -162,7 +162,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		m.logger.Warn(
 			"Unable to crypt password in application",
 			zap.String("password", form.Password),
-			zap.Object("form", form),
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 

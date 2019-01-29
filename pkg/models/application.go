@@ -51,6 +51,21 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (a *ApplicationForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("SpaceId", a.SpaceId.String())
+	enc.AddObject("Application", a.Application)
+
+	return nil
+}
+
+func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Name", a.Name)
+	enc.AddString("Description", a.Description)
+	enc.AddBool("IsActive", a.IsActive)
+
+	return nil
+}
+
 func NewApplicationService(dbHandler *database.Handler) *ApplicationService {
 	return &ApplicationService{
 		db: dbHandler.Session.DB(dbHandler.Name),

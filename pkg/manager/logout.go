@@ -32,7 +32,7 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 	if err != nil {
 		m.logger.Error(
 			"Unable to get application",
-			zap.Object("form", form),
+			zap.Object("LogoutForm", form),
 			zap.Error(err),
 		)
 

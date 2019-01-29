@@ -138,7 +138,7 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 	if _, err := m.spaceService.GetSpace(form.SpaceId); err != nil {
 		m.logger.Error(
 			"Unable to get space",
-			zap.String("spaceId", form.SpaceId.String()),
+			zap.Object("ApplicationForm", form),
 			zap.Error(err),
 		)
 
@@ -191,7 +191,7 @@ func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvide
 	if err := m.mfaService.Add(p); err != nil {
 		m.logger.Error(
 			"Unable to add MFA provider to application",
-			zap.Object("mfaProvider", p),
+			zap.Object("MfaProvider", p),
 			zap.Error(err),
 		)
 
