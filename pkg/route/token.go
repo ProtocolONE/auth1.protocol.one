@@ -42,7 +42,11 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("TokenRefresh validate form failed", zap.Error(err))
+		l.logger.Error(
+			"TokenRefresh validate form failed",
+			zap.Object("RefreshTokenForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -75,7 +79,11 @@ func (l *Token) TokenOTT(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("TokenOTT bind validate failed", zap.Error(err))
+		l.logger.Error(
+			"TokenOTT bind validate failed",
+			zap.Object("OneTimeTokenForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

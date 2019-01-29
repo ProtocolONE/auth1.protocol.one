@@ -5,74 +5,73 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"time"
 )
 
-type (
-	AuthToken struct {
-		AccessToken  string `json:"access_token,omitempty"`
-		ExpiresIn    int64  `json:"expires_in,omitempty"`
-		RefreshToken string `json:"id_token,omitempty"`
-	}
+type AuthToken struct {
+	AccessToken  string `json:"access_token,omitempty"`
+	ExpiresIn    int64  `json:"expires_in,omitempty"`
+	RefreshToken string `json:"id_token,omitempty"`
+}
 
-	OneTimeTokenService struct {
-		Redis    *redis.Client
-		Settings *OneTimeTokenSettings
-	}
+type OneTimeTokenService struct {
+	Redis    *redis.Client
+	Settings *OneTimeTokenSettings
+}
 
-	OneTimeTokenSettings struct {
-		Length int
-		TTL    int
-	}
+type OneTimeTokenSettings struct {
+	Length int
+	TTL    int
+}
 
-	OneTimeTokenForm struct {
-		ClientId string `json:"client_id" form:"client_id" validate:"required"`
-		Token    string `json:"token" form:"token" validate:"required"`
-	}
+type OneTimeTokenForm struct {
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+	Token    string `json:"token" form:"token" validate:"required"`
+}
 
-	OneTimeToken struct {
-		Token string `json:"token,omitempty"`
-	}
+type OneTimeToken struct {
+	Token string `json:"token,omitempty"`
+}
 
-	JwtTokenService struct {
-		*AuthTokenSettings
-	}
+type JwtTokenService struct {
+	*AuthTokenSettings
+}
 
-	AuthTokenSettings struct {
-		JwtKey        []byte
-		JwtTTL        int
-		JwtMethod     jwt.SigningMethod
-		RefreshLength int
-		RefreshTTL    int
-	}
+type AuthTokenSettings struct {
+	JwtKey        []byte
+	JwtTTL        int
+	JwtMethod     jwt.SigningMethod
+	RefreshLength int
+	RefreshTTL    int
+}
 
-	JwtClaim struct {
-		UserId         bson.ObjectId `json:"user_id"`
-		AppId          bson.ObjectId `json:"app_id"`
-		Email          string        `json:"email"`
-		EmailConfirmed bool          `json:"email_confirmed"`
-		Nickname       string        `json:"nickname"`
-		jwt.StandardClaims
-	}
+type JwtClaim struct {
+	UserId         bson.ObjectId `json:"user_id"`
+	AppId          bson.ObjectId `json:"app_id"`
+	Email          string        `json:"email"`
+	EmailConfirmed bool          `json:"email_confirmed"`
+	Nickname       string        `json:"nickname"`
+	jwt.StandardClaims
+}
 
-	RefreshTokenService struct {
-		*AuthTokenSettings
-	}
+type RefreshTokenService struct {
+	*AuthTokenSettings
+}
 
-	RefreshToken struct {
-		Value     string
-		TTL       int
-		UserAgent string
-		IP        string
-	}
+type RefreshToken struct {
+	Value     string
+	TTL       int
+	UserAgent string
+	IP        string
+}
 
-	RefreshTokenForm struct {
-		ClientId string `json:"client_id" form:"client_id" validate:"required"`
-		Token    string `json:"token" form:"token" validate:"required"`
-	}
-)
+type RefreshTokenForm struct {
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+	Token    string `json:"token" form:"token" validate:"required"`
+}
 
 const (
 	OneTimeTokenStoragePattern = "ott_data_%s"
@@ -85,6 +84,20 @@ var (
 	letterIdxMax  = 63 / letterIdxBits
 	src           = rand.NewSource(time.Now().UnixNano())
 )
+
+func (m *RefreshTokenForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientId", m.ClientId)
+	enc.AddString("Token", m.Token)
+
+	return nil
+}
+
+func (m *OneTimeTokenForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientId", m.ClientId)
+	enc.AddString("Token", m.Token)
+
+	return nil
+}
 
 func NewJwtTokenService(authTokenSettings *AuthTokenSettings) *JwtTokenService {
 	return &JwtTokenService{authTokenSettings}

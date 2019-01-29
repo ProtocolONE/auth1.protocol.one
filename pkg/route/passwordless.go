@@ -42,7 +42,11 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("PasswordLessStart validate form failed", zap.Error(err))
+		l.logger.Error(
+			"PasswordLessStart validate form failed",
+			zap.Object("PasswordLessStartForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -75,7 +79,11 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("PasswordLessVerify validate form failed", zap.Error(err))
+		l.logger.Error(
+			"PasswordLessVerify validate form failed",
+			zap.Object("PasswordLessVerifyForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

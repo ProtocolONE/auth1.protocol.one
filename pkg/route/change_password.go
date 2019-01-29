@@ -42,7 +42,11 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("ChangePasswordStart validate form failed", zap.Error(err))
+		l.logger.Error(
+			"ChangePasswordStart validate form failed",
+			zap.Object("ChangePasswordStartForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -74,7 +78,11 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("ChangePasswordVerify validate form failed", zap.Error(err))
+		l.logger.Error(
+			"ChangePasswordVerify validate form failed",
+			zap.Object("ChangePasswordVerifyForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

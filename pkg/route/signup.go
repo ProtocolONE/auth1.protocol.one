@@ -41,7 +41,11 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("SignUp validate form failed", zap.Error(err))
+		l.logger.Error(
+			"SignUp validate form failed",
+			zap.Object("SignUpForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

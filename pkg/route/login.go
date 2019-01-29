@@ -48,7 +48,11 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("Authorize validate form failed", zap.Error(err))
+		l.logger.Error(
+			"Authorize validate form failed",
+			zap.Object("AuthorizeForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -81,7 +85,11 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("AuthorizeResult validate form failed", zap.Error(err))
+		l.logger.Error(
+			"AuthorizeResult validate form failed",
+			zap.Object("AuthorizeResultForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -120,7 +128,11 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("AuthorizeLink validate form failed", zap.Error(err))
+		l.logger.Error(
+			"AuthorizeLink validate form failed",
+			zap.Object("AuthorizeLinkForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -155,7 +167,11 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("Login validate form failed", zap.Error(err))
+		l.logger.Error(
+			"Login validate form failed",
+			zap.Object("LoginForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

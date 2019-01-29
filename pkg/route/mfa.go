@@ -43,7 +43,11 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("MFAChallenge validate form failed", zap.Error(err))
+		l.logger.Error(
+			"MFAChallenge validate form failed",
+			zap.Object("MfaChallengeForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -76,7 +80,11 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("MFAVerify validate form failed", zap.Error(err))
+		l.logger.Error(
+			"MFAVerify validate form failed",
+			zap.Object("MfaVerifyForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -109,7 +117,11 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("MFAAdd validate form failed", zap.Error(err))
+		l.logger.Error(
+			"MFAAdd validate form failed",
+			zap.Object("MfaAddForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

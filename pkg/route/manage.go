@@ -51,7 +51,11 @@ func (l *Manage) CreateSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("CreateSpace validate form failed", zap.Error(err))
+		l.logger.Error(
+			"CreateSpace validate form failed",
+			zap.Object("SpaceForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -95,7 +99,11 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("UpdateSpace validate form failed", zap.Error(err))
+		l.logger.Error(
+			"UpdateSpace validate form failed",
+			zap.Object("SpaceForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -114,9 +122,9 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 }
 
 func (l *Manage) CreateApplication(ctx echo.Context) error {
-	a := &models.ApplicationForm{}
+	applicationForm := &models.ApplicationForm{}
 
-	if err := ctx.Bind(a); err != nil {
+	if err := ctx.Bind(applicationForm); err != nil {
 		l.logger.Error("CreateApplication bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
@@ -127,8 +135,12 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 		)
 	}
 
-	if err := ctx.Validate(a); err != nil {
-		l.logger.Error("CreateApplication validate form failed", zap.Error(err))
+	if err := ctx.Validate(applicationForm); err != nil {
+		l.logger.Error(
+			"CreateApplication validate form failed",
+			zap.Object("ApplicationForm", applicationForm),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -138,7 +150,7 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 		)
 	}
 
-	app, err := l.Manager.CreateApplication(a)
+	app, err := l.Manager.CreateApplication(applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
@@ -148,6 +160,7 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 
 func (l *Manage) GetApplication(ctx echo.Context) error {
 	id := ctx.Param("id")
+
 	a, err := l.Manager.GetApplication(id)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
@@ -158,9 +171,9 @@ func (l *Manage) GetApplication(ctx echo.Context) error {
 
 func (l *Manage) UpdateApplication(ctx echo.Context) error {
 	id := ctx.Param("id")
-	a := &models.ApplicationForm{}
+	applicationForm := &models.ApplicationForm{}
 
-	if err := ctx.Bind(a); err != nil {
+	if err := ctx.Bind(applicationForm); err != nil {
 		l.logger.Error("UpdateApplication bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
@@ -171,8 +184,12 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 		)
 	}
 
-	if err := ctx.Validate(a); err != nil {
-		l.logger.Error("UpdateApplication validate form failed", zap.Error(err))
+	if err := ctx.Validate(applicationForm); err != nil {
+		l.logger.Error(
+			"UpdateApplication validate form failed",
+			zap.Object("ApplicationForm", applicationForm),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -182,7 +199,7 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 		)
 	}
 
-	app, err := l.Manager.UpdateApplication(id, a)
+	app, err := l.Manager.UpdateApplication(id, applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
 	}
@@ -191,9 +208,9 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 }
 
 func (l *Manage) AddMFA(ctx echo.Context) error {
-	f := &models.MfaApplicationForm{}
+	mfaApplicationForm := &models.MfaApplicationForm{}
 
-	if err := ctx.Bind(f); err != nil {
+	if err := ctx.Bind(mfaApplicationForm); err != nil {
 		l.logger.Error("AddMFA bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
@@ -204,8 +221,12 @@ func (l *Manage) AddMFA(ctx echo.Context) error {
 		)
 	}
 
-	if err := ctx.Validate(f); err != nil {
-		l.logger.Error("AddMFA validate form failed", zap.Error(err))
+	if err := ctx.Validate(mfaApplicationForm); err != nil {
+		l.logger.Error(
+			"AddMFA validate form failed",
+			zap.Object("MfaApplicationForm", mfaApplicationForm),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -215,7 +236,7 @@ func (l *Manage) AddMFA(ctx echo.Context) error {
 		)
 	}
 
-	app, err := l.Manager.AddMFA(f)
+	app, err := l.Manager.AddMFA(mfaApplicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}

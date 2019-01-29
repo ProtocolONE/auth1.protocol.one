@@ -32,6 +32,15 @@ func (s *Space) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("name", s.Name)
 	enc.AddString("description", s.Name)
 	enc.AddBool("isActive", s.IsActive)
+
+	return nil
+}
+
+func (s *SpaceForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Name", s.Name)
+	enc.AddString("Description", s.Description)
+	enc.AddBool("IsActive", s.IsActive)
+
 	return nil
 }
 

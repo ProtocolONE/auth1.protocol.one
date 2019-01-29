@@ -41,7 +41,11 @@ func (l *Logout) Logout(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error("Logout validate form failed", zap.Error(err))
+		l.logger.Error(
+			"Logout validate form failed",
+			zap.Object("LogoutForm", form),
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
