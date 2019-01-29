@@ -64,5 +64,5 @@ spec:
           periodSeconds: 5
         volumeMounts:
         - name: p1auth1-config
-          mountPath: /etc
+          mountPath: /application/etc
           readOnly: true

@@ -2,6 +2,8 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
+  annotations:
+    "helm.sh/resource-policy": keep
   name: {{ .Release.Name }}-mongo
   labels:
     app: {{ .Release.Name }}

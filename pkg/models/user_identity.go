@@ -194,9 +194,11 @@ func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIden
 	if err := json.Unmarshal(b, &f); err != nil {
 		return nil, err
 	}
-	m := f.(map[string]interface{})
-	result, err := parseResponse(uic.Connection, m, uis)
-	fmt.Printf("%+v\r\n", result)
+
+	/*
+		m := f.(map[string]interface{})
+		_, err := parseResponse(uic.Connection, m, uis)
+	*/
 	return uis, nil
 }
 
