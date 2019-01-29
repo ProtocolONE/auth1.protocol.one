@@ -53,8 +53,6 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 	}
 
 	if err := l.Manager.ChangePasswordStart(form); err != nil {
-		l.logger.Error("ChangePasswordStart failed", zap.Error(err))
-
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
@@ -87,8 +85,6 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	}
 
 	if err := l.Manager.ChangePasswordVerify(form); err != nil {
-		l.logger.Error("ChangePasswordVerify failed", zap.Error(err))
-
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
