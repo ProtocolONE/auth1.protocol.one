@@ -12,7 +12,7 @@ import (
 
 type (
 	Login struct {
-		Manager manager.LoginManager
+		Manager *manager.LoginManager
 		Http    *echo.Echo
 		logger  *zap.Logger
 	}

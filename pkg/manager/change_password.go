@@ -15,8 +15,8 @@ type ChangePasswordManager struct {
 	userIdentityService *models.UserIdentityService
 }
 
-func NewChangePasswordManager(logger *zap.Logger, db *database.Handler, r *redis.Client) ChangePasswordManager {
-	m := ChangePasswordManager{
+func NewChangePasswordManager(logger *zap.Logger, db *database.Handler, r *redis.Client) *ChangePasswordManager {
+	m := &ChangePasswordManager{
 		redis:               r,
 		logger:              logger,
 		appService:          models.NewApplicationService(db),

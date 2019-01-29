@@ -25,8 +25,8 @@ type LoginManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) LoginManager {
-	m := LoginManager{
+func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *LoginManager {
+	m := &LoginManager{
 		logger:              logger,
 		redis:               redis,
 		appService:          models.NewApplicationService(h),

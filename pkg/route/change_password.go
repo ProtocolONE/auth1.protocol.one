@@ -11,7 +11,7 @@ import (
 )
 
 type ChangePassword struct {
-	Manager manager.ChangePasswordManager
+	Manager *manager.ChangePasswordManager
 	logger  *zap.Logger
 }
 
