@@ -5,15 +5,31 @@ import (
 	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
 	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-type UserInfoManager Config
+type UserInfoManager struct {
+	logger             *zap.Logger
+	applicationService *models.ApplicationService
+}
+
+func NewUserInfoManager(logger *zap.Logger, db *database.Handler) *UserInfoManager {
+	m := &UserInfoManager{
+		logger:             logger,
+		applicationService: models.NewApplicationService(db),
+	}
+
+	return m
+}
 
 func (m *UserInfoManager) UserInfo(ctx echo.Context) (t *models.UserProfile, error *models.AuthTokenError) {
-	as := models.NewApplicationService(m.Database)
-	c, err := helper.GetTokenFromAuthHeader(*as, ctx.Request().Header)
+	c, err := helper.GetTokenFromAuthHeader(m.applicationService, ctx.Request().Header)
 	if err != nil {
+		m.logger.Error(
+			"Unable to get token from auth header",
+			zap.Error(err),
+		)
+
 		return nil, &models.AuthTokenError{Code: `auth_token_invalid`, Message: err.Error()}
 	}
 
@@ -23,13 +39,4 @@ func (m *UserInfoManager) UserInfo(ctx echo.Context) (t *models.UserProfile, err
 		Email:         c.Email,
 		EmailVerified: c.EmailConfirmed,
 	}, nil
-}
-
-func InitUserInfoManager(logger *logrus.Entry, db *database.Handler) UserInfoManager {
-	m := UserInfoManager{
-		Database: db,
-		Logger:   logger,
-	}
-
-	return m
 }

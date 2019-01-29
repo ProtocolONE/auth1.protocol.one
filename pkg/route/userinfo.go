@@ -8,12 +8,12 @@ import (
 )
 
 type UserInfo struct {
-	Manager manager.UserInfoManager
+	Manager *manager.UserInfoManager
 }
 
 func UserInfoInit(cfg Config) error {
 	route := &UserInfo{
-		Manager: manager.InitUserInfoManager(cfg.Logger, cfg.Database),
+		Manager: manager.NewUserInfoManager(cfg.Logger, cfg.Database),
 	}
 
 	cfg.Echo.GET("/userinfo", route.UserInfo)
