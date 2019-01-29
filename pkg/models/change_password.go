@@ -1,21 +1,39 @@
 package models
 
-type (
-	ChangePasswordStartForm struct {
-		ClientID   string `json:"client_id" form:"client_id" validate:"required"`
-		Connection string `json:"connection" form:"connection" validate:"required"`
-		Email      string `json:"email" form:"email" validate:"required,email"`
-	}
+import "go.uber.org/zap/zapcore"
 
-	ChangePasswordVerifyForm struct {
-		ClientID       string `form:"client_id" json:"client_id" validate:"required"`
-		Connection     string `form:"connection" json:"connection" validate:"required"`
-		Token          string `form:"token" json:"token" validate:"required"`
-		Password       string `form:"password" json:"password" validate:"required"`
-		PasswordRepeat string `form:"password_repeat" json:"password_repeat" validate:"required"`
-	}
+type ChangePasswordStartForm struct {
+	ClientID   string `json:"client_id" form:"client_id" validate:"required"`
+	Connection string `json:"connection" form:"connection" validate:"required"`
+	Email      string `json:"email" form:"email" validate:"required,email"`
+}
 
-	ChangePasswordTokenSource struct {
-		Email string
-	}
-)
+type ChangePasswordVerifyForm struct {
+	ClientID       string `form:"client_id" json:"client_id" validate:"required"`
+	Connection     string `form:"connection" json:"connection" validate:"required"`
+	Token          string `form:"token" json:"token" validate:"required"`
+	Password       string `form:"password" json:"password" validate:"required"`
+	PasswordRepeat string `form:"password_repeat" json:"password_repeat" validate:"required"`
+}
+
+type ChangePasswordTokenSource struct {
+	Email string
+}
+
+func (a *ChangePasswordStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientID", a.ClientID)
+	enc.AddString("Connection", a.Connection)
+	enc.AddString("Email", a.Email)
+
+	return nil
+}
+
+func (a *ChangePasswordVerifyForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientID", a.ClientID)
+	enc.AddString("Connection", a.Connection)
+	enc.AddString("Token", "[HIDDEN]")
+	enc.AddString("Password", "[HIDDEN]")
+	enc.AddString("PasswordRepeat", "[HIDDEN]")
+
+	return nil
+}

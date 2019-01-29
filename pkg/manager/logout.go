@@ -28,11 +28,11 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 		return &models.CommonError{Message: models.ErrorRedirectUriIncorrect}
 	}
 
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientId))
+	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientId))
 	if err != nil {
 		m.logger.Error(
 			"Unable to get application",
-			zap.String("clientId", form.ClientId),
+			zap.Object("form", form),
 			zap.Error(err),
 		)
 
@@ -43,17 +43,17 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 	if err != nil {
 		m.logger.Error(
 			"Unable to load session settings an application",
-			zap.String("appId", a.ID.String()),
+			zap.Object("app", app),
 			zap.Error(err),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
-	c := models.NewCookie(a, &models.User{}).Clear(cs)
+	c := models.NewCookie(app, &models.User{}).Clear(cs)
 	if err != nil {
 		m.logger.Error(
 			"Unable to clear cookie an application",
-			zap.String("appId", a.ID.String()),
+			zap.Object("app", app),
 			zap.Error(err),
 		)
 

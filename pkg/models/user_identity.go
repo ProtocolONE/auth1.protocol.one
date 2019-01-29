@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/oauth2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -75,6 +76,32 @@ const (
 	UserIdentityProviderPassword = "password"
 	UserIdentityProviderSocial   = "social"
 )
+
+func (a *UserIdentity) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", a.ID.String())
+	enc.AddString("UserID", a.UserID.String())
+	enc.AddString("AppID", a.AppID.String())
+	enc.AddString("Connection", a.Connection)
+	enc.AddString("Provider", a.Provider)
+	enc.AddString("ExternalID", a.ExternalID)
+	enc.AddString("Credential", a.Credential)
+	enc.AddString("Email", a.Email)
+	enc.AddString("Username", a.Username)
+	enc.AddString("Name", a.Name)
+	enc.AddString("Email", a.Email)
+	enc.AddTime("CreatedAt", a.CreatedAt)
+	enc.AddTime("UpdatedAt", a.UpdatedAt)
+
+	return nil
+}
+
+func (a *UserIdentitySocial) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", a.ID)
+	enc.AddString("Name", a.Name)
+	enc.AddString("Email", a.Email)
+
+	return nil
+}
 
 func NewUserIdentityService(dbHandler *database.Handler) *UserIdentityService {
 	return &UserIdentityService{dbHandler.Session.DB(dbHandler.Name)}
@@ -147,7 +174,6 @@ func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIden
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v\r\n", t)
 
 	resp, err := http.Get(fmt.Sprintf(uic.EndpointUserInfoURL, url.QueryEscape(t.AccessToken)))
 	if err != nil {
