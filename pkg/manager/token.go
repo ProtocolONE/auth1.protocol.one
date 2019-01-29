@@ -2,12 +2,23 @@ package manager
 
 import (
 	"auth-one-api/pkg/models"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-type TokenManager Config
+type TokenManager struct {
+	Logger *zap.Logger
+}
+
+func NewTokenManager(logger *zap.Logger) *TokenManager {
+	m := &TokenManager{
+		Logger: logger,
+	}
+
+	return m
+}
 
 func (m *TokenManager) Refresh(form *models.RefreshTokenForm) (token *models.AuthToken, error *models.CommonError) {
+	//UNDONE Right login
 	return &models.AuthToken{
 		RefreshToken: `refreshtoken`,
 		AccessToken:  `accesstoken`,
@@ -28,12 +39,4 @@ func (m *TokenManager) OTT(form *models.OneTimeTokenForm) (token *models.AuthTok
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,
 	}, nil
-}
-
-func InitTokenManager(logger *logrus.Entry) TokenManager {
-	m := TokenManager{
-		Logger: logger,
-	}
-
-	return m
 }
