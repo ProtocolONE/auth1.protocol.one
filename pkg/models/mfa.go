@@ -87,6 +87,24 @@ func (m *MfaProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (m *MfaVerifyForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", m.ClientId)
+	enc.AddString("AppID", m.ProviderId)
+	enc.AddString("Token", "[HIDDEN]")
+	enc.AddString("Code", "[HIDDEN]")
+
+	return nil
+}
+
+func (m *MfaAddForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", m.ClientId)
+	enc.AddString("ProviderId", m.ProviderId)
+	enc.AddString("Code", m.Code)
+	enc.AddString("PhoneNumber", "[HIDDEN]")
+
+	return nil
+}
+
 func (m MFARequiredError) Error() string {
 	return m.Message
 }
