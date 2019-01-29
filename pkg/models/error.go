@@ -23,6 +23,7 @@ var (
 	ErrorLoginIncorrect           = "Login is incorrect"
 	ErrorCryptPassword            = "Unable to crypt password"
 	ErrorUnableChangePassword     = "Unable to change password"
+	ErrorUnableCreateOttSettings  = "Unable create ott settings"
 	ErrorPasswordIncorrect        = "Password is incorrect"
 	ErrorPasswordRepeat           = "Password repeat is not equal to password"
 	ErrorUnableValidatePassword   = "Unable to validate password"

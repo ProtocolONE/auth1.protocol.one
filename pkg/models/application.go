@@ -41,7 +41,9 @@ type (
 )
 
 func NewApplicationService(dbHandler *database.Handler) *ApplicationService {
-	return &ApplicationService{dbHandler.Session.DB(dbHandler.Name)}
+	return &ApplicationService{
+		db: dbHandler.Session.DB(dbHandler.Name),
+	}
 }
 
 func (s ApplicationService) Create(app *Application) error {

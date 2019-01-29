@@ -5,12 +5,12 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type Config struct {
 	Echo       *echo.Echo
-	Logger     *logrus.Entry
+	Logger     *zap.Logger
 	Database   *database.Handler
 	Redis      *redis.Client
 	MfaService proto.MfaService

@@ -98,9 +98,11 @@ func (us UserIdentityService) Update(userIdentity *UserIdentity) error {
 
 func (us UserIdentityService) Get(app *Application, provider string, connection string, externalId string) (*UserIdentity, error) {
 	ui := &UserIdentity{}
-	if err := us.db.C(database.TableUserIdentity).
+	err := us.db.C(database.TableUserIdentity).
 		Find(bson.M{"app_id": app.ID, "provider": provider, "external_id": externalId}).
-		One(&ui); err != nil {
+		One(&ui)
+
+	if err != nil {
 		return nil, err
 	}
 

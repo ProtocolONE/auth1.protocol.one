@@ -4,12 +4,12 @@ import (
 	"auth-one-api/pkg/database"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type Config struct {
 	Database   *database.Handler
 	Redis      *redis.Client
-	Logger     *logrus.Entry
+	Logger     *zap.Logger
 	MfaService proto.MfaService
 }
