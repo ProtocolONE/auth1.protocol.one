@@ -43,7 +43,7 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 	if err != nil {
 		m.logger.Error(
 			"Unable to load session settings an application",
-			zap.Object("app", app),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -53,7 +53,7 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 	if err != nil {
 		m.logger.Error(
 			"Unable to clear cookie an application",
-			zap.Object("app", app),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 

@@ -32,7 +32,7 @@ func InitSignUpManager(logger *zap.Logger, h *database.Handler) *SignUpManager {
 }
 
 func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token *models.AuthToken, error *models.CommonError) {
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.logger.Error(
 			"Unable to get application",
@@ -71,7 +71,7 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
-	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, "", form.Email)
+	ui, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get user with identity for application",
@@ -84,9 +84,9 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 	}
 
-	u := &models.User{
+	user := &models.User{
 		ID:            bson.NewObjectId(),
-		AppID:         a.ID,
+		AppID:         app.ID,
 		Email:         form.Email,
 		EmailVerified: false,
 		Blocked:       false,
@@ -97,7 +97,7 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := m.userService.Create(u); err != nil {
+	if err := m.userService.Create(user); err != nil {
 		m.logger.Error(
 			"Unable to create user with identity for application",
 			zap.Object("SignUpForm", form),
@@ -109,8 +109,8 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 
 	ui = &models.UserIdentity{
 		ID:         bson.NewObjectId(),
-		UserID:     u.ID,
-		AppID:      a.ID,
+		UserID:     user.ID,
+		AppID:      app.ID,
 		ExternalID: form.Email,
 		Provider:   models.UserIdentityProviderPassword,
 		Connection: "initial",
@@ -129,22 +129,22 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
 	}
 
-	t, err := helper.CreateAuthToken(ctx, m.appService, u)
+	t, err := helper.CreateAuthToken(ctx, m.appService, user)
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user auth token for application [%s] with error: %s",
-			zap.Object("User", u),
-			zap.Object("Application", a),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
 	}
 
-	if err := m.authLogService.Add(ctx, u, t.RefreshToken); err != nil {
+	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 		m.logger.Error(
 			"Unable to add auth log for user",
-			zap.Object("User", u),
+			zap.Object("User", user),
 			zap.Error(err),
 		)
 
@@ -155,19 +155,19 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 	if err != nil {
 		m.logger.Error(
 			"Unable to add user auth log to application",
-			zap.Object("User", u),
-			zap.Object("Application", a),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
-	c, err := models.NewCookie(a, u).Crypt(cs)
+	c, err := models.NewCookie(app, user).Crypt(cs)
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user cookie for application",
-			zap.Object("User", u),
-			zap.Object("Application", a),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 

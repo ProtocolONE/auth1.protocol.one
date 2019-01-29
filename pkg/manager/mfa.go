@@ -80,7 +80,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get application",
-			zap.Object("userIdentity", mp.UserIdentity),
+			zap.Object("UserIdentity", mp.UserIdentity),
 			zap.Error(err),
 		)
 
@@ -91,7 +91,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get user",
-			zap.Object("userIdentity", mp.UserIdentity),
+			zap.Object("UserIdentity", mp.UserIdentity),
 			zap.Error(err),
 		)
 
@@ -102,8 +102,8 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err != nil {
 		m.Logger.Error(
 			"Unable to create user auth token for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -113,8 +113,8 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 		m.Logger.Error(
 			"Unable to add user auth log for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -125,7 +125,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err != nil {
 		m.Logger.Error(
 			"Unable to load session settings for application",
-			zap.Object("app", app),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -135,8 +135,8 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	if err != nil {
 		m.Logger.Error(
 			"Unable to create user cookie for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 

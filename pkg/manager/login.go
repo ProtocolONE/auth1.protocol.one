@@ -60,7 +60,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		m.logger.Error(
 			"Unable to load user identity settings for application",
 			zap.Object("AuthorizeForm", form),
-			zap.String("provider", models.UserIdentityProviderSocial),
+			zap.String("Provider", models.UserIdentityProviderSocial),
 			zap.Error(err),
 		)
 
@@ -133,7 +133,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err != nil {
 			m.logger.Error(
 				"Unable to get user identity by email for application",
-				zap.Object("userIdentitySocial", cp),
+				zap.Object("UserIdentitySocial", cp),
 				zap.Object("AuthorizeForm", authForm),
 				zap.Error(err),
 			)
@@ -145,8 +145,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err != nil {
 			m.logger.Error(
 				"Unable to create user auth token for application",
-				zap.Object("user", user),
-				zap.Object("app", app),
+				zap.Object("User", user),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -156,7 +156,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 			m.logger.Error(
 				"Unable to log authorization for user",
-				zap.Object("user", user),
+				zap.Object("User", user),
 				zap.Error(err),
 			)
 
@@ -167,7 +167,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err != nil {
 			m.logger.Error(
 				"Unable to load session settings for application",
-				zap.Object("app", app),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -178,8 +178,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err != nil {
 			m.logger.Error(
 				"Unable to create user cookie for application",
-				zap.Object("user", user),
-				zap.Object("app", app),
+				zap.Object("User", user),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -197,7 +197,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err != nil {
 			m.logger.Warn(
 				"Unable to get user",
-				zap.Object("userIdentitySocial", userIdentity),
+				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
 			)
 
@@ -238,9 +238,9 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			m.logger.Error(
 				"Unable to create one-time token for application",
 				zap.Object("AuthorizeForm", authForm),
-				zap.Object("user", user),
-				zap.Object("app", app),
-				zap.String("provider", models.UserIdentityProviderSocial),
+				zap.Object("User", user),
+				zap.Object("Application", app),
+				zap.String("Provider", models.UserIdentityProviderSocial),
 				zap.Error(err),
 			)
 
@@ -257,8 +257,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			m.logger.Error(
 				"Unable to load social settings for application",
 				zap.Object("AuthorizeForm", authForm),
-				zap.Object("userIdentitySocial", cp),
-				zap.Object("app", app),
+				zap.Object("UserIdentitySocial", cp),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -288,8 +288,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			m.logger.Error(
 				"Unable to create one-time token for application",
 				zap.Object("AuthorizeForm", authForm),
-				zap.Object("userIdentitySocial", cp),
-				zap.Object("app", app),
+				zap.Object("UserIdentitySocial", cp),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -299,7 +299,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `link`, Message: ott.Token}
 	}
 
-	u := &models.User{
+	user := &models.User{
 		ID:            bson.NewObjectId(),
 		AppID:         app.ID,
 		Email:         cp.Email,
@@ -312,12 +312,12 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := m.userService.Create(u); err != nil {
+	if err := m.userService.Create(user); err != nil {
 		m.logger.Error(
 			"Unable to create user with identity for application",
 			zap.Object("AuthorizeForm", authForm),
-			zap.Object("userIdentitySocial", cp),
-			zap.Object("app", app),
+			zap.Object("UserIdentitySocial", cp),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -326,7 +326,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	userIdentity = &models.UserIdentity{
 		ID:         bson.NewObjectId(),
-		UserID:     u.ID,
+		UserID:     user.ID,
 		AppID:      app.ID,
 		Provider:   models.UserIdentityProviderSocial,
 		Connection: authForm.Connection,
@@ -342,31 +342,31 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		m.logger.Error(
 			"Unable to create user identity for an application",
 			zap.Object("AuthorizeForm", authForm),
-			zap.Object("userIdentitySocial", cp),
-			zap.Object("app", app),
+			zap.Object("UserIdentitySocial", cp),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
 	}
 
-	t, err := helper.CreateAuthToken(ctx, m.appService, u)
+	t, err := helper.CreateAuthToken(ctx, m.appService, user)
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user [%s] auth token for application[%s] with error: %s",
 			zap.Object("AuthorizeForm", authForm),
-			zap.Object("userIdentitySocial", cp),
-			zap.Object("app", app),
+			zap.Object("UserIdentitySocial", cp),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
 	}
 
-	if err := m.authLogService.Add(ctx, u, t.RefreshToken); err != nil {
+	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 		m.logger.Error(
 			"Unable to log auth for user",
-			zap.Object("user", u),
+			zap.Object("User", user),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -376,18 +376,18 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	if err != nil {
 		m.logger.Error(
 			"Unable to load session settings for application",
-			zap.Object("app", app),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
-	c, err := models.NewCookie(app, u).Crypt(cs)
+	c, err := models.NewCookie(app, user).Crypt(cs)
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user cookie for application",
-			zap.Object("user", u),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -486,8 +486,8 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		if err != nil {
 			m.logger.Error(
 				"Unable to load MFA providers for user",
-				zap.Object("user", user),
-				zap.Object("app", app),
+				zap.Object("User", user),
+				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
@@ -500,7 +500,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				if err != nil {
 					m.logger.Error(
 						"Unable to load auth token settings for application",
-						zap.Object("userIdentity", userIdentity),
+						zap.Object("UserIdentity", userIdentity),
 						zap.Error(err),
 					)
 
@@ -511,7 +511,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				if _, err = jts.Decode(form.AccessToken); err != nil {
 					m.logger.Warn(
 						"Unable to decode access token for application",
-						zap.Object("userIdentity", userIdentity),
+						zap.Object("UserIdentity", userIdentity),
 						zap.Error(err),
 					)
 
@@ -530,7 +530,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				if err != nil {
 					m.logger.Error(
 						"Unable to create one-time token for application",
-						zap.Object("userIdentity", userIdentity),
+						zap.Object("UserIdentity", userIdentity),
 						zap.Error(err),
 					)
 
@@ -545,7 +545,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		if err != nil {
 			m.logger.Error(
 				"Unable to get user",
-				zap.Object("userIdentity", userIdentity),
+				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
 			)
 
@@ -556,7 +556,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		if err := m.userService.Create(user); err != nil {
 			m.logger.Error(
 				"Unable to create user with identity",
-				zap.Object("userIdentity", sl),
+				zap.Object("UserIdentity", sl),
 				zap.Error(err),
 			)
 
@@ -576,7 +576,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	if err := m.userIdentityService.Create(sl); err != nil {
 		m.logger.Error(
 			"Unable to create user identity for application",
-			zap.Object("userIdentity", sl),
+			zap.Object("UserIdentity", sl),
 			zap.Error(err),
 		)
 
@@ -587,8 +587,8 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user auth token for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -598,7 +598,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 		m.logger.Error(
 			"Unable to log authorization for user",
-			zap.Object("user", user),
+			zap.Object("User", user),
 			zap.Error(err),
 		)
 
@@ -609,7 +609,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	if err != nil {
 		m.logger.Error(
 			"Unable to load session settings for application",
-			zap.Object("app", app),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -619,8 +619,8 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user cookie for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -682,7 +682,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to crypt password for application",
-			zap.String("password", form.Password),
+			zap.String("Password", form.Password),
 			zap.Object("LoginForm", form),
 			zap.Error(err),
 		)
@@ -694,7 +694,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to get user",
-			zap.Object("userIdentity", userIdentity),
+			zap.Object("UserIdentity", userIdentity),
 			zap.Error(err),
 		)
 
@@ -705,7 +705,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to load MFA providers for user",
-			zap.Object("userIdentity", userIdentity),
+			zap.Object("UserIdentity", userIdentity),
 			zap.Error(err),
 		)
 
@@ -725,7 +725,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 		if err != nil {
 			m.logger.Error(
 				"Unable to create one-time token for application",
-				zap.Object("userIdentity", userIdentity),
+				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
 			)
 
@@ -739,8 +739,8 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user auth token for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -750,8 +750,8 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
 		m.logger.Error(
 			"Unable to add user auth log for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -762,8 +762,8 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to load session settings for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
@@ -773,8 +773,8 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	if err != nil {
 		m.logger.Error(
 			"Unable to create user cookie for application",
-			zap.Object("user", user),
-			zap.Object("app", app),
+			zap.Object("User", user),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 

@@ -100,7 +100,7 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		return nil, err
 	}
 
-	a := &models.Application{
+	app := &models.Application{
 		ID:          bson.NewObjectId(),
 		SpaceId:     s.Id,
 		Name:        form.Application.Name,
@@ -110,17 +110,17 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := m.appService.Create(a); err != nil {
+	if err := m.appService.Create(app); err != nil {
 		m.logger.Error(
 			"Unable to create application",
-			zap.Object("app", a),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 
 		return nil, err
 	}
 
-	return a, nil
+	return app, nil
 }
 
 func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationForm) (*models.Application, error) {
@@ -128,7 +128,7 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 	if err != nil {
 		m.logger.Error(
 			"Unable to get app",
-			zap.String("appId", id),
+			zap.String("AppId", id),
 			zap.Error(err),
 		)
 
@@ -154,7 +154,7 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 	if err := m.appService.Update(a); err != nil {
 		m.logger.Error(
 			"Unable to update application",
-			zap.Object("app", a),
+			zap.Object("Application", a),
 			zap.Error(err),
 		)
 
@@ -169,7 +169,7 @@ func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
 	if err != nil {
 		m.logger.Error(
 			"Unable to get app",
-			zap.String("appId", id),
+			zap.String("AppId", id),
 			zap.Error(err),
 		)
 

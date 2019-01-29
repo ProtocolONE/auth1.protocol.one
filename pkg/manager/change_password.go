@@ -145,7 +145,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get user identity for the application",
-			zap.String("email", ts.Email),
+			zap.String("Email", ts.Email),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
@@ -161,7 +161,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err != nil {
 		m.logger.Warn(
 			"Unable to crypt password in application",
-			zap.String("password", form.Password),
+			zap.String("Password", form.Password),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
@@ -172,7 +172,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	if err = m.userIdentityService.Update(ui); err != nil {
 		m.logger.Warn(
 			"Unable to update user identity password",
-			zap.Object("userIdentity", ui),
+			zap.Object("UserIdentity", ui),
 			zap.Error(err),
 		)
 
