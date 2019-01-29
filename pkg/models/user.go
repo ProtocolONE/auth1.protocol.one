@@ -119,6 +119,15 @@ func (a *LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientID", a.ClientID)
+	enc.AddString("Connection", a.Connection)
+	enc.AddString("Email", a.Email)
+	enc.AddString("Password", "[HIDDEN]")
+
+	return nil
+}
+
 func (m CaptchaRequiredError) Error() string {
 	return m.Message
 }

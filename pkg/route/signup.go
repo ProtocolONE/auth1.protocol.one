@@ -6,16 +6,19 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type SignUp struct {
-	Manager manager.SignUpManager
+	Manager *manager.SignUpManager
+	logger  *zap.Logger
 }
 
-func SignUpInit(cfg Config) error {
+func InitSignUp(cfg Config) error {
 	route := &SignUp{
 		Manager: manager.InitSignUpManager(cfg.Logger, cfg.Database),
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.POST("/signup", route.SignUp)
@@ -27,6 +30,8 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 	form := new(models.SignUpForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("SignUp bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -36,6 +41,8 @@ func (l *SignUp) SignUp(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error("SignUp validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

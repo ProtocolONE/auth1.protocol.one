@@ -111,7 +111,7 @@ func (s *Server) setupRoutes() error {
 	if err := route.LoginInit(routeConfig); err != nil {
 		return err
 	}
-	if err := route.SignUpInit(routeConfig); err != nil {
+	if err := route.InitSignUp(routeConfig); err != nil {
 		return err
 	}
 	if err := route.PasswordLessInit(routeConfig); err != nil {
