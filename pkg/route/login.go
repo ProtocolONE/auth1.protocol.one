@@ -56,7 +56,6 @@ func (l *Login) Authorize(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	fmt.Print(str)
 	return ctx.Redirect(http.StatusOK, str)
 }
 

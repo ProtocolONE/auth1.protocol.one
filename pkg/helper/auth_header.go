@@ -40,7 +40,6 @@ func GetTokenFromAuthHeader(as models.ApplicationService, headers http.Header) (
 	}
 
 	if err = c.Valid(); err != nil {
-		fmt.Print(err)
 		return nil, errors.New("token is invalid")
 	}
 

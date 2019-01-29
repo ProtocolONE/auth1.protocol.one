@@ -145,7 +145,6 @@ func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIden
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v\r\n", t)
 
 	resp, err := http.Get(fmt.Sprintf(uic.EndpointUserInfoURL, url.QueryEscape(t.AccessToken)))
 	if err != nil {
@@ -168,7 +167,7 @@ func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIden
 	}
 	m := f.(map[string]interface{})
 	result, err := parseResponse(uic.Connection, m, uis)
-	fmt.Printf("%+v\r\n", result)
+
 	return uis, nil
 }
 

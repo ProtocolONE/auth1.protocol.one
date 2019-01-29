@@ -36,7 +36,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		UserID:     mp.UserIdentity.UserID.String(),
 		Code:       form.Code,
 	})
-	fmt.Printf("%v", rsp)
+
 	if err != nil || rsp.Result != true {
 		if err != nil {
 			m.Logger.Warning(fmt.Sprintf("Unable to verify MFA code: %s", err.Error()))
