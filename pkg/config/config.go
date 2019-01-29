@@ -36,7 +36,6 @@ type (
 	Config struct {
 		Api      ApiConfig
 		Jwt      JwtConfig
-		Logger   LoggingConfig
 		Database DatabaseConfig
 		Redis    RedisConfig
 	}
