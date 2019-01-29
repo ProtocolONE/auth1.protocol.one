@@ -6,20 +6,23 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type (
 	Manage struct {
-		Manager manager.ManageManager
+		Manager *manager.ManageManager
 		Http    *echo.Echo
+		logger  *zap.Logger
 	}
 )
 
 func ManageInit(cfg Config) error {
 	route := &Manage{
-		Manager: manager.InitManageManager(cfg.Logger, cfg.Database),
+		Manager: manager.NewManageManager(cfg.Logger, cfg.Database),
 		Http:    cfg.Echo,
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.POST("/api/space", route.CreateSpace)
@@ -37,6 +40,8 @@ func (l *Manage) CreateSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("CreateSpace bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -46,6 +51,8 @@ func (l *Manage) CreateSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error("CreateSpace validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -77,6 +84,8 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("UpdateSpace bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -86,6 +95,8 @@ func (l *Manage) UpdateSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error("UpdateSpace validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -106,6 +117,8 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 	a := &models.ApplicationForm{}
 
 	if err := ctx.Bind(a); err != nil {
+		l.logger.Error("CreateApplication bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -115,6 +128,8 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(a); err != nil {
+		l.logger.Error("CreateApplication validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -146,6 +161,8 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 	a := &models.ApplicationForm{}
 
 	if err := ctx.Bind(a); err != nil {
+		l.logger.Error("UpdateApplication bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -155,6 +172,8 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(a); err != nil {
+		l.logger.Error("UpdateApplication validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -175,6 +194,8 @@ func (l *Manage) AddMFA(ctx echo.Context) error {
 	f := &models.MfaApplicationForm{}
 
 	if err := ctx.Bind(f); err != nil {
+		l.logger.Error("AddMFA bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -184,6 +205,8 @@ func (l *Manage) AddMFA(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(f); err != nil {
+		l.logger.Error("AddMFA validate form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

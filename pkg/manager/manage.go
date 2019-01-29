@@ -4,13 +4,28 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"errors"
-	"fmt"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
-type ManageManager Config
+type ManageManager struct {
+	logger       *zap.Logger
+	spaceService *models.SpaceService
+	appService   *models.ApplicationService
+	mfaService   *models.MfaService
+}
+
+func NewManageManager(logger *zap.Logger, db *database.Handler) *ManageManager {
+	m := &ManageManager{
+		logger:       logger,
+		spaceService: models.NewSpaceService(db),
+		appService:   models.NewApplicationService(db),
+		mfaService:   models.NewMfaService(db),
+	}
+
+	return m
+}
 
 func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, error) {
 	s := &models.Space{
@@ -22,8 +37,13 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 		UpdatedAt:   time.Now(),
 	}
 
-	ss := models.NewSpaceService(m.Database)
-	if err := ss.CreateSpace(s); err != nil {
+	if err := m.spaceService.CreateSpace(s); err != nil {
+		m.logger.Error(
+			"Unable to create space",
+			zap.Object("space", s),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -31,8 +51,7 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 }
 
 func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.Space, error) {
-	ss := models.NewSpaceService(m.Database)
-	s, err := ss.GetSpace(bson.ObjectIdHex(id))
+	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +60,13 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 	s.Description = form.Description
 	s.IsActive = form.IsActive
 
-	if err := ss.UpdateSpace(s); err != nil {
+	if err := m.spaceService.UpdateSpace(s); err != nil {
+		m.logger.Error(
+			"Unable to update space",
+			zap.Object("space", s),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -49,9 +74,14 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 }
 
 func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
-	ss := models.NewSpaceService(m.Database)
-	s, err := ss.GetSpace(bson.ObjectIdHex(id))
+	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
+		m.logger.Error(
+			"Unable to get space",
+			zap.String("spaceId", id),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -59,9 +89,14 @@ func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
 }
 
 func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models.Application, error) {
-	ss := models.NewSpaceService(m.Database)
-	s, err := ss.GetSpace(form.SpaceId)
+	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {
+		m.logger.Error(
+			"Unable to get space",
+			zap.String("spaceId", form.SpaceId.String()),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -75,8 +110,13 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		UpdatedAt:   time.Now(),
 	}
 
-	as := models.NewApplicationService(m.Database)
-	if err := as.Create(a); err != nil {
+	if err := m.appService.Create(a); err != nil {
+		m.logger.Error(
+			"Unable to create application",
+			zap.Object("app", a),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -84,14 +124,24 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 }
 
 func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationForm) (*models.Application, error) {
-	as := models.NewApplicationService(m.Database)
-	a, err := as.Get(bson.ObjectIdHex(id))
+	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
+		m.logger.Error(
+			"Unable to get app",
+			zap.String("appId", id),
+			zap.Error(err),
+		)
+
 		return nil, errors.New("application not exists")
 	}
 
-	ss := models.NewSpaceService(m.Database)
-	if _, err := ss.GetSpace(form.SpaceId); err != nil {
+	if _, err := m.spaceService.GetSpace(form.SpaceId); err != nil {
+		m.logger.Error(
+			"Unable to get space",
+			zap.String("spaceId", form.SpaceId.String()),
+			zap.Error(err),
+		)
+
 		return nil, errors.New("space not exists")
 	}
 
@@ -101,7 +151,13 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 	a.IsActive = form.Application.IsActive
 	a.UpdatedAt = time.Now()
 
-	if err := as.Update(a); err != nil {
+	if err := m.appService.Update(a); err != nil {
+		m.logger.Error(
+			"Unable to update application",
+			zap.Object("app", a),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
@@ -109,27 +165,21 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 }
 
 func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
-	ss := models.NewApplicationService(m.Database)
-	s, err := ss.Get(bson.ObjectIdHex(id))
-
+	s, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
+		m.logger.Error(
+			"Unable to get app",
+			zap.String("appId", id),
+			zap.Error(err),
+		)
+
 		return nil, err
 	}
 
 	return s, nil
 }
 
-func InitManageManager(logger *logrus.Entry, db *database.Handler) ManageManager {
-	m := ManageManager{
-		Database: db,
-		Logger:   logger,
-	}
-
-	return m
-}
-
 func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvider, error) {
-	ms := models.NewMfaService(m.Database)
 	p := &models.MfaProvider{
 		ID:      bson.NewObjectId(),
 		AppID:   f.AppId,
@@ -137,8 +187,14 @@ func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvide
 		Channel: f.MfaProvider.Channel,
 		Type:    f.MfaProvider.Type,
 	}
-	if err := ms.Add(p); err != nil {
-		m.Logger.Warning(fmt.Sprintf("Unable to add MFA provider [%s] an application [%s] with error: %s", f.MfaProvider.Name, f.AppId, err.Error()))
+
+	if err := m.mfaService.Add(p); err != nil {
+		m.logger.Error(
+			"Unable to add MFA provider to application",
+			zap.Object("mfaProvider", p),
+			zap.Error(err),
+		)
+
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
 
