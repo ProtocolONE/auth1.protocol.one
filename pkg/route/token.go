@@ -6,16 +6,19 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type Token struct {
-	Manager manager.TokenManager
+	Manager *manager.TokenManager
+	logger  *zap.Logger
 }
 
 func TokenInit(cfg Config) error {
 	route := &Token{
-		Manager: manager.InitTokenManager(cfg.Logger),
+		Manager: manager.NewTokenManager(cfg.Logger),
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.GET("/token/refresh", route.TokenRefresh)
@@ -28,6 +31,8 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 	form := new(models.RefreshTokenForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("TokenRefresh bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -37,6 +42,12 @@ func (l *Token) TokenRefresh(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"TokenRefresh validate form failed",
+			zap.Object("RefreshTokenForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -57,6 +68,8 @@ func (l *Token) TokenOTT(ctx echo.Context) error {
 	form := new(models.OneTimeTokenForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("TokenOTT bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -66,6 +79,12 @@ func (l *Token) TokenOTT(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"TokenOTT bind validate failed",
+			zap.Object("OneTimeTokenForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

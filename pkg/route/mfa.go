@@ -6,16 +6,19 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type MFA struct {
-	Manager manager.MFAManager
+	Manager *manager.MFAManager
+	logger  *zap.Logger
 }
 
 func MFAInit(cfg Config) error {
 	route := &MFA{
-		Manager: manager.InitMFAManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.MfaService),
+		Manager: manager.NewMFAManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.MfaService),
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.POST("/mfa/challenge", route.MFAChallenge)
@@ -29,6 +32,8 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 	form := new(models.MfaChallengeForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("MFAChallenge bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -38,6 +43,12 @@ func (l *MFA) MFAChallenge(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"MFAChallenge validate form failed",
+			zap.Object("MfaChallengeForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -58,6 +69,8 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 	form := new(models.MfaVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("MFAVerify bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -67,6 +80,12 @@ func (l *MFA) MFAVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"MFAVerify validate form failed",
+			zap.Object("MfaVerifyForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -87,6 +106,8 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 	form := new(models.MfaAddForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("MFAAdd bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -96,6 +117,12 @@ func (l *MFA) MFAAdd(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"MFAAdd validate form failed",
+			zap.Object("MfaAddForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

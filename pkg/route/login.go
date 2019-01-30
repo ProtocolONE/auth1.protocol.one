@@ -6,20 +6,23 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type (
 	Login struct {
-		Manager manager.LoginManager
+		Manager *manager.LoginManager
 		Http    *echo.Echo
+		logger  *zap.Logger
 	}
 )
 
 func LoginInit(cfg Config) error {
 	route := &Login{
-		Manager: manager.InitLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
+		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
 		Http:    cfg.Echo,
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.GET("/authorize/link", route.AuthorizeLink)
@@ -34,6 +37,8 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	form := new(models.AuthorizeForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Authorize bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -43,6 +48,12 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"Authorize validate form failed",
+			zap.Object("AuthorizeForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -63,6 +74,8 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	form := new(models.AuthorizeResultForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("AuthorizeResult bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -72,6 +85,12 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"AuthorizeResult validate form failed",
+			zap.Object("AuthorizeResultForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -81,6 +100,8 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	}
 
 	t, err := l.Manager.AuthorizeResult(ctx, form)
+	// WTF result HTML/JSON???
+
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
@@ -96,6 +117,8 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	form := new(models.AuthorizeLinkForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("AuthorizeLink bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -105,6 +128,12 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"AuthorizeLink validate form failed",
+			zap.Object("AuthorizeLinkForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -114,6 +143,8 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	}
 
 	t, err := l.Manager.AuthorizeLink(ctx, form)
+
+	// WTF result HTML/JSON???
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
@@ -125,6 +156,8 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 	form := new(models.LoginForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Login bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -134,6 +167,12 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"Login validate form failed",
+			zap.Object("LoginForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

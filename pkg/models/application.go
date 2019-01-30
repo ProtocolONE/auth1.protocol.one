@@ -4,6 +4,7 @@ import (
 	"auth-one-api/pkg/database"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/twitch"
@@ -13,35 +14,62 @@ import (
 	"time"
 )
 
-type (
-	ApplicationService struct {
-		db *mgo.Database
-	}
+type ApplicationService struct {
+	db *mgo.Database
+}
 
-	Application struct {
-		ID          bson.ObjectId `bson:"_id" json:"id"`                        // unique application identifier
-		SpaceId     bson.ObjectId `bson:"space_id" json:"space_id"`             // application space owner
-		Name        string        `bson:"name" json:"name" validate:"required"` // application name
-		Description string        `bson:"description" json:"description"`       // application description
-		IsActive    bool          `bson:"is_active" json:"is_active"`           // is application active
-		CreatedAt   time.Time     `bson:"created_at" json:"-"`                  // date of create application
-		UpdatedAt   time.Time     `bson:"updated_at" json:"-"`                  // date of update application
-	}
+type Application struct {
+	ID          bson.ObjectId `bson:"_id" json:"id"`                        // unique application identifier
+	SpaceId     bson.ObjectId `bson:"space_id" json:"space_id"`             // application space owner
+	Name        string        `bson:"name" json:"name" validate:"required"` // application name
+	Description string        `bson:"description" json:"description"`       // application description
+	IsActive    bool          `bson:"is_active" json:"is_active"`           // is application active
+	CreatedAt   time.Time     `bson:"created_at" json:"-"`                  // date of create application
+	UpdatedAt   time.Time     `bson:"updated_at" json:"-"`                  // date of update application
+}
 
-	ApplicationForm struct {
-		SpaceId     bson.ObjectId       `json:"space_id"`                        // unique space identifier
-		Application *ApplicationFormApp `json:"application" validate:"required"` // application data
-	}
+type ApplicationForm struct {
+	SpaceId     bson.ObjectId       `json:"space_id"`                        // unique space identifier
+	Application *ApplicationFormApp `json:"application" validate:"required"` // application data
+}
 
-	ApplicationFormApp struct {
-		Name        string `bson:"name" json:"name" validate:"required"` // application name
-		Description string `bson:"description" json:"description"`       // application description
-		IsActive    bool   `bson:"is_active" json:"is_active"`           // is application active
-	}
-)
+type ApplicationFormApp struct {
+	Name        string `bson:"name" json:"name" validate:"required"` // application name
+	Description string `bson:"description" json:"description"`       // application description
+	IsActive    bool   `bson:"is_active" json:"is_active"`           // is application active
+}
+
+func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", a.ID.String())
+	enc.AddString("SpaceId", a.SpaceId.String())
+	enc.AddString("Name", a.Name)
+	enc.AddString("Description", a.Description)
+	enc.AddBool("IsActive", a.IsActive)
+	enc.AddTime("CreatedAt", a.CreatedAt)
+	enc.AddTime("UpdatedAt", a.UpdatedAt)
+
+	return nil
+}
+
+func (a *ApplicationForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("SpaceId", a.SpaceId.String())
+	enc.AddObject("Application", a.Application)
+
+	return nil
+}
+
+func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Name", a.Name)
+	enc.AddString("Description", a.Description)
+	enc.AddBool("IsActive", a.IsActive)
+
+	return nil
+}
 
 func NewApplicationService(dbHandler *database.Handler) *ApplicationService {
-	return &ApplicationService{dbHandler.Session.DB(dbHandler.Name)}
+	return &ApplicationService{
+		db: dbHandler.Session.DB(dbHandler.Name),
+	}
 }
 
 func (s ApplicationService) Create(app *Application) error {

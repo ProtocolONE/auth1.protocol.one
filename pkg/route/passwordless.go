@@ -6,16 +6,19 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type PasswordLess struct {
-	Manager manager.PasswordLessManager
+	Manager *manager.PasswordLessManager
+	logger  *zap.Logger
 }
 
 func PasswordLessInit(cfg Config) error {
 	route := &PasswordLess{
-		Manager: manager.InitPasswordLessManager(cfg.Logger),
+		Manager: manager.NewPasswordLessManager(cfg.Logger),
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.POST("/passwordless/start", route.PasswordLessStart)
@@ -28,6 +31,8 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	form := new(models.PasswordLessStartForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("PasswordLessStart bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -37,6 +42,12 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"PasswordLessStart validate form failed",
+			zap.Object("PasswordLessStartForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -57,6 +68,8 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	form := new(models.PasswordLessVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("PasswordLessVerify bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -66,6 +79,12 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"PasswordLessVerify validate form failed",
+			zap.Object("PasswordLessVerifyForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

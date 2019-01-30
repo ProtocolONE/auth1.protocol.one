@@ -2,13 +2,12 @@ package helper
 
 import (
 	"auth-one-api/pkg/models"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 )
 
-func GetTokenFromAuthHeader(as models.ApplicationService, headers http.Header) (token *models.JwtClaim, err error) {
+func GetTokenFromAuthHeader(as *models.ApplicationService, headers http.Header) (token *models.JwtClaim, err error) {
 	authHeader := headers.Get(`Authorization`)
 	i := strings.Index(authHeader, ` `)
 	if -1 == i {
@@ -30,17 +29,17 @@ func GetTokenFromAuthHeader(as models.ApplicationService, headers http.Header) (
 
 	ats, err := as.LoadAuthTokenSettings()
 	if err != nil {
-		return nil, errors.New("unable to load token settings")
+		return nil, errors.Wrap(err, "unable to load token settings")
 	}
 
 	jts := models.NewJwtTokenService(ats)
 	c, err := jts.Decode(s[1])
 	if err != nil {
-		return nil, errors.New("unable to load jwt settings")
+		return nil, errors.Wrap(err, "unable to load jwt settings")
 	}
 
 	if err = c.Valid(); err != nil {
-		return nil, errors.New("token is invalid")
+		return nil, errors.Wrap(err, "token is invalid")
 	}
 
 	return c, nil

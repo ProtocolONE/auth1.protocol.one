@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/micro/go-micro"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 	"strconv"
@@ -21,14 +21,14 @@ import (
 type (
 	ServerConfig struct {
 		ApiConfig      *config.ApiConfig
-		Logger         *logrus.Entry
+		Logger         *zap.Logger
 		JwtConfig      *config.JwtConfig
 		DatabaseConfig *config.DatabaseConfig
 		RedisConfig    *config.RedisConfig
 	}
 
 	Server struct {
-		Log          *logrus.Entry
+		Log          *zap.Logger
 		Echo         *echo.Echo
 		ServerConfig *config.ApiConfig
 		DbHandler    *database.Handler
@@ -37,15 +37,15 @@ type (
 	}
 )
 
-func NewServer(config *ServerConfig) (*Server, error) {
-	db, err := database.NewConnection(config.DatabaseConfig)
+func NewServer(c *ServerConfig) (*Server, error) {
+	db, err := database.NewConnection(c.DatabaseConfig)
 	if err != nil {
-		config.Logger.Fatalf("Database connection failed with error: %s\n", err)
+		c.Logger.Fatal("Database connection failed with error", zap.Error(err))
 	}
 
 	r := redis.NewClient(&redis.Options{
-		Addr:     config.RedisConfig.Addr,
-		Password: config.RedisConfig.Password,
+		Addr:     c.RedisConfig.Addr,
+		Password: c.RedisConfig.Password,
 	})
 
 	service := micro.NewService()
@@ -53,18 +53,15 @@ func NewServer(config *ServerConfig) (*Server, error) {
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
 	server := &Server{
-		Log:          config.Logger,
+		Log:          c.Logger,
 		Echo:         echo.New(),
-		DbHandler:    &database.Handler{Name: config.DatabaseConfig.Database, Session: db},
+		DbHandler:    &database.Handler{Name: c.DatabaseConfig.Database, Session: db},
 		RedisHandler: r,
 		MfaService:   ms,
-		ServerConfig: config.ApiConfig,
+		ServerConfig: c.ApiConfig,
 	}
 
-	server.Echo.Logger = Logger{config.Logger.Logger}
-	server.Echo.Use(LoggerHandler)
-
-	server.Echo.Use(middleware.Logger())
+	server.Echo.Use(ZapLogger(c.Logger))
 	server.Echo.Use(middleware.Recover())
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowHeaders: []string{"authorization", "content-type"},
@@ -73,7 +70,7 @@ func NewServer(config *ServerConfig) (*Server, error) {
 	registerCustomValidator(server.Echo)
 
 	if err := server.setupRoutes(); err != nil {
-		server.Log.Fatal(err)
+		server.Log.Fatal("Setup routes failed", zap.Error(err))
 	}
 
 	return server, nil
@@ -114,7 +111,7 @@ func (s *Server) setupRoutes() error {
 	if err := route.LoginInit(routeConfig); err != nil {
 		return err
 	}
-	if err := route.SignUpInit(routeConfig); err != nil {
+	if err := route.InitSignUp(routeConfig); err != nil {
 		return err
 	}
 	if err := route.PasswordLessInit(routeConfig); err != nil {

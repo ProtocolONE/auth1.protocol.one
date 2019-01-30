@@ -6,16 +6,19 @@ import (
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type Logout struct {
-	Manager manager.LogoutManager
+	Manager *manager.LogoutManager
+	logger  *zap.Logger
 }
 
 func LogoutInit(cfg Config) error {
 	route := &Logout{
-		Manager: manager.InitLogoutManager(cfg.Logger, cfg.Database),
+		Manager: manager.NewLogoutManager(cfg.Logger, cfg.Database),
+		logger:  cfg.Logger,
 	}
 
 	cfg.Echo.GET("/logout", route.Logout)
@@ -27,6 +30,8 @@ func (l *Logout) Logout(ctx echo.Context) error {
 	form := new(models.LogoutForm)
 
 	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Logout bind form failed", zap.Error(err))
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,
@@ -36,6 +41,12 @@ func (l *Logout) Logout(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"Logout validate form failed",
+			zap.Object("LogoutForm", form),
+			zap.Error(err),
+		)
+
 		return helper.NewErrorResponse(
 			ctx,
 			http.StatusBadRequest,

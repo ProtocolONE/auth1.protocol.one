@@ -3,6 +3,7 @@ package cmd
 import (
 	"auth-one-api/pkg/api"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var serverCmd = &cobra.Command{
@@ -26,13 +27,13 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {
-		logger.Fatal("Failed to create server: " + err.Error())
+		logger.Fatal("Failed to create server", zap.Error(err))
 	}
 
-	logger.Infof("Starting up server")
+	logger.Info("Starting up server")
 
 	err = server.Start()
 	if err != nil {
-		logger.Fatal("Failed to start server: " + err.Error())
+		logger.Fatal("Failed to start server", zap.Error(err))
 	}
 }

@@ -2,10 +2,20 @@ package manager
 
 import (
 	"auth-one-api/pkg/models"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-type PasswordLessManager Config
+type PasswordLessManager struct {
+	logger *zap.Logger
+}
+
+func NewPasswordLessManager(logger *zap.Logger) *PasswordLessManager {
+	m := &PasswordLessManager{
+		logger: logger,
+	}
+
+	return m
+}
 
 func (m *PasswordLessManager) PasswordLessStart(form *models.PasswordLessStartForm) (ott *models.OneTimeToken, error *models.CommonError) {
 	if form.ClientId == `incorrect` {
@@ -39,12 +49,4 @@ func (m *PasswordLessManager) PasswordLessVerify(form *models.PasswordLessVerify
 		AccessToken:  `accesstoken`,
 		ExpiresIn:    1575983364,
 	}, nil
-}
-
-func InitPasswordLessManager(logger *logrus.Entry) PasswordLessManager {
-	m := PasswordLessManager{
-		Logger: logger,
-	}
-
-	return m
 }

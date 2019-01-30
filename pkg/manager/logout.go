@@ -3,46 +3,63 @@ package manager
 import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
-	"fmt"
 	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 )
 
-type LogoutManager Config
+type LogoutManager struct {
+	logger     *zap.Logger
+	appService *models.ApplicationService
+}
+
+func NewLogoutManager(logger *zap.Logger, db *database.Handler) *LogoutManager {
+	m := &LogoutManager{
+		logger:     logger,
+		appService: models.NewApplicationService(db),
+	}
+
+	return m
+}
 
 func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error models.ErrorInterface) {
 	if form.RedirectUri == `bad_redirect_uri` {
 		return &models.CommonError{Message: models.ErrorRedirectUriIncorrect}
 	}
 
-	as := models.NewApplicationService(m.Database)
-	a, err := as.Get(bson.ObjectIdHex(form.ClientId))
+	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientId))
 	if err != nil {
+		m.logger.Error(
+			"Unable to get application",
+			zap.Object("LogoutForm", form),
+			zap.Error(err),
+		)
+
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	cs, err := as.LoadSessionSettings()
+	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
-		m.Logger.Warning(fmt.Sprintf("Unable to load session settings an application [%s] with error: %s", a.ID, err.Error()))
+		m.logger.Error(
+			"Unable to load session settings an application",
+			zap.Object("Application", app),
+			zap.Error(err),
+		)
+
 		return &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
-	c := models.NewCookie(a, &models.User{}).Clear(cs)
+	c := models.NewCookie(app, &models.User{}).Clear(cs)
 	if err != nil {
-		m.Logger.Warning(fmt.Sprintf("Unable to clear cookie an application [%s] with error: %s", a.ID, err.Error()))
+		m.logger.Error(
+			"Unable to clear cookie an application",
+			zap.Object("Application", app),
+			zap.Error(err),
+		)
+
 		return &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
+
 	http.SetCookie(r, c)
-
 	return nil
-}
-
-func InitLogoutManager(logger *logrus.Entry, db *database.Handler) LogoutManager {
-	m := LogoutManager{
-		Database: db,
-		Logger:   logger,
-	}
-
-	return m
 }
