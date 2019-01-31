@@ -15,7 +15,7 @@ type ChangePassword struct {
 	logger  *zap.Logger
 }
 
-func ChangePasswordInit(cfg Config) error {
+func InitChangePassword(cfg Config) error {
 	route := &ChangePassword{
 		Manager: manager.NewChangePasswordManager(cfg.Logger, cfg.Database, cfg.Redis),
 		logger:  cfg.Logger,

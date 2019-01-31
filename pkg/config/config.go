@@ -33,16 +33,24 @@ type (
 		Password string
 	}
 
+	KubernetesConfig struct {
+		Service KubernetesServiceConfig
+	}
+
+	KubernetesServiceConfig struct {
+		Host string
+	}
+
 	Config struct {
-		Api      ApiConfig
-		Jwt      JwtConfig
-		Database DatabaseConfig
-		Redis    RedisConfig
+		Api        ApiConfig
+		Jwt        JwtConfig
+		Database   DatabaseConfig
+		Redis      RedisConfig
+		Kubernetes KubernetesConfig
 	}
 )
 
 func LoadConfig(configFile string) (*Config, error) {
-	viper.SetEnvPrefix("AUTHONE")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 

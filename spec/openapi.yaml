@@ -155,7 +155,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                $ref: '#/components/schemas/AuthToken'
         '400':
           description: Bad Request
           content:
@@ -164,40 +164,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BearerAuth: []
-  /token/ott:
-    get:
-      tags:
-      - JWT Token
-      summary: 'Get user Access Token by One-Time Token'
-      description: ''
-      parameters:
-      - name: client_id
-        in: query
-        required: true
-        schema:
-          type: string
-        description: 'The `client_id` of your application'
-      - name: token
-        in: query
-        required: true
-        schema:
-          type: string
-        description: 'One-Time Token (for example, the parameter `auth_one_ott` passed during authentication with redirect)'
-      operationId: tokenOTT
-      responses:
-        '200':
-          description: 'User Access Tokens'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JWTToken'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security: []
   /dbconnections/change_password:
     post:
       tags:
@@ -282,7 +248,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                $ref: '#/components/schemas/AuthToken'
         '400':
           description: Bad Request
           content:
@@ -320,14 +286,22 @@ paths:
         schema:
           type: string
         description: 'The user''s desired password'
+      - name: redirect_uri
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'If the parameter is set, then in case of successful authentication the redirection to the specified address will be made. Parameter `auth_one_ott` will be added to the address where value will be a disposable token on which it is possible to receive authentication tokens using server inquiry on API (see the /login/ott method).'
       operationId: signup
       responses:
         '200':
-          description: 'User Access Token'
+          description: 'User Access Token or URL with one-time auth token'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                oneOf:
+                  - $ref: '#/components/schemas/AuthToken'
+                  - $ref: '#/components/schemas/AuthRedirectUrl'
         '400':
           description: Bad Request
           content:
@@ -372,14 +346,22 @@ paths:
         schema:
           type: string
         description: 'Captcha'
+      - name: redirect_uri
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'If the parameter is set, then in case of successful authentication the redirection to the specified address will be made. Parameter `auth_one_ott` will be added to the address where value will be a disposable token on which it is possible to receive authentication tokens using server inquiry on API (see the /login/ott method).'
       operationId: login
       responses:
         '200':
-          description: 'User Access Token'
+          description: 'User Access Token or URL with one-time auth token'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                oneOf:
+                  - $ref: '#/components/schemas/AuthToken'
+                  - $ref: '#/components/schemas/AuthRedirectUrl'
         '400':
           description: Bad Request
           content:
@@ -388,6 +370,40 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: 'MFA required. The `error` will be the value `mfa_required` and the `error_message` will be contains token.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+  /login/ott:
+    get:
+      tags:
+        - JWT Token
+      summary: 'Get user Access Token by One-Time Token'
+      description: ''
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'The `client_id` of your application'
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 'One-Time Token (for example, the parameter `auth_one_ott` passed during authentication with redirect)'
+      operationId: loginOTT
+      responses:
+        '200':
+          description: 'User Access Tokens'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '400':
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -432,7 +448,7 @@ paths:
         description: 'Append any additional parameter to the end of your request, and it will be sent to the provider. For example, access_type=offline (for Google Refresh Tokens) , display=popup (for Windows Live popup mode)'
       operationId: authorize
       responses:
-        '302':
+        '301':
           description: >-
             Redirect to destination URI with One-Time Token. Adds to the request
             the parameter `auth_one_ott` with the value of a one-time token.
@@ -573,7 +589,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                $ref: '#/components/schemas/AuthToken'
         '400':
           description: Bad Request
           content:
@@ -619,7 +635,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                $ref: '#/components/schemas/AuthToken'
         '400':
           description: Bad Request
           content:
@@ -665,7 +681,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTToken'
+                $ref: '#/components/schemas/AuthToken'
         '400':
           description: Bad Request
           content:
@@ -751,7 +767,7 @@ components:
         updated_at:
           type: string
           example: "2016-12-05T15:15:40.545Z"
-    JWTToken:
+    AuthToken:
       type: object
       properties:
         access_token:
@@ -767,6 +783,13 @@ components:
           type: string
           description: Refresh token
           example: oDnPKc1a...vWE36Lh
+    AuthRedirectUrl:
+      type: object
+      properties:
+        redirect_url:
+          type: string
+          example: https://127.0.0.1/members/?auth_one_ott=oDnPKc1a...vWE36Lh
+          description: URL to redirect a user with a one-time authentication token
     OneTimeCode:
       type: object
       description: 'One-Time Code'

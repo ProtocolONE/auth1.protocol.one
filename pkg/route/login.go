@@ -18,7 +18,7 @@ type (
 	}
 )
 
-func LoginInit(cfg Config) error {
+func InitLogin(cfg Config) error {
 	route := &Login{
 		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
 		Http:    cfg.Echo,
@@ -28,6 +28,8 @@ func LoginInit(cfg Config) error {
 	cfg.Echo.GET("/authorize/link", route.AuthorizeLink)
 	cfg.Echo.GET("/authorize/result", route.AuthorizeResult)
 	cfg.Echo.GET("/authorize", route.Authorize)
+	cfg.Echo.GET("/login/form", route.LoginPage)
+	cfg.Echo.GET("/login/ott", route.LoginByOTT)
 	cfg.Echo.POST("/login", route.Login)
 
 	return nil
@@ -181,7 +183,7 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 		)
 	}
 
-	token, e := l.Manager.Login(ctx, form)
+	res, e := l.Manager.Login(ctx, form)
 	if e != nil {
 		httpCode := http.StatusBadRequest
 		code := BadRequiredCodeCommon
@@ -206,6 +208,57 @@ func (l *Login) Login(ctx echo.Context) (err error) {
 		}
 
 		return helper.NewErrorResponse(ctx, httpCode, code, message)
+	}
+
+	return ctx.JSON(http.StatusOK, res)
+}
+
+func (l *Login) LoginPage(ctx echo.Context) (err error) {
+	form := new(models.LoginPageForm)
+
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Login page bind form failed", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	return ctx.Render(http.StatusOK, "login_form.html", map[string]interface{}{
+		"ClientID":    form.ClientID,
+		"RedirectUri": form.RedirectUri,
+	})
+}
+
+func (l *Login) LoginByOTT(ctx echo.Context) error {
+	form := new(models.OneTimeTokenForm)
+
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("TokenOTT bind form failed", zap.Error(err))
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			BadRequiredCodeCommon,
+			models.ErrorInvalidRequestParameters,
+		)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"TokenOTT bind validate failed",
+			zap.Object("OneTimeTokenForm", form),
+			zap.Error(err),
+		)
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			models.ErrorRequiredField,
+		)
+	}
+
+	token, e := l.Manager.LoginByOTT(form)
+	if e != nil {
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
 
 	return ctx.JSON(http.StatusOK, token)

@@ -17,6 +17,10 @@ type AuthToken struct {
 	RefreshToken string `json:"id_token,omitempty"`
 }
 
+type AuthRedirectUrl struct {
+	Url string `json:"url"`
+}
+
 type OneTimeTokenService struct {
 	Redis    *redis.Client
 	Settings *OneTimeTokenSettings
@@ -29,7 +33,7 @@ type OneTimeTokenSettings struct {
 
 type OneTimeTokenForm struct {
 	ClientId string `json:"client_id" form:"client_id" validate:"required"`
-	Token    string `json:"token" form:"token" validate:"required"`
+	Token    string `json:"auth_one_ott" form:"auth_one_ott" validate:"required"`
 }
 
 type OneTimeToken struct {
@@ -95,6 +99,12 @@ func (m *RefreshTokenForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 func (m *OneTimeTokenForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientId", m.ClientId)
 	enc.AddString("Token", m.Token)
+
+	return nil
+}
+
+func (a *OneTimeToken) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Token", a.Token)
 
 	return nil
 }

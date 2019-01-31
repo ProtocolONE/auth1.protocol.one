@@ -17,7 +17,7 @@ type SignUp struct {
 
 func InitSignUp(cfg Config) error {
 	route := &SignUp{
-		Manager: manager.InitSignUpManager(cfg.Logger, cfg.Database),
+		Manager: manager.InitSignUpManager(cfg.Logger, cfg.Database, cfg.Redis),
 		logger:  cfg.Logger,
 	}
 

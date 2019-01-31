@@ -4,6 +4,7 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 	"gopkg.in/mgo.v2/bson"
@@ -13,15 +14,17 @@ import (
 
 type SignUpManager struct {
 	logger              *zap.Logger
+	redis               *redis.Client
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
 	authLogService      *models.AuthLogService
 }
 
-func InitSignUpManager(logger *zap.Logger, h *database.Handler) *SignUpManager {
+func InitSignUpManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *SignUpManager {
 	m := &SignUpManager{
 		logger:              logger,
+		redis:               redis,
 		appService:          models.NewApplicationService(h),
 		userService:         models.NewUserService(h),
 		userIdentityService: models.NewUserIdentityService(h),
@@ -31,7 +34,7 @@ func InitSignUpManager(logger *zap.Logger, h *database.Handler) *SignUpManager {
 	return m
 }
 
-func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token *models.AuthToken, error *models.CommonError) {
+func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token interface{}, error *models.CommonError) {
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.logger.Error(
@@ -174,6 +177,38 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
 	}
 	http.SetCookie(ctx.Response(), c)
+
+	if form.RedirectUri != "" {
+		ottSettings := &models.OneTimeTokenSettings{
+			Length: 64,
+			TTL:    3600,
+		}
+		os := models.NewOneTimeTokenService(m.redis, ottSettings)
+		ott, err := os.Create(&t)
+		if err != nil {
+			m.logger.Error(
+				"Unable to create one-time token for application",
+				zap.Object("LoginForm", form),
+				zap.Object("User", user),
+				zap.Object("Application", app),
+				zap.Error(err),
+			)
+
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+		}
+
+		url, err := helper.PrepareRedirectUrl(form.RedirectUri, ott)
+		if err != nil {
+			m.logger.Error(
+				"Unable to create redirect url",
+				zap.Object("LoginForm", form),
+				zap.Object("OneTimeToken", ott),
+				zap.Error(err),
+			)
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+		}
+		return &models.AuthRedirectUrl{Url: url}, nil
+	}
 
 	return t, nil
 }

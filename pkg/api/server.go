@@ -11,31 +11,37 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/micro/go-micro"
+	k8s "github.com/micro/kubernetes/go/micro"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
+	"html/template"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-type (
-	ServerConfig struct {
-		ApiConfig      *config.ApiConfig
-		Logger         *zap.Logger
-		JwtConfig      *config.JwtConfig
-		DatabaseConfig *config.DatabaseConfig
-		RedisConfig    *config.RedisConfig
-	}
+type ServerConfig struct {
+	ApiConfig      *config.ApiConfig
+	Logger         *zap.Logger
+	JwtConfig      *config.JwtConfig
+	DatabaseConfig *config.DatabaseConfig
+	RedisConfig    *config.RedisConfig
+	Kubernetes     *config.KubernetesConfig
+}
 
-	Server struct {
-		Log          *zap.Logger
-		Echo         *echo.Echo
-		ServerConfig *config.ApiConfig
-		DbHandler    *database.Handler
-		RedisHandler *redis.Client
-		MfaService   proto.MfaService
-	}
-)
+type Server struct {
+	Log          *zap.Logger
+	Echo         *echo.Echo
+	ServerConfig *config.ApiConfig
+	DbHandler    *database.Handler
+	RedisHandler *redis.Client
+	MfaService   proto.MfaService
+}
+
+type Template struct {
+	templates *template.Template
+}
 
 func NewServer(c *ServerConfig) (*Server, error) {
 	db, err := database.NewConnection(c.DatabaseConfig)
@@ -48,7 +54,14 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		Password: c.RedisConfig.Password,
 	})
 
-	service := micro.NewService()
+	var service micro.Service
+	if c.Kubernetes.Service.Host == "" {
+		service = micro.NewService()
+		c.Logger.Info("Initialize micro service")
+	} else {
+		service = k8s.NewService()
+		c.Logger.Info("Initialize k8s service")
+	}
 	service.Init()
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
@@ -61,6 +74,10 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		ServerConfig: c.ApiConfig,
 	}
 
+	t := &Template{
+		templates: template.Must(template.ParseGlob("public/templates/*.html")),
+	}
+	server.Echo.Renderer = t
 	server.Echo.Use(ZapLogger(c.Logger))
 	server.Echo.Use(middleware.Recover())
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -105,33 +122,37 @@ func (s *Server) setupRoutes() error {
 		MfaService: s.MfaService,
 	}
 
-	if err := route.LogoutInit(routeConfig); err != nil {
+	if err := route.InitLogout(routeConfig); err != nil {
 		return err
 	}
-	if err := route.LoginInit(routeConfig); err != nil {
+	if err := route.InitLogin(routeConfig); err != nil {
 		return err
 	}
 	if err := route.InitSignUp(routeConfig); err != nil {
 		return err
 	}
-	if err := route.PasswordLessInit(routeConfig); err != nil {
+	if err := route.InitPasswordLess(routeConfig); err != nil {
 		return err
 	}
-	if err := route.ChangePasswordInit(routeConfig); err != nil {
+	if err := route.InitChangePassword(routeConfig); err != nil {
 		return err
 	}
-	if err := route.UserInfoInit(routeConfig); err != nil {
+	if err := route.InitUserInfo(routeConfig); err != nil {
 		return err
 	}
-	if err := route.MFAInit(routeConfig); err != nil {
+	if err := route.InitMFA(routeConfig); err != nil {
 		return err
 	}
-	if err := route.TokenInit(routeConfig); err != nil {
+	if err := route.InitToken(routeConfig); err != nil {
 		return err
 	}
-	if err := route.ManageInit(routeConfig); err != nil {
+	if err := route.InitManage(routeConfig); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, ctx echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
 }

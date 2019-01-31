@@ -15,7 +15,7 @@ type PasswordLess struct {
 	logger  *zap.Logger
 }
 
-func PasswordLessInit(cfg Config) error {
+func InitPasswordLess(cfg Config) error {
 	route := &PasswordLess{
 		Manager: manager.NewPasswordLessManager(cfg.Logger),
 		logger:  cfg.Logger,

@@ -11,7 +11,7 @@ type UserInfo struct {
 	Manager *manager.UserInfoManager
 }
 
-func UserInfoInit(cfg Config) error {
+func InitUserInfo(cfg Config) error {
 	route := &UserInfo{
 		Manager: manager.NewUserInfoManager(cfg.Logger, cfg.Database),
 	}
