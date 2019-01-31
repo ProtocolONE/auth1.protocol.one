@@ -15,7 +15,7 @@ type Logout struct {
 	logger  *zap.Logger
 }
 
-func LogoutInit(cfg Config) error {
+func InitLogout(cfg Config) error {
 	route := &Logout{
 		Manager: manager.NewLogoutManager(cfg.Logger, cfg.Database),
 		logger:  cfg.Logger,

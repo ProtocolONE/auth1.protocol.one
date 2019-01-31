@@ -15,7 +15,7 @@ type MFA struct {
 	logger  *zap.Logger
 }
 
-func MFAInit(cfg Config) error {
+func InitMFA(cfg Config) error {
 	route := &MFA{
 		Manager: manager.NewMFAManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.MfaService),
 		logger:  cfg.Logger,

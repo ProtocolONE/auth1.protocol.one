@@ -23,8 +23,8 @@ func runServer(cmd *cobra.Command, args []string) {
 		ApiConfig:      &cfg.Api,
 		DatabaseConfig: &cfg.Database,
 		RedisConfig:    &cfg.Redis,
+		Kubernetes:     &cfg.Kubernetes,
 	}
-
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {
 		logger.Fatal("Failed to create server", zap.Error(err))

@@ -18,7 +18,7 @@ type (
 	}
 )
 
-func ManageInit(cfg Config) error {
+func InitManage(cfg Config) error {
 	route := &Manage{
 		Manager: manager.NewManageManager(cfg.Logger, cfg.Database),
 		Http:    cfg.Echo,

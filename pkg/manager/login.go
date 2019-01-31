@@ -410,24 +410,9 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ss, err := m.appService.LoadSocialSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to load social settings for application",
-			zap.Object("AuthorizeLinkForm", form),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialSettings}
-	}
-
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: ss.LinkedTokenLength,
-		TTL:    ss.LinkedTTL,
-	}
+	ottSettings := &models.OneTimeTokenSettings{}
 	os := models.NewOneTimeTokenService(m.redis, ottSettings)
 	sl := &models.UserIdentity{}
-
 	if err := os.Get(form.Code, sl); err != nil {
 		m.logger.Error(
 			"Unable to use token for application",
@@ -631,7 +616,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	return t, nil
 }
 
-func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *models.AuthToken, error models.ErrorInterface) {
+func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token interface{}, error models.ErrorInterface) {
 	if form.Email == `captcha@required.com` {
 		return nil, &models.CaptchaRequiredError{Message: models.ErrorCaptchaRequired}
 	}
@@ -782,5 +767,55 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token *m
 	}
 	http.SetCookie(ctx.Response(), c)
 
+	if form.RedirectUri != "" {
+		ottSettings := &models.OneTimeTokenSettings{
+			Length: 64,
+			TTL:    3600,
+		}
+		os := models.NewOneTimeTokenService(m.redis, ottSettings)
+		ott, err := os.Create(&t)
+		if err != nil {
+			m.logger.Error(
+				"Unable to create one-time token for application",
+				zap.Object("LoginForm", form),
+				zap.Object("User", user),
+				zap.Object("Application", app),
+				zap.Error(err),
+			)
+
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+		}
+
+		url, err := helper.PrepareRedirectUrl(form.RedirectUri, ott)
+		if err != nil {
+			m.logger.Error(
+				"Unable to create redirect url",
+				zap.Object("LoginForm", form),
+				zap.Object("OneTimeToken", ott),
+				zap.Error(err),
+			)
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+		}
+		return &models.AuthRedirectUrl{Url: url}, nil
+	}
+
 	return t, nil
+}
+
+func (m *LoginManager) LoginByOTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error models.ErrorInterface) {
+	ottSettings := &models.OneTimeTokenSettings{}
+	os := models.NewOneTimeTokenService(m.redis, ottSettings)
+	token = &models.AuthToken{}
+
+	if err := os.Get(form.Token, token); err != nil {
+		m.logger.Error(
+			"Unable to use auth token for application",
+			zap.Object("OneTimeTokenForm", form),
+			zap.Error(err),
+		)
+
+		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
+	}
+
+	return token, nil
 }
