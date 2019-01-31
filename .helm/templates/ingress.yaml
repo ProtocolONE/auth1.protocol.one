@@ -1,5 +1,4 @@
 {{- $endpoint := .Values.backend -}}
-{{- $endpointSvc := printf "%s-%s" .Release.Name $endpoint.name}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -26,5 +25,5 @@ spec:
         paths:
           - path: {{ .Values.ingress.path }}
             backend:
-              serviceName: {{ $endpointSvc }}
+              serviceName: {{ .Release.Name }}
               servicePort: {{ $endpoint.service.port }}
