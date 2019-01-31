@@ -36,7 +36,7 @@ var (
 	ErrorCaptchaIncorrect         = "Captcha is incorrect"
 	ErrorAuthTemporaryLocked      = "Temporary locked"
 	ErrorProviderIdIncorrect      = "Provider ID is incorrect"
-	ErrorGetSocialData            = "User already exists. Do you have link account?"
+	ErrorGetSocialData            = "Unable to load social data"
 	ErrorGetSocialSettings        = "Unable to load social settings"
 	ErrorMfaRequired              = "MFA required"
 	ErrorMfaClientAdd             = "Unable to add MFA"
