@@ -2,4 +2,4 @@
 *.exe
 *.exe~
 *.out
- pkg/models/application.go
+pkg/models/application.go

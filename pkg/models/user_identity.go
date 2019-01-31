@@ -195,10 +195,11 @@ func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIden
 		return nil, err
 	}
 
-	/*
-		m := f.(map[string]interface{})
-		_, err := parseResponse(uic.Connection, m, uis)
-	*/
+	m := f.(map[string]interface{})
+	if _, err := parseResponse(uic.Connection, m, uis); err != nil {
+		return nil, err
+	}
+
 	return uis, nil
 }
 
