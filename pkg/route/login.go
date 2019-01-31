@@ -69,7 +69,7 @@ func (l *Login) Authorize(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
 
-	return ctx.Redirect(http.StatusOK, str)
+	return ctx.Redirect(http.StatusMovedPermanently, str)
 }
 
 func (l *Login) AuthorizeResult(ctx echo.Context) error {
