@@ -3,6 +3,7 @@ package models
 import (
 	"auth-one-api/pkg/database"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -154,7 +155,7 @@ func (uic *UserIdentityConnection) GetAuthUrl(ctx echo.Context, form interface{}
 		return "", err
 	}
 
-	return conf.AuthCodeURL(string(s), oauth2.AccessTypeOffline), nil
+	return conf.AuthCodeURL(base64.StdEncoding.EncodeToString(s), oauth2.AccessTypeOffline), nil
 }
 
 func (uic *UserIdentityConnection) GetClientProfile(ctx echo.Context) (*UserIdentitySocial, error) {

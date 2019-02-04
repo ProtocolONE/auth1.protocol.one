@@ -59,12 +59,16 @@ type AuthorizeResultForm struct {
 	State string `query:"state" form:"state" json:"state" validate:"required"`
 }
 
+type AuthorizeResultResponse struct {
+	Result  string      `json:"result"`
+	Payload interface{} `json:"payload"`
+}
+
 type AuthorizeLinkForm struct {
-	ClientID    string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
-	Code        string `query:"code" form:"code" json:"code" validate:"required"`
-	Action      string `query:"action" form:"action" json:"action" validate:"required"`
-	Password    string `query:"password" form:"password" json:"password"`
-	AccessToken string `query:"access_token" form:"access_token" json:"access_token"`
+	ClientID string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
+	Code     string `query:"code" form:"code" json:"code" validate:"required"`
+	Action   string `query:"action" form:"action" json:"action" validate:"required"`
+	Password string `query:"password" form:"password" json:"password"`
 }
 
 type LoginForm struct {
@@ -72,7 +76,7 @@ type LoginForm struct {
 	Email       string `form:"email" validate:"required,email" json:"email"`
 	Password    string `form:"password" validate:"required" json:"password"`
 	Captcha     string `form:"captcha" json:"captcha"`
-	RedirectUri string `form:"redirect_uri" query:"redirect_uri"`
+	RedirectUri string `form:"redirect_uri" query:"redirect_uri" json:"redirect_uri"`
 }
 
 type LoginPageForm struct {

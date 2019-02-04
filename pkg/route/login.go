@@ -78,12 +78,10 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	if err := ctx.Bind(form); err != nil {
 		l.logger.Error("AuthorizeResult bind form failed", zap.Error(err))
 
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
+			"Result":  &manager.SocialAccountError,
+			"Payload": map[string]interface{}{"code": BadRequiredCodeCommon, "message": models.ErrorInvalidRequestParameters},
+		})
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -93,26 +91,26 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 			zap.Error(err),
 		)
 
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
+			"Result":  &manager.SocialAccountError,
+			"Payload": map[string]interface{}{"code": fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()), "message": models.ErrorRequiredField},
+		})
 	}
 
 	t, err := l.Manager.AuthorizeResult(ctx, form)
 	// WTF result HTML/JSON???
 
 	if err != nil {
-		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
+		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
+			"Result":  &manager.SocialAccountError,
+			"Payload": map[string]interface{}{"code": UnknownErrorCode, "message": err.GetMessage()},
+		})
 	}
 
-	if t != nil {
-		return ctx.JSON(http.StatusOK, t)
-	} else {
-		return ctx.HTML(http.StatusOK, "")
-	}
+	return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
+		"Result":  t.Result,
+		"Payload": t.Payload,
+	})
 }
 
 func (l *Login) AuthorizeLink(ctx echo.Context) error {
