@@ -1,8 +1,8 @@
 package models
 
 import (
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/securecookie"
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 )
 

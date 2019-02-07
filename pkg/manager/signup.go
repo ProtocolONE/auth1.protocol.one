@@ -4,10 +4,10 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
+	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"time"
 )

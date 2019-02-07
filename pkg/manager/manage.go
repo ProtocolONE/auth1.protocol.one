@@ -4,8 +4,12 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"errors"
+	"fmt"
+	"github.com/globalsign/mgo/bson"
+	"github.com/ory/hydra/sdk/go/hydra"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
-	"gopkg.in/mgo.v2/bson"
+	"net/http"
 	"time"
 )
 
@@ -14,14 +18,16 @@ type ManageManager struct {
 	spaceService *models.SpaceService
 	appService   *models.ApplicationService
 	mfaService   *models.MfaService
+	hydraSDK     *hydra.CodeGenSDK
 }
 
-func NewManageManager(logger *zap.Logger, db *database.Handler) *ManageManager {
+func NewManageManager(logger *zap.Logger, db *database.Handler, h *hydra.CodeGenSDK) *ManageManager {
 	m := &ManageManager{
 		logger:       logger,
 		spaceService: models.NewSpaceService(db),
 		appService:   models.NewApplicationService(db),
 		mfaService:   models.NewMfaService(db),
+		hydraSDK:     h,
 	}
 
 	return m
@@ -101,13 +107,15 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 	}
 
 	app := &models.Application{
-		ID:          bson.NewObjectId(),
-		SpaceId:     s.Id,
-		Name:        form.Application.Name,
-		Description: form.Application.Description,
-		IsActive:    form.Application.IsActive,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:               bson.NewObjectId(),
+		SpaceId:          s.Id,
+		Name:             form.Application.Name,
+		Description:      form.Application.Description,
+		IsActive:         form.Application.IsActive,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+		AuthSecret:       models.GetRandString(64),
+		AuthRedirectUrls: form.Application.AuthRedirectUrls,
 	}
 
 	if err := m.appService.Create(app); err != nil {
@@ -119,6 +127,23 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 
 		return nil, err
 	}
+
+	client, response, err := m.hydraSDK.AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
+		ClientId:      app.ID.Hex(),
+		ClientName:    app.Name,
+		ClientSecret:  app.AuthSecret,
+		GrantTypes:    []string{"authorization_code", "refresh_token"},
+		ResponseTypes: []string{"code", "id_token"},
+		RedirectUris:  app.AuthRedirectUrls,
+		Scope:         "openid offline",
+	})
+	if err != nil {
+		fmt.Printf("%+v", err)
+	} else if response.StatusCode != http.StatusCreated {
+		fmt.Printf("%+v", response)
+	}
+
+	fmt.Printf("Client created: %+v", client)
 
 	return app, nil
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title></title></head>
+<body>
+<h1>Please select scopes</h1>
+<form action="/oauth/consent" method="POST">
+    <input type="hidden" name="challenge" value="{{index . "Challenge"}}">
+    <input type="hidden" name="_csrf" value="{{index . "Csrf"}}">
+    <table style="">
+        {{ range $key, $value := index . "Scopes"}}
+            <tr>
+                <td><input type="checkbox" name="scope" value="{{ $value }}"> {{ $value }}</td>
+            </tr>
+        {{ end }}
+    </table>
+    <input type="submit" value="Accept">
+    {{if .Error}}
+        <p>{{index . "Error"}}</p>
+    {{end}}
+</form>
+</body>
+</html>
+

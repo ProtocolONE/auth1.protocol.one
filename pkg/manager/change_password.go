@@ -3,9 +3,9 @@ package manager
 import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
+	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type ChangePasswordManager struct {

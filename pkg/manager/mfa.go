@@ -6,10 +6,10 @@ import (
 	"auth-one-api/pkg/models"
 	"context"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
+	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 )
 

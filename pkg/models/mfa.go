@@ -2,9 +2,9 @@ package models
 
 import (
 	"auth-one-api/pkg/database"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type MfaService struct {

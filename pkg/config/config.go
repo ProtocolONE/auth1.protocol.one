@@ -33,6 +33,11 @@ type (
 		Password string
 	}
 
+	HydraConfig struct {
+		PublicURL string
+		AdminURL  string
+	}
+
 	KubernetesConfig struct {
 		Service KubernetesServiceConfig
 	}
@@ -41,12 +46,23 @@ type (
 		Host string
 	}
 
+	SessionConfig struct {
+		Database  string
+		Table     string
+		Secret    string
+		Name      string
+		MaxAge    int
+		EnsureTTL bool
+	}
+
 	Config struct {
 		Api        ApiConfig
 		Jwt        JwtConfig
 		Database   DatabaseConfig
 		Redis      RedisConfig
 		Kubernetes KubernetesConfig
+		Hydra      HydraConfig
+		Session    SessionConfig
 	}
 )
 
