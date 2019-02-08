@@ -4,24 +4,45 @@ services:
   auth1-mongo:
     image: mongo:4.1.3
     container_name: auth1-mongo
-    restart: always
+    restart: unless-stopped
     networks:
-      - p1devnet
+    - p1devnet
     volumes:
-      - auth1-mongo:/data/db
+    - auth1-mongo:/data/db
     ports:
-      - "3002:27017"
+    - "27017:27017"
 
   auth1-redis:
     image: redis:5.0.3
     container_name: auth1-redis
-    restart: always
+    restart: unless-stopped
     networks:
-      - p1devnet
+    - p1devnet
     volumes:
-      - auth1-redis:/data/redis
+    - auth1-redis:/data/redis
     ports:
-      - "6379:6379"
+    - "6379:6379"
+
+  auth1:
+    build: .
+    container_name: auth1
+    restart: unless-stopped
+    depends_on:
+    - auth1-mongo
+    - auth1-redis
+    networks:
+    - p1devnet
+    environment:
+    - API_PORT=8080
+    - DATABASE_HOST=auth1-mongo
+    - DATABASE_DATABASE=auth-one
+    - DATABASE_USER=
+    - DATABASE_PASSWORD=
+    - REDIS_ADDR="auth1-redis:6379"
+    - REDIS_PASSWORD=""
+    - LOGGER_LEVEL="debug"  
+    ports:
+    - "8080:8080"
 
 volumes:
   auth1-mongo:
