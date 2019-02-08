@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6c9c8e7b-5683-4d24-940e-e0c8167a46c7",
+		"_postman_id": "4424c8dd-315d-4198-a0df-6a711fc3328f",
 		"name": "AuthOne",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -28,7 +28,7 @@
 									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\"\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space",
+									"raw": "http://127.0.0.1:8080/api/space?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -79,7 +79,7 @@
 									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\",\n    \"is_active\": true\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de",
+									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -135,7 +135,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de",
+									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -190,10 +190,10 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"app_id\": \"5c221b985ffa56fdd05257de\",\n\t\"mfa_provider\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\"\n\t}\n}"
+									"raw": "{\n\t\"space_id\": \"5c4b6e3b02429c6fec249c99\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/mfa",
+									"raw": "http://127.0.0.1:8080/api/app",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -204,7 +204,7 @@
 									"port": "8080",
 									"path": [
 										"api",
-										"mfa"
+										"app"
 									],
 									"query": [
 										{
@@ -244,7 +244,7 @@
 									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df",
+									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -300,7 +300,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df",
+									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -358,7 +358,7 @@
 									"raw": "{\n\t\"app_id\": \"5c1bbe8b4c1efd4428629bde\",\n\t\"mfa_provider\": {\n    \t\"name\": \"Authy\",\n    \t\"channel\": \"auth1\",\n    \t\"type\": \"otp\"\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/mfa",
+									"raw": "http://127.0.0.1:8080/api/mfa?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -731,13 +731,13 @@
 			"item": [
 				{
 					"name": "Logout",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
 						"url": {
 							"raw": "http://127.0.0.1:8080/logout?client_id=5c1b434d4c1efd2c184d9561&redirect_uri=test",
 							"protocol": "http",
