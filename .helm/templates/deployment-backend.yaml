@@ -52,6 +52,14 @@ spec:
           value: "{{ $deployment.port }}"
         - name: MICRO_SELECTOR
           value: "static"
+        - name: HYDRA_PUBLICURL
+            secretKeyRef:
+              name: {{ .Chart.Name }}-env
+              key: HYDRA_PUBLICURL
+        - name: HYDRA_ADMINURL
+            secretKeyRef:
+              name: {{ .Chart.Name }}-env
+              key: HYDRA_ADMINURL
         ports:
         - containerPort: {{$deployment.port}}
 #        livenessProbe:
