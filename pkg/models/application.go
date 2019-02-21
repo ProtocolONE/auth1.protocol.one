@@ -30,18 +30,6 @@ type Application struct {
 	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // auth secret key
 }
 
-type ApplicationForm struct {
-	SpaceId     bson.ObjectId       `json:"space_id"`                        // unique space identifier
-	Application *ApplicationFormApp `json:"application" validate:"required"` // application data
-}
-
-type ApplicationFormApp struct {
-	Name             string   `bson:"name" json:"name" validate:"required"`                             // application name
-	Description      string   `bson:"description" json:"description"`                                   // application description
-	IsActive         bool     `bson:"is_active" json:"is_active"`                                       // is application active
-	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // auth secret key
-}
-
 func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", a.ID.String())
 	enc.AddString("SpaceId", a.SpaceId.String())

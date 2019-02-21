@@ -3,6 +3,7 @@ package manager
 import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
+	"fmt"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
@@ -77,7 +78,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
-
+	fmt.Print(req.Client.ClientId)
 	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
 		m.logger.Error(
@@ -93,6 +94,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 		m.logger.Warn(
 			"Unable to get user identity",
 			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Application", app),
 			zap.Error(err),
 		)
 	}
@@ -157,9 +159,9 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.OauthConsent
 
 func (m *OauthManager) GetScopes() (scopes []string, err error) {
 	scopes = []string{"openid", "offline"}
-	if err := m.loadRemoteScopes(scopes); err != nil {
+	/*if err := m.loadRemoteScopes(scopes); err != nil {
 		return nil, err
-	}
+	}*/
 
 	return scopes, nil
 }

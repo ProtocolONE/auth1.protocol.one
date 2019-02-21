@@ -132,8 +132,8 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		ClientId:      app.ID.Hex(),
 		ClientName:    app.Name,
 		ClientSecret:  app.AuthSecret,
-		GrantTypes:    []string{"authorization_code", "refresh_token"},
-		ResponseTypes: []string{"code", "id_token"},
+		GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
+		ResponseTypes: []string{"code", "id_token", "token"},
 		RedirectUris:  app.AuthRedirectUrls,
 		Scope:         "openid offline",
 	})
