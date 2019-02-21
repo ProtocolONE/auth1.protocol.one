@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title></title></head>
+<body>
+<h1>Please log in</h1>
+<form action="/oauth/login" method="POST">
+    <input type="hidden" name="challenge" value="{{index . "Challenge"}}">
+    <input type="hidden" name="_csrf" value="{{index . "Csrf"}}">
+    <table style="">
+        <tr>
+            <td><input type="email" name="email" placeholder="email@foobar.com"></td>
+            <td>(it's "foo@bar.com")</td>
+        </tr>
+        <tr>
+            <td><input type="password" name="password"></td>
+            <td>(it's "foobar")</td>
+        </tr>
+    </table>
+    <input type="checkbox" id="remember" name="remember" value="1">
+    <label for="remember">Remember me</label><br>
+    <input type="submit" value="Log in">
+    {{if .Error}}
+        <p>{{index . "Error"}}</p>
+    {{end}}
+</form>
+</body>
+</html>
+

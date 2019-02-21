@@ -14,12 +14,12 @@ require (
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.2.0
 	github.com/gorilla/handlers v1.4.0 // indirect
-	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/securecookie v1.1.1
+	github.com/gorilla/sessions v0.0.0-20160922145804-ca9ada445741
 	github.com/gorilla/websocket v1.4.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
+	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
 	github.com/labstack/echo v3.3.5+incompatible
 	github.com/labstack/gommon v0.2.8
 	github.com/leodido/go-urn v1.1.0 // indirect
@@ -35,6 +35,7 @@ require (
 	github.com/nlopes/slack v0.4.0 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
+	github.com/ory/hydra v0.0.0-20181218121201-bdb6634e3d87
 	github.com/pkg/errors v0.8.1
 	github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516 // indirect
 	github.com/sirupsen/logrus v1.2.0

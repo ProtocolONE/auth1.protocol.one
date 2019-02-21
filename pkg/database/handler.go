@@ -2,7 +2,7 @@ package database
 
 import (
 	"auth-one-api/pkg/config"
-	"gopkg.in/mgo.v2"
+	"github.com/globalsign/mgo"
 	"net/url"
 )
 

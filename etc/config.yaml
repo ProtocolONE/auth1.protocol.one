@@ -10,9 +10,19 @@ Database:
   Database: "auth-one"
   User: ""
   Password: ""
+Session:
+  Database: "auth-one"
+  Table: "session"
+  Secret: "secretkey"
+  Name: "sessid"
+  MaxAge: 3600
+  EnsureTTL: true
 Redis:
   Addr: "127.0.0.1:6379"
   Password: ""
 Kubernetes:
   Service:
     Host: ""
+Hydra:
+  PublicURL: "http://localhost:4444"
+  AdminURL: "http://localhost:4445"

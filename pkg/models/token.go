@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"time"
 )

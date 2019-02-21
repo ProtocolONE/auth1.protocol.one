@@ -24,6 +24,8 @@ func runServer(cmd *cobra.Command, args []string) {
 		DatabaseConfig: &cfg.Database,
 		RedisConfig:    &cfg.Redis,
 		Kubernetes:     &cfg.Kubernetes,
+		HydraConfig:    &cfg.Hydra,
+		SessionConfig:  &cfg.Session,
 	}
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {

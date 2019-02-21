@@ -20,7 +20,7 @@ type (
 
 func InitManage(cfg Config) error {
 	route := &Manage{
-		Manager: manager.NewManageManager(cfg.Logger, cfg.Database),
+		Manager: manager.NewManageManager(cfg.Logger, cfg.Database, cfg.Hydra),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}

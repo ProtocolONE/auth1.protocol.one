@@ -8,14 +8,19 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/sessions"
+	"github.com/kidstuff/mongostore"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
+	"github.com/ory/hydra/sdk/go/hydra"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
 	"io"
+	"log"
+	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
@@ -28,6 +33,8 @@ type ServerConfig struct {
 	DatabaseConfig *config.DatabaseConfig
 	RedisConfig    *config.RedisConfig
 	Kubernetes     *config.KubernetesConfig
+	HydraConfig    *config.HydraConfig
+	SessionConfig  *config.SessionConfig
 }
 
 type Server struct {
@@ -37,6 +44,8 @@ type Server struct {
 	DbHandler    *database.Handler
 	RedisHandler *redis.Client
 	MfaService   proto.MfaService
+	Hydra        *hydra.CodeGenSDK
+	Session      *sessions.Session
 }
 
 type Template struct {
@@ -65,6 +74,24 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	service.Init()
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
+	h, err := hydra.NewSDK(&hydra.Configuration{
+		AdminURL: c.HydraConfig.AdminURL,
+	})
+	if err != nil {
+		c.Logger.Fatal("Hydra SDK creation failed", zap.Error(err))
+	}
+
+	store := mongostore.NewMongoStore(
+		db.DB(c.SessionConfig.Database).C(c.SessionConfig.Table),
+		c.SessionConfig.MaxAge,
+		c.SessionConfig.EnsureTTL,
+		[]byte(c.SessionConfig.Secret),
+	)
+	s, err := store.Get(&http.Request{}, c.SessionConfig.Name)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	server := &Server{
 		Log:          c.Logger,
 		Echo:         echo.New(),
@@ -72,6 +99,8 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		RedisHandler: r,
 		MfaService:   ms,
 		ServerConfig: c.ApiConfig,
+		Hydra:        h,
+		Session:      s,
 	}
 
 	t := &Template{
@@ -120,6 +149,8 @@ func (s *Server) setupRoutes() error {
 		Database:   s.DbHandler,
 		Redis:      s.RedisHandler,
 		MfaService: s.MfaService,
+		Hydra:      s.Hydra,
+		Session:    s.Session,
 	}
 
 	if err := route.InitLogout(routeConfig); err != nil {
@@ -147,6 +178,9 @@ func (s *Server) setupRoutes() error {
 		return err
 	}
 	if err := route.InitManage(routeConfig); err != nil {
+		return err
+	}
+	if err := route.InitOauth(routeConfig); err != nil {
 		return err
 	}
 

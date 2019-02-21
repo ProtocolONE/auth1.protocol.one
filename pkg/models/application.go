@@ -4,13 +4,13 @@ import (
 	"auth-one-api/pkg/database"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/twitch"
 	"golang.org/x/oauth2/vk"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
@@ -19,24 +19,15 @@ type ApplicationService struct {
 }
 
 type Application struct {
-	ID          bson.ObjectId `bson:"_id" json:"id"`                        // unique application identifier
-	SpaceId     bson.ObjectId `bson:"space_id" json:"space_id"`             // application space owner
-	Name        string        `bson:"name" json:"name" validate:"required"` // application name
-	Description string        `bson:"description" json:"description"`       // application description
-	IsActive    bool          `bson:"is_active" json:"is_active"`           // is application active
-	CreatedAt   time.Time     `bson:"created_at" json:"-"`                  // date of create application
-	UpdatedAt   time.Time     `bson:"updated_at" json:"-"`                  // date of update application
-}
-
-type ApplicationForm struct {
-	SpaceId     bson.ObjectId       `json:"space_id"`                        // unique space identifier
-	Application *ApplicationFormApp `json:"application" validate:"required"` // application data
-}
-
-type ApplicationFormApp struct {
-	Name        string `bson:"name" json:"name" validate:"required"` // application name
-	Description string `bson:"description" json:"description"`       // application description
-	IsActive    bool   `bson:"is_active" json:"is_active"`           // is application active
+	ID               bson.ObjectId `bson:"_id" json:"id"`                                                    // unique application identifier
+	SpaceId          bson.ObjectId `bson:"space_id" json:"space_id"`                                         // application space owner
+	Name             string        `bson:"name" json:"name" validate:"required"`                             // application name
+	Description      string        `bson:"description" json:"description"`                                   // application description
+	IsActive         bool          `bson:"is_active" json:"is_active"`                                       // is application active
+	CreatedAt        time.Time     `bson:"created_at" json:"-"`                                              // date of create application
+	UpdatedAt        time.Time     `bson:"updated_at" json:"-"`                                              // date of update application
+	AuthSecret       string        `bson:"auth_secret" json:"auth_secret" validate:"required"`               // auth redirect urls
+	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // auth secret key
 }
 
 func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -104,9 +95,9 @@ func (s ApplicationService) LoadPasswordSettings() (*PasswordSettings, error) {
 		BcryptCost:        10,
 		Min:               4,
 		Max:               10,
-		RequireNumber:     true,
-		RequireSpecial:    true,
-		RequireUpper:      true,
+		RequireNumber:     false,
+		RequireSpecial:    false,
+		RequireUpper:      false,
 		ChangeTokenLength: 128,
 		ChangeTokenTTL:    86400,
 	}, nil
