@@ -12,27 +12,23 @@
 					"name": "Space",
 					"item": [
 						{
-							"name": "Get space",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
+							"name": "Create space",
 							"request": {
-								"method": "GET",
+								"method": "POST",
 								"header": [
 									{
 										"key": "Content-Type",
 										"name": "Content-Type",
-										"type": "text",
 										"value": "application/json",
-										"disabled": true
+										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": ""
+									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\"\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
+									"raw": "http://127.0.0.1:8080/api/space?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -43,8 +39,7 @@
 									"port": "8080",
 									"path": [
 										"api",
-										"space",
-										"5c221b985ffa56fdd05257de"
+										"space"
 									],
 									"query": [
 										{
@@ -120,23 +115,27 @@
 							"response": []
 						},
 						{
-							"name": "Create space",
+							"name": "Get space",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
 							"request": {
-								"method": "POST",
+								"method": "GET",
 								"header": [
 									{
 										"key": "Content-Type",
 										"name": "Content-Type",
+										"type": "text",
 										"value": "application/json",
-										"type": "text"
+										"disabled": true
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\"\n}"
+									"raw": ""
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space?",
+									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -147,7 +146,8 @@
 									"port": "8080",
 									"path": [
 										"api",
-										"space"
+										"space",
+										"5c221b985ffa56fdd05257de"
 									],
 									"query": [
 										{
@@ -190,7 +190,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"space_id\": \"5c1bbe564c1efd4428629bdd\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true,\n    \t\"auth_redirect_urls\": [\"http://127.0.0.1/auth/callback\"]\n\t}\n}"
+									"raw": "{\n\t\"space_id\": \"5c4b6e3b02429c6fec249c99\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
 								},
 								"url": {
 									"raw": "http://127.0.0.1:8080/api/app",
@@ -205,6 +205,58 @@
 									"path": [
 										"api",
 										"app"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "Test",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "Initial space",
+											"disabled": true
+										},
+										{
+											"key": "is_active",
+											"value": "1",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update application",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"app",
+										"5c221cde5ffa56fdd05257df"
 									],
 									"query": [
 										{
@@ -246,58 +298,6 @@
 								"body": {
 									"mode": "raw",
 									"raw": ""
-								},
-								"url": {
-									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
-									"protocol": "http",
-									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
-									],
-									"port": "8080",
-									"path": [
-										"api",
-										"app",
-										"5c221cde5ffa56fdd05257df"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Update application",
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
 								},
 								"url": {
 									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
@@ -401,6 +401,53 @@
 			"name": "Authenticate",
 			"item": [
 				{
+					"name": "Login by social provider",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/authorize?client_id=5c221cde5ffa56fdd05257df&connection=facebook&redirect_uri=https://auth1.eu.gamenet.ru/authorize/result&state",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"authorize"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "5c221cde5ffa56fdd05257df"
+								},
+								{
+									"key": "connection",
+									"value": "facebook"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "https://auth1.eu.gamenet.ru/authorize/result"
+								},
+								{
+									"key": "state",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Login by password",
 					"request": {
 						"method": "POST",
@@ -449,53 +496,6 @@
 							"port": "8080",
 							"path": [
 								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login by social provider",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://127.0.0.1:8080/authorize?client_id=5c221cde5ffa56fdd05257df&connection=facebook&redirect_uri=https://auth1.eu.gamenet.ru/authorize/result&state",
-							"protocol": "http",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"port": "8080",
-							"path": [
-								"authorize"
-							],
-							"query": [
-								{
-									"key": "client_id",
-									"value": "5c221cde5ffa56fdd05257df"
-								},
-								{
-									"key": "connection",
-									"value": "facebook"
-								},
-								{
-									"key": "redirect_uri",
-									"value": "https://auth1.eu.gamenet.ru/authorize/result"
-								},
-								{
-									"key": "state",
-									"value": null
-								}
 							]
 						}
 					},
@@ -771,6 +771,78 @@
 			"name": "MFA",
 			"item": [
 				{
+					"name": "Add MFA to user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-CLIENT-ID",
+								"value": "5c1bbe8b4c1efd4428629bde",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "client_id",
+									"value": "5c1bbe8b4c1efd4428629bde",
+									"type": "text"
+								},
+								{
+									"key": "provider_id",
+									"value": "5c4765944c1efd4194ec950f",
+									"type": "text"
+								},
+								{
+									"key": "authenticator_types",
+									"value": "auth1",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/mfa/add?",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"mfa",
+								"add"
+							],
+							"query": [
+								{
+									"key": "redirect_uri",
+									"value": "https://auth1.eu.gamenet.ru/authorize/result",
+									"disabled": true
+								},
+								{
+									"key": "state",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "MFA verify",
 					"request": {
 						"auth": {
@@ -829,78 +901,6 @@
 							"path": [
 								"mfa",
 								"verify"
-							],
-							"query": [
-								{
-									"key": "redirect_uri",
-									"value": "https://auth1.eu.gamenet.ru/authorize/result",
-									"disabled": true
-								},
-								{
-									"key": "state",
-									"value": null,
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Add MFA to user",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "X-CLIENT-ID",
-								"value": "5c1bbe8b4c1efd4428629bde",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "client_id",
-									"value": "5c1bbe8b4c1efd4428629bde",
-									"type": "text"
-								},
-								{
-									"key": "provider_id",
-									"value": "5c4765944c1efd4194ec950f",
-									"type": "text"
-								},
-								{
-									"key": "authenticator_types",
-									"value": "auth1",
-									"type": "text",
-									"disabled": true
-								}
-							]
-						},
-						"url": {
-							"raw": "http://127.0.0.1:8080/mfa/add?",
-							"protocol": "http",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"port": "8080",
-							"path": [
-								"mfa",
-								"add"
 							],
 							"query": [
 								{
