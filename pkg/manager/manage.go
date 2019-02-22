@@ -181,7 +181,13 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 		return nil, err
 	}
 
-	client, _, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
+	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
+	m.logger.Error(
+		"GET HYDRA CLIENT",
+		zap.Any("Client", client),
+		zap.Any("Response", response),
+		zap.Error(err),
+	)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get hydra client",
