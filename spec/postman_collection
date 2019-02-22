@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4424c8dd-315d-4198-a0df-6a711fc3328f",
+		"_postman_id": "2f52d888-79f5-40e1-a485-91aa89fcf922",
 		"name": "AuthOne",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -190,10 +190,10 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"space_id\": \"5c4b6e3b02429c6fec249c99\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
+									"raw": "{\n\t\"space_id\": \"5c4b6e3b02429c6fec249c99\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true,\n    \t\"auth_redirect_urls\": [\"https://storefront.tst.protocol.one/auth/callback\"]\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app",
+									"raw": "http://127.0.0.1:8080/api/app?",
 									"protocol": "http",
 									"host": [
 										"127",
@@ -241,7 +241,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true\n\t}\n}"
+									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true,\n    \t\"auth_redirect_urls\": [\"https://storefront.tst.protocol.one/auth/callback\"]\n\t}\n}"
 								},
 								"url": {
 									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",

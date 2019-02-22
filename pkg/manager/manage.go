@@ -49,7 +49,6 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 			zap.Object("space", s),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -72,7 +71,6 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 			zap.Object("space", s),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -87,7 +85,6 @@ func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
 			zap.String("spaceId", id),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -102,7 +99,6 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 			zap.String("spaceId", form.SpaceId.String()),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -124,7 +120,6 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -137,12 +132,14 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		RedirectUris:  app.AuthRedirectUrls,
 		Scope:         "openid offline",
 	})
-	if err != nil {
-		fmt.Printf("%+v", err)
-	} else if response.StatusCode != http.StatusCreated {
-		fmt.Printf("%+v", response)
+	if err != nil || response.StatusCode != http.StatusCreated {
+		m.logger.Error(
+			"Unable to create hydra client",
+			zap.Object("Application", app),
+			zap.Error(err),
+		)
+		return nil, err
 	}
-
 	fmt.Printf("Client created: %+v", client)
 
 	return app, nil
@@ -156,7 +153,6 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 			zap.String("AppId", id),
 			zap.Error(err),
 		)
-
 		return nil, errors.New("application not exists")
 	}
 
@@ -166,7 +162,6 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 			zap.Object("ApplicationForm", form),
 			zap.Error(err),
 		)
-
 		return nil, errors.New("space not exists")
 	}
 
@@ -182,7 +177,28 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 			zap.Object("Application", a),
 			zap.Error(err),
 		)
+		return nil, err
+	}
 
+	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
+	if err != nil || response.StatusCode != http.StatusCreated {
+		m.logger.Error(
+			"Unable to get hydra client",
+			zap.Object("Application", a),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	client.RedirectUris = form.Application.AuthRedirectUrls
+
+	_, response, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
+	if err != nil || response.StatusCode != http.StatusCreated {
+		m.logger.Error(
+			"Unable to update hydra client",
+			zap.Object("Application", a),
+			zap.Error(err),
+		)
 		return nil, err
 	}
 
@@ -197,7 +213,6 @@ func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
 			zap.String("AppId", id),
 			zap.Error(err),
 		)
-
 		return nil, err
 	}
 
@@ -219,7 +234,6 @@ func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvide
 			zap.Object("MfaProvider", p),
 			zap.Error(err),
 		)
-
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
 
