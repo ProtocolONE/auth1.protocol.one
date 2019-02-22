@@ -181,8 +181,8 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 		return nil, err
 	}
 
-	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
-	if err != nil || response.StatusCode != http.StatusCreated {
+	client, _, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
+	if err != nil {
 		m.logger.Error(
 			"Unable to get hydra client",
 			zap.Object("Application", a),
@@ -193,8 +193,8 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 
 	client.RedirectUris = form.Application.AuthRedirectUrls
 
-	_, response, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
-	if err != nil || response.StatusCode != http.StatusCreated {
+	_, _, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
+	if err != nil {
 		m.logger.Error(
 			"Unable to update hydra client",
 			zap.Object("Application", a),
