@@ -30,6 +30,7 @@ func initConfig() {
 	var err error
 
 	logger, _ = zap.NewProduction()
+	zap.ReplaceGlobals(logger)
 	defer logger.Sync() // flushes buffer, if any
 
 	cfg, err = config.LoadConfig(cfgFile)

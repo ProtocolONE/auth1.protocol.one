@@ -26,8 +26,8 @@ type Application struct {
 	IsActive         bool          `bson:"is_active" json:"is_active"`                                       // is application active
 	CreatedAt        time.Time     `bson:"created_at" json:"-"`                                              // date of create application
 	UpdatedAt        time.Time     `bson:"updated_at" json:"-"`                                              // date of update application
-	AuthSecret       string        `bson:"auth_secret" json:"auth_secret" validate:"required"`               // auth redirect urls
-	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // auth secret key
+	AuthSecret       string        `bson:"auth_secret" json:"auth_secret" validate:"required"`               // auth secret key
+	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // list of callbacks urls
 }
 
 func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {

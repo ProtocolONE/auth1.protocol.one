@@ -14,7 +14,7 @@ type ApplicationFormApp struct {
 	Name             string   `bson:"name" json:"name" validate:"required"`                             // application name
 	Description      string   `bson:"description" json:"description"`                                   // application description
 	IsActive         bool     `bson:"is_active" json:"is_active"`                                       // is application active
-	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // auth secret key
+	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // list of callbacks urls
 }
 
 type ApplicationKeysForm struct {

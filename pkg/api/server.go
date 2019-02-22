@@ -19,7 +19,6 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -89,7 +88,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	)
 	s, err := store.Get(&http.Request{}, c.SessionConfig.Name)
 	if err != nil {
-		log.Println(err.Error())
+		c.Logger.Error(err.Error())
 	}
 
 	server := &Server{
