@@ -170,6 +170,7 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 	a.Description = form.Application.Description
 	a.IsActive = form.Application.IsActive
 	a.UpdatedAt = time.Now()
+	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 
 	if err := m.appService.Update(a); err != nil {
 		m.logger.Error(
