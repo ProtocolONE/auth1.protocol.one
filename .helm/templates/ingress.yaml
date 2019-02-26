@@ -27,3 +27,15 @@ spec:
             backend:
               serviceName: {{ .Release.Name }}
               servicePort: {{ $endpoint.service.port }}
+          - path: /oauth
+            backend:
+              serviceName: hydra
+              servicePort: 4444
+          - path: /userinfo
+            backend:
+              serviceName: hydra
+              servicePort: 4444              
+          - path: /.well-known/jwks.json
+            backend:
+              serviceName: hydra
+              servicePort: 4444              
