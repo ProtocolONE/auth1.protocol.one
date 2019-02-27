@@ -3,7 +3,6 @@ module auth-one-api
 require (
 	cloud.google.com/go v0.34.0 // indirect
 	github.com/ProtocolONE/mfa-service v0.1.0
-	github.com/ProtocolONE/p1pay.api v0.0.0-20181211184730-a02f1a33dd7f
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
