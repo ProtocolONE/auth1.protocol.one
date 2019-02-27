@@ -33,7 +33,19 @@ spec:
             backend:
               serviceName: hydra
               servicePort: 4444
-          - path: /oauth2
+          - path: /oauth2/auth
+            backend:
+              serviceName: hydra
+              servicePort: 4444
+          - path: /oauth2/token
+            backend:
+              serviceName: hydra
+              servicePort: 4444
+          - path: /oauth2/revoke
+            backend:
+              serviceName: hydra
+              servicePort: 4444
+          - path: /oauth2/userinfo
             backend:
               serviceName: hydra
               servicePort: 4444
