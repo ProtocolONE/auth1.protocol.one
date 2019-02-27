@@ -1,48 +1,78 @@
 version: "3.6"
 
 services:
+  web:
+    image: nginx
+    container_name: auth1-nginx
+    networks:
+      - subnet
+    depends_on:
+      - hydra
+      - auth1
+    ports:
+      - "80:80"
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+      - AUTHONE_SERVER=http://auth1:8080
+      - HYDRA_SERVER=http://hydra:4444
+    volumes:
+      - ./etc/nginx/default.template:/etc/nginx/conf.d/default.template
+    command: bin/bash -c "envsubst < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+
+  hydra:
+    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
+    container_name: hydra
+    networks:
+      - subnet
+    environment:
+      - DATABASE_URL=memory
+      - LOG_LEVEL=debug
+      - OAUTH2_ISSUER_URL=http://localhost:4444/
+      - OAUTH2_CONSENT_URL=http://localhost:8080/oauth2/consent
+      - OAUTH2_LOGIN_URL=http://localhost:8080/oauth2/login
+    restart: unless-stopped
+    command: "serve all --dangerous-force-http"
+
   auth1-mongo:
     image: mongo:4.1.3
     container_name: auth1-mongo
     restart: unless-stopped
     networks:
-    - p1devnet
+      - subnet
     volumes:
-    - auth1-mongo:/data/db
-    ports:
-    - "27017:27017"
+      - auth1-mongo:/data/db
 
   auth1-redis:
     image: redis:5.0.3
     container_name: auth1-redis
     restart: unless-stopped
     networks:
-    - p1devnet
+      - subnet
     volumes:
-    - auth1-redis:/data/redis
-    ports:
-    - "6379:6379"
+      - auth1-redis:/data/redis
 
   auth1:
     build: .
     container_name: auth1
     restart: unless-stopped
     depends_on:
-    - auth1-mongo
-    - auth1-redis
+      - auth1-mongo
+      - auth1-redis
+      - hydra
     networks:
-    - p1devnet
+      - subnet
     environment:
-    - API_PORT=8080
-    - DATABASE_HOST=auth1-mongo
-    - DATABASE_DATABASE=auth-one
-    - DATABASE_USER=
-    - DATABASE_PASSWORD=
-    - REDIS_ADDR="auth1-redis:6379"
-    - REDIS_PASSWORD=""
-    - LOGGER_LEVEL="debug"  
-    ports:
-    - "8080:8080"
+      - API_PORT=8080
+      - DATABASE_HOST=auth1-mongo
+      - DATABASE_DATABASE=auth-one
+      - DATABASE_USER=
+      - DATABASE_PASSWORD=
+      - REDIS_ADDR="auth1-redis:6379"
+      - REDIS_PASSWORD=""
+      - LOGGER_LEVEL="debug"
+      - HYDRA_PUBLICURL=http://localhost:4444
+      - HYDRA_ADMINURL=http://localhost:4445
 
 volumes:
   auth1-mongo:
@@ -51,5 +81,5 @@ volumes:
     external: true
 
 networks:
-  p1devnet:
+  subnet:
     external: true

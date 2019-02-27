@@ -1,0 +1,22 @@
+server {
+    listen ${NGINX_PORT};
+    server_name ${NGINX_HOST};
+
+    location ^/oauth2/(auth|token|revoke)(.*)$ {
+        rewrite ^(.*)$ /oauth2/$1$2 break;
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /.well-known/jwks.json {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth/userinfo {
+        rewrite ^/userinfo break;
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /* {
+        proxy_pass ${AUTHONE_SERVER};
+    }
+}
