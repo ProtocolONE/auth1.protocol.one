@@ -3,7 +3,6 @@ package manager
 import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
-	"fmt"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
@@ -63,7 +62,7 @@ func (m *OauthManager) CleanCsrfSession(ctx echo.Context) error {
 	return nil
 }
 
-func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm) (url string, err error) {
+func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (url string, err error) {
 	csrf := m.session.Values["csrf"]
 	if form.Csrf != "" && csrf != form.Csrf {
 		return "", errors.New("Invalid request")
@@ -73,17 +72,17 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get client from login request",
-			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
-	fmt.Print(req.Client.ClientId)
+
 	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
 		m.logger.Error(
 			"Unable to get application",
-			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -93,7 +92,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get user identity",
-			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
@@ -107,7 +106,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 	if err != nil {
 		m.logger.Error(
 			"Unable to load password settings for application",
-			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -119,7 +118,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 		m.logger.Error(
 			"Unable to crypt password for application",
 			zap.String("Password", form.Password),
-			zap.Object("OauthLoginSubmitForm", form),
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
@@ -137,13 +136,13 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.OauthLoginSubmitForm)
 	return r.RedirectTo, nil
 }
 
-func (m *OauthManager) Consent(ctx echo.Context, form *models.OauthConsentForm) (scopes []string, err error) {
+func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (scopes []string, err error) {
 	scopes, err = m.GetScopes()
 
 	return scopes, nil
 }
 
-func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.OauthConsentSubmitForm) (url string, err error) {
+func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2ConsentSubmitForm) (url string, err error) {
 	_, err = m.GetScopes()
 	if err != nil {
 		return "", err
@@ -155,6 +154,39 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.OauthConsent
 	}
 
 	return req.RedirectTo, nil
+}
+
+func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, error) {
+	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	if err != nil {
+		m.logger.Error(
+			"Unable to get application",
+			zap.Object("Oauth2IntrospectForm", form),
+			zap.Error(err),
+		)
+		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+	}
+
+	if app.AuthSecret != form.Secret {
+		m.logger.Error(
+			"Invalid secret key",
+			zap.Object("Oauth2IntrospectForm", form),
+			zap.Error(err),
+		)
+		return nil, &models.CommonError{Code: `secret`, Message: models.ErrorUnknownError}
+	}
+
+	client, _, err := m.hydra.AdminApi.IntrospectOAuth2Token(form.Token, "")
+	if err != nil {
+		m.logger.Error(
+			"Unable to introspect token",
+			zap.Object("Oauth2IntrospectForm", form),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return &models.Oauth2TokenIntrospection{client}, nil
 }
 
 func (m *OauthManager) GetScopes() (scopes []string, err error) {

@@ -8,29 +8,30 @@ import (
 	"net/http"
 )
 
-type Oauth struct {
+type Oauth2 struct {
 	Manager *manager.OauthManager
 	Http    *echo.Echo
 	logger  *zap.Logger
 }
 
-func InitOauth(cfg Config) error {
-	route := &Oauth{
+func InitOauth2(cfg Config) error {
+	route := &Oauth2{
 		Manager: manager.NewOauthManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Hydra, cfg.Session),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}
 
-	cfg.Echo.GET("/oauth/login", route.oauthLogin)
-	cfg.Echo.POST("/oauth/login", route.oauthLoginSubmit)
-	cfg.Echo.GET("/oauth/consent", route.oauthConsent)
-	cfg.Echo.POST("/oauth/consent", route.oauthConsentSubmit)
+	cfg.Echo.GET("/oauth2/login", route.oauthLogin)
+	cfg.Echo.POST("/oauth2/login", route.oauthLoginSubmit)
+	cfg.Echo.GET("/oauth2/consent", route.oauthConsent)
+	cfg.Echo.POST("/oauth2/consent", route.oauthConsentSubmit)
+	cfg.Echo.POST("/oauth2/introspect", route.oauthIntrospect)
 
 	return nil
 }
 
-func (l *Oauth) oauthLogin(ctx echo.Context) error {
-	form := new(models.OauthLoginForm)
+func (l *Oauth2) oauthLogin(ctx echo.Context) error {
+	form := new(models.Oauth2LoginForm)
 	if err := ctx.Bind(form); err != nil {
 		l.logger.Error("Login page bind form failed", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
@@ -48,8 +49,8 @@ func (l *Oauth) oauthLogin(ctx echo.Context) error {
 	})
 }
 
-func (l *Oauth) oauthLoginSubmit(ctx echo.Context) error {
-	form := new(models.OauthLoginSubmitForm)
+func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
+	form := new(models.Oauth2LoginSubmitForm)
 	if err := ctx.Bind(form); err != nil {
 		l.logger.Error("Login page bind form failed", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
@@ -73,8 +74,8 @@ func (l *Oauth) oauthLoginSubmit(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusPermanentRedirect, url)
 }
 
-func (l *Oauth) oauthConsent(ctx echo.Context) error {
-	form := new(models.OauthConsentForm)
+func (l *Oauth2) oauthConsent(ctx echo.Context) error {
+	form := new(models.Oauth2ConsentForm)
 	if err := ctx.Bind(form); err != nil {
 		l.logger.Error("Consent page bind form failed", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
@@ -99,8 +100,8 @@ func (l *Oauth) oauthConsent(ctx echo.Context) error {
 	})
 }
 
-func (l *Oauth) oauthConsentSubmit(ctx echo.Context) error {
-	form := new(models.OauthConsentSubmitForm)
+func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
+	form := new(models.Oauth2ConsentSubmitForm)
 	if err := ctx.Bind(form); err != nil {
 		l.logger.Error("Consent page bind form failed", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
@@ -123,4 +124,19 @@ func (l *Oauth) oauthConsentSubmit(ctx echo.Context) error {
 	}
 
 	return ctx.Redirect(http.StatusPermanentRedirect, url)
+}
+
+func (l *Oauth2) oauthIntrospect(ctx echo.Context) error {
+	form := new(models.Oauth2IntrospectForm)
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Introspect page bind form failed", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	token, err := l.Manager.Introspect(ctx, form)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	return ctx.JSON(http.StatusOK, token)
 }

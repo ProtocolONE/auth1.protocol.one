@@ -179,7 +179,7 @@ func (s *Server) setupRoutes() error {
 	if err := route.InitManage(routeConfig); err != nil {
 		return err
 	}
-	if err := route.InitOauth(routeConfig); err != nil {
+	if err := route.InitOauth2(routeConfig); err != nil {
 		return err
 	}
 
