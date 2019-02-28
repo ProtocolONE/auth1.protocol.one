@@ -3,6 +3,7 @@
 
 enableRedis: true
 enableMongo: true
+enableHydra: true
 enableCertIssuer: true
 
 ingress:
@@ -23,7 +24,22 @@ backend:
     type: ClusterIP
     port: 8080
     protocol: TCP
-  
+
+hydra:
+  env:
+  - SYSTEM_SECRET
+  - DATABASE_URL
+  - HTTPS_ALLOW_TERMINATION_FROM
+  - LOG_LEVEL
+  - ACCESS_TOKEN_LIFESPAN
+  - ID_TOKEN_LIFESPAN
+  - AUTHORIZE_CODE_LIFESPAN
+  - OAUTH2_CONSENT_URL
+  - OAUTH2_LOGIN_URL
+  - OAUTH2_ISSUER_URL
+  - OIDC_SUBJECT_TYPE_PAIRWISE_SALT
+
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little

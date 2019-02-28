@@ -1,0 +1,84 @@
+{{- if .Values.enableHydra }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: hydra
+  labels:
+    app: hydra
+spec:
+  type: ClusterIP
+  selector:
+    app: hydra
+  ports:
+    - name: publicsvc
+      port: 4444
+      targetPort: 4444
+      protocol: TCP
+    - name: internalsvc
+      port: 4445
+      targetPort: 4445
+      protocol: TCP
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hydra
+  labels:
+    app: hydra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hydra
+  template:
+    metadata:
+      name: hydra
+      labels:
+        app: hydra
+    spec:
+      #volumes:
+        #- name: hydra-data
+        #  persistentVolumeClaim:
+        #    claimName: hardy-clownfish-hydra
+        #- name: hydra-secret
+        #  secret:
+        #    secretName: hydra-secret
+      initContainers:
+      - name: hydra-migrate
+        #image: oryd/hydra:v0.11.14-alpine
+        image: oryd/hydra:unstable
+        command: ["hydra", "migrate", "sql", "-e"]
+        env:
+        - name: DATABASE_URL
+          value: postgres://postgres:studio103@hydrapgsql-postgresql:5432/hydra?sslmode=disable
+        - name: LOG_LEVEL
+          value: debug
+      containers:
+        - name: hydra
+          #image: oryd/hydra:v0.11.14-alpine
+          image: oryd/hydra:unstable
+          imagePullPolicy: Always
+          command: ["hydra", "serve","all", "--dangerous-force-http"]
+          #volumeMounts:
+          #  - name: hydra-data
+          #    mountPath: /root
+          ports:
+            - name: publicsvc
+              containerPort: 4444
+            - name: internalsvc
+              containerPort: 4445
+          env:
+          {{- range .Values.hydra.env }}
+          - name: {{ . }}
+            valueFrom:
+              secretKeyRef:
+                name: p1auth1hydra-env
+                key: {{ . }}
+          {{- end }}
+
+#          resources:
+#            requests:
+#              cpu: 100m
+#              memory: 128Mi
+{{- end }}
