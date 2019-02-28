@@ -3,7 +3,7 @@
 <head><title></title></head>
 <body>
 <h1>Please log in</h1>
-<form action="/oauth/login" method="POST">
+<form method="POST">
     <input type="hidden" name="challenge" value="{{index . "Challenge"}}">
     <input type="hidden" name="_csrf" value="{{index . "Csrf"}}">
     <table style="">
