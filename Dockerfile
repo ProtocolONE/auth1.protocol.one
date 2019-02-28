@@ -11,7 +11,11 @@ RUN go mod download
 
 # Copy all files in currend directiry into home directory
 COPY . ./
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o ./bin/auth1_auth .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o $GOPATH/bin/auth1_auth .
+FROM alpine:3.9
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+WORKDIR /application
+COPY --from=builder /application /application
 
-ENTRYPOINT $GOPATH/bin/auth1_auth server -c etc/config.yaml
+ENTRYPOINT /application/bin/auth1_auth server -c etc/config.yaml
