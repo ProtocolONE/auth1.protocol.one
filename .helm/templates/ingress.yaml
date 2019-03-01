@@ -22,7 +22,7 @@ spec:
         - {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.hostname }}
       secretName: {{ .Release.Name}}-ssl-secret
   rules:
-    - host: {{ .Values.ingress.hostname }}
+    - host: {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.hostname }}
       http:
         paths:
           - path: {{ .Values.ingress.path }}
