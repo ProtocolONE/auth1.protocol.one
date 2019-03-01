@@ -1,28 +1,27 @@
 <!DOCTYPE html>
-<html>
-<head><title></title></head>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ProtocolONE Auth</title>
+</head>
 <body>
-<h1>Please log in</h1>
-<form method="POST">
-    <input type="hidden" name="challenge" value="{{index . "Challenge"}}">
-    <input type="hidden" name="_csrf" value="{{index . "Csrf"}}">
-    <table style="">
-        <tr>
-            <td><input type="email" name="email" placeholder="email@foobar.com"></td>
-            <td>(it's "foo@bar.com")</td>
-        </tr>
-        <tr>
-            <td><input type="password" name="password"></td>
-            <td>(it's "foobar")</td>
-        </tr>
-    </table>
-    <input type="checkbox" id="remember" name="remember" value="1">
-    <label for="remember">Remember me</label><br>
-    <input type="submit" value="Log in">
-    {{if .Error}}
-        <p>{{index . "Error"}}</p>
-    {{end}}
-</form>
+<noscript>
+    <strong>We're sorry but the page doesn't work properly without JavaScript enabled.
+        Please enable it to continue.</strong>
+</noscript>
+
+<div id="auth-form"></div>
+<script>
+    window.AUTH_API_URL = "{{index . "AuthDomain"}}";
+    window.AUTH_FORM_DATA = {
+        challenge: {{index . "Challenge"}},
+        csrf: {{index . "Csrf"}}
+    };
+</script>
+<script src="https://localhost:4040/auth-web-form.js"></script>
+{{/*<script src="https://static.protocol.one/auth/form/dev/auth-web-form.js"></script>*/}}
 </body>
 </html>
 

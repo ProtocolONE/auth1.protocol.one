@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -62,10 +61,14 @@ func (m *OauthManager) CleanCsrfSession(ctx echo.Context) error {
 	return nil
 }
 
-func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (url string, err error) {
+func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
 	csrf := m.session.Values["csrf"]
 	if form.Csrf != "" && csrf != form.Csrf {
-		return "", errors.New("Invalid request")
+		m.logger.Error(
+			"Unable to get application",
+			zap.Object("LoginForm", form),
+		)
+		return "", &models.CommonError{Code: `csrf`, Message: models.ErrorCsrfSignature}
 	}
 
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
@@ -75,7 +78,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
 
 	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
@@ -124,16 +127,27 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	r, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.UserID.Hex()})
+	// TODO: Add MFA cases
+
+	_, _, err = m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.UserID.Hex()})
 	if err != nil {
-		return "", err
+		m.logger.Error(
+			"Unable to accept login challenge",
+			zap.Object("Oauth2LoginSubmitForm", form),
+			zap.Error(err),
+		)
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	if _, err := m.CreateCsrfSession(ctx); err != nil {
-		return "", err
+	// TODO: What scope should be requested to send a person to accept them?
+	// TODO: For now, we automatically agree with those that the user came with.
+
+	reqACR, _, err := m.hydra.AcceptConsentRequest(form.Challenge, swagger.AcceptConsentRequest{GrantScope: req.RequestedScope})
+	if err != nil {
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	return r.RedirectTo, nil
+	return reqACR.RedirectTo, nil
 }
 
 func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (scopes []string, err error) {

@@ -1,8 +1,10 @@
 package route
 
 import (
+	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
+	"fmt"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 	"net/http"
@@ -44,34 +46,67 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
-		"Challenge": form.Challenge,
-		"Csrf":      csrf,
+		"AuthDomain": ctx.Scheme() + "://" + ctx.Request().Host,
+		"Challenge":  form.Challenge,
+		"Csrf":       csrf,
 	})
 }
 
 func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2LoginSubmitForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Login page bind form failed", zap.Error(err))
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		l.logger.Error("Login bind form failed", zap.Error(err))
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			BadRequiredCodeCommon,
+			models.ErrorInvalidRequestParameters,
+		)
+	}
+	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"Login validate form failed",
+			zap.Object("LoginForm", form),
+			zap.Error(err),
+		)
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			models.ErrorRequiredField,
+		)
 	}
 
 	url, err := l.Manager.Auth(ctx, form)
 	if err != nil {
-		csrf, e := l.Manager.CreateCsrfSession(ctx)
-		if e != nil {
-			l.logger.Error("Error saving session", zap.Error(e))
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
+		httpCode := http.StatusBadRequest
+		code := BadRequiredCodeCommon
+		message := fmt.Sprint(err)
+
+		switch err.(type) {
+		case *models.CaptchaRequiredError:
+			httpCode = http.StatusPreconditionRequired
+			code = CaptchaRequiredCode
+		case *models.MFARequiredError:
+			httpCode = http.StatusForbidden
+			code = MFARequiredCode
+		case *models.TemporaryLockedError:
+			httpCode = http.StatusLocked
+			code = TemporaryLockedCode
+		case *models.CommonError:
+			code = err.GetCode()
+			message = err.GetMessage()
+		default:
+			code = UnknownErrorCode
+			message = models.ErrorUnknownError
 		}
 
-		return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
-			"Challenge": form.Challenge,
-			"Csrf":      csrf,
-			"Error":     err.Error(),
-		})
+		return helper.NewErrorResponse(ctx, httpCode, code, message)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, url)
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
 func (l *Oauth2) oauthConsent(ctx echo.Context) error {

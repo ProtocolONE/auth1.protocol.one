@@ -4,6 +4,7 @@ type (
 	ErrorInterface interface {
 		GetCode() string
 		GetMessage() string
+		Error() string
 	}
 
 	CommonError struct {
@@ -41,6 +42,8 @@ var (
 	ErrorMfaRequired              = "MFA required"
 	ErrorMfaClientAdd             = "Unable to add MFA"
 	ErrorMfaCodeInvalid           = "Invalid MFA code"
+	ErrorCsrfSignature            = "Invalid csrf signature"
+	ErrorLoginChallenge           = "Invalid login challenge"
 )
 
 func (m *CommonError) Error() string {
