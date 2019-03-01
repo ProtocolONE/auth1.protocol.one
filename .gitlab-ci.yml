@@ -91,7 +91,7 @@ deploy_devel:
       kubectl config set-context ci --cluster=k8s --user=ci &&
       kubectl config use-context ci &&
       helm init --client-only &&
-      helm upgrade --install $P1_PROJECT .helm
+      helm upgrade --install $P1_PROJECT-dev .helm
         --namespace=dev
         --set ingress.hostnamePrefix="dev-"
         --set enableHydra=true
