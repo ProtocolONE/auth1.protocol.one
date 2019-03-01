@@ -16,7 +16,7 @@ spec:
     - ReadWriteOnce
   nfs:
     server: nfs-share
-    path: "/home/nfsroot/k8sdata/p1auth1-redis"
+    path: "/home/nfsroot/k8sdata/{{ .Release.Name }}-redis"
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
