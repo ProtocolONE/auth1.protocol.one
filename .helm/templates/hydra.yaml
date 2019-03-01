@@ -51,7 +51,10 @@ spec:
         command: ["hydra", "migrate", "sql", "-e"]
         env:
         - name: DATABASE_URL
-          value: postgres://postgres:studio103@hydrapgsql-postgresql:5432/hydra?sslmode=disable
+          valueFrom:
+            secretKeyRef:
+              name: p1auth1hydra-env
+              key: DATABASE_URL
         - name: LOG_LEVEL
           value: debug
       containers:
