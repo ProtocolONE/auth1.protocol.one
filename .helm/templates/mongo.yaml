@@ -16,7 +16,7 @@ spec:
     - ReadWriteOnce
   nfs:
     server: nfs-share
-    path: "/home/nfsroot/k8sdata/p1auth1-mongo"
+    path: "/home/nfsroot/k8sdata/{{ .Release.Name }}-mongo"
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
