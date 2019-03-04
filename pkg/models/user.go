@@ -143,6 +143,10 @@ func (m CaptchaRequiredError) Error() string {
 	return m.Message
 }
 
+func (m *CaptchaRequiredError) GetHttpCode() int {
+	return m.HttpCode
+}
+
 func (m *CaptchaRequiredError) GetCode() string {
 	return m.Code
 }

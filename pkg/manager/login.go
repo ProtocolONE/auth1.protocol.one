@@ -524,7 +524,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 			}
 
-			return nil, &models.MFARequiredError{Message: ott.Token}
+			return nil, &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
 		}
 
 		user, err = m.userService.Get(userIdentity.UserID)
@@ -618,13 +618,13 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token interface{}, error models.ErrorInterface) {
 	if form.Email == `captcha@required.com` {
-		return nil, &models.CaptchaRequiredError{Message: models.ErrorCaptchaRequired}
+		return nil, &models.CaptchaRequiredError{HttpCode: http.StatusPreconditionRequired, Message: models.ErrorCaptchaRequired}
 	}
 	if form.Captcha == `incorrect` {
 		return nil, &models.CommonError{Code: `captcha`, Message: models.ErrorCaptchaIncorrect}
 	}
 	if form.Email == `temporary@locked.com` {
-		return nil, &models.TemporaryLockedError{Message: models.ErrorAuthTemporaryLocked}
+		return nil, &models.TemporaryLockedError{HttpCode: http.StatusLocked, Message: models.ErrorAuthTemporaryLocked}
 	}
 
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
@@ -717,7 +717,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
 
-		return nil, &models.MFARequiredError{Message: ott.Token}
+		return nil, &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
 	}
 
 	t, err := helper.CreateAuthToken(ctx, m.appService, user)

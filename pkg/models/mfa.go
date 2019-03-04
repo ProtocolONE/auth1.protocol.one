@@ -131,6 +131,10 @@ func (m MFARequiredError) Error() string {
 	return m.Message
 }
 
+func (m *MFARequiredError) GetHttpCode() int {
+	return m.HttpCode
+}
+
 func (m *MFARequiredError) GetCode() string {
 	return m.Code
 }

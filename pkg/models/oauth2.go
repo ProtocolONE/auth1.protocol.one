@@ -59,3 +59,19 @@ func (a *Oauth2IntrospectForm) MarshalLogObject(enc zapcore.ObjectEncoder) error
 type Oauth2TokenIntrospection struct {
 	*swagger.OAuth2TokenIntrospection
 }
+
+type Oauth2SignUpForm struct {
+	Csrf      string `query:"_csrf" form:"_csrf" validate:"required"`
+	Challenge string `query:"challenge" form:"challenge" validate:"required"`
+	Email     string `query:"email" form:"email" validate:"required"`
+	Password  string `query:"password" form:"password" validate:"required"`
+}
+
+func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("Email", a.Email)
+	enc.AddString("Password", "[HIDDEN]")
+	enc.AddString("Csrf", a.Csrf)
+
+	return nil
+}

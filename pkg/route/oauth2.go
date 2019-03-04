@@ -27,6 +27,7 @@ func InitOauth2(cfg Config) error {
 	cfg.Echo.POST("/oauth2/login", route.oauthLoginSubmit)
 	cfg.Echo.GET("/oauth2/consent", route.oauthConsent)
 	cfg.Echo.POST("/oauth2/consent", route.oauthConsentSubmit)
+	cfg.Echo.POST("/oauth2/signup", route.oauthSignUp)
 	cfg.Echo.POST("/oauth2/introspect", route.oauthIntrospect)
 
 	return nil
@@ -85,24 +86,15 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 		code := BadRequiredCodeCommon
 		message := fmt.Sprint(err)
 
-		switch err.(type) {
-		case *models.CaptchaRequiredError:
-			httpCode = http.StatusPreconditionRequired
-			code = CaptchaRequiredCode
-		case *models.MFARequiredError:
-			httpCode = http.StatusForbidden
-			code = MFARequiredCode
-		case *models.TemporaryLockedError:
-			httpCode = http.StatusLocked
-			code = TemporaryLockedCode
-		case *models.CommonError:
-			code = err.GetCode()
-			message = err.GetMessage()
-		default:
-			code = UnknownErrorCode
-			message = models.ErrorUnknownError
+		if err.GetHttpCode() != 0 {
+			httpCode = err.GetHttpCode()
 		}
-
+		if err.GetCode() != "" {
+			code = err.GetCode()
+		}
+		if err.GetMessage() != "" {
+			message = err.GetMessage()
+		}
 		return helper.NewErrorResponse(ctx, httpCode, code, message)
 	}
 
@@ -116,23 +108,13 @@ func (l *Oauth2) oauthConsent(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	csrf, err := l.Manager.CreateCsrfSession(ctx)
-	if err != nil {
-		l.logger.Error("Error saving session", zap.Error(err))
-		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-	}
-
-	scopes, err := l.Manager.Consent(ctx, form)
+	url, err := l.Manager.Consent(ctx, form)
 	if err != nil {
 		l.logger.Error("Unable to load scopes", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 
-	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
-		"Challenge": form.Challenge,
-		"Csrf":      csrf,
-		"Scopes":    scopes,
-	})
+	return ctx.Redirect(http.StatusPermanentRedirect, url)
 }
 
 func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
@@ -174,4 +156,32 @@ func (l *Oauth2) oauthIntrospect(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, token)
+}
+
+func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
+	form := new(models.Oauth2SignUpForm)
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("SigUp bind form failed", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	url, err := l.Manager.SignUp(ctx, form)
+	if err != nil {
+		httpCode := http.StatusBadRequest
+		code := BadRequiredCodeCommon
+		message := fmt.Sprint(err)
+
+		if err.GetHttpCode() != 0 {
+			httpCode = err.GetHttpCode()
+		}
+		if err.GetCode() != "" {
+			code = err.GetCode()
+		}
+		if err.GetMessage() != "" {
+			message = err.GetMessage()
+		}
+		return helper.NewErrorResponse(ctx, httpCode, code, message)
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }

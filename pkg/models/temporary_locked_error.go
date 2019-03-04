@@ -6,6 +6,10 @@ func (m TemporaryLockedError) Error() string {
 	return m.Message
 }
 
+func (m *TemporaryLockedError) GetHttpCode() int {
+	return m.HttpCode
+}
+
 func (m *TemporaryLockedError) GetCode() string {
 	return m.Code
 }
