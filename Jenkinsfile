@@ -36,14 +36,13 @@ pipeline {
             }
         }
 */
-/*        stage('Staging Deployment') {
+        stage('Staging Deployment') {
             steps {
                 script {
-                    deploy()
+                    p1deploy()
                 }
             }
         }
-*/
     }
     post {
         success {
