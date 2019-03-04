@@ -30,6 +30,7 @@ pipeline {
                 GO111MODULE = "on"
             }
             steps {
+                sh "apk update && apk add git"
                 sh "go test ./... -coverprofile=coverage.out -covermode=atomic -p=1"
             }
         }
