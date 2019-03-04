@@ -25,6 +25,10 @@ pipeline {
             agent {
                 docker { image 'golang:1.11-alpine' }
             }
+            environment {
+                XDG_CACHE_HOME = "/tmp/.cache"
+                GO111MODULE = "on"
+            }
             steps {
                 sh "go test ./... -coverprofile=coverage.out -covermode=atomic -p=1"
             }
