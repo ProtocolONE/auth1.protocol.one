@@ -1,6 +1,4 @@
-#!groovy
-library 'p1build'
-library 'p1deploy'
+@Library('p1pipeline')_
   
 pipeline {
     options {
