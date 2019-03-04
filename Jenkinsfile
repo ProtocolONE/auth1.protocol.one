@@ -20,7 +20,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Tests') {
             agent {
                 docker { image 'golang:1.11-alpine' }
@@ -34,7 +34,7 @@ pipeline {
                 sh "go test ./... -coverprofile=coverage.out -covermode=atomic -p=1"
             }
         }
-
+*/
         stage('Staging Deployment') {
             steps {
                 script {
