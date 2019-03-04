@@ -16,7 +16,7 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    build()
+                    p1build()
                 }
             }
         }
