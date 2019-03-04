@@ -35,10 +35,6 @@ spec:
         heritage: {{ .Release.Service }}
         role: {{ $deployment.role }}
     spec:
-      volumes:
-      - name: p1auth1-config
-        secret:
-          secretName: p1auth1-config
       serviceAccountName: {{ .Release.Name }}
       containers:
       - name: {{ $deployment.name }}
@@ -52,16 +48,13 @@ spec:
           value: "{{ $deployment.port }}"
         - name: MICRO_SELECTOR
           value: "static"
-        - name: HYDRA_PUBLICURL
+        {{- range .Values.backend.env}}
+        - name: {{.}}
           valueFrom:
             secretKeyRef:
-              name: {{ .Chart.Name }}-env
-              key: HYDRA_PUBLICURL
-        - name: HYDRA_ADMINURL
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Chart.Name }}-env
-              key: HYDRA_ADMINURL
+              name: {{ $deploymentName }}-env
+              key: {{.}}
+        {{- end}}
         ports:
         - containerPort: {{$deployment.port}}
 #        livenessProbe:
@@ -72,7 +65,3 @@ spec:
 #          timeoutSeconds: 1
 #          failureThreshold: 3
 #          periodSeconds: 5
-        volumeMounts:
-        - name: p1auth1-config
-          mountPath: /application/etc
-          readOnly: true
