@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        CI_REGISTRY_IMAGE = "p1hub/${registry}"
-        P1_PROJECT = "${project}"
+        CI_REGISTRY_IMAGE = "p1hub/auth1"
+        P1_PROJECT = "p1auth1"
     }
 
     agent any
