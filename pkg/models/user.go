@@ -82,6 +82,8 @@ type LoginForm struct {
 type LoginPageForm struct {
 	ClientID    string `form:"client_id" query:"client_id"`
 	RedirectUri string `form:"redirect_uri" query:"redirect_uri"`
+	State       string `form:"state" query:"state"`
+	Scopes      string `form:"scopes" query:"scopes"`
 }
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {

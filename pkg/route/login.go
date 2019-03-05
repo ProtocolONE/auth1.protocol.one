@@ -5,9 +5,11 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
+	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 )
 
 type (
@@ -219,10 +221,21 @@ func (l *Login) LoginPage(ctx echo.Context) (err error) {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	return ctx.Render(http.StatusOK, "login_form.html", map[string]interface{}{
-		"ClientID":    form.ClientID,
-		"RedirectUri": form.RedirectUri,
-	})
+	scopes := []string{"openid", "offline"}
+	if form.Scopes != "" {
+		scopes = strings.Split(form.Scopes, " ")
+	}
+
+	settings := jwtverifier.Config{
+		ClientID:     form.ClientID,
+		ClientSecret: "",
+		Scopes:       scopes,
+		RedirectURL:  form.RedirectUri,
+		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
+	}
+	jwtv := jwtverifier.NewJwtVerifier(settings)
+
+	return ctx.Redirect(http.StatusPermanentRedirect, jwtv.CreateAuthUrl(form.State))
 }
 
 func (l *Login) LoginByOTT(ctx echo.Context) error {
