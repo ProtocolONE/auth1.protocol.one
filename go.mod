@@ -2,6 +2,7 @@ module auth-one-api
 
 require (
 	cloud.google.com/go v0.34.0 // indirect
+	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190304132955-c9a221d256ec
 	github.com/ProtocolONE/mfa-service v0.1.0
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -44,13 +45,10 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
-	github.com/stretchr/testify v1.3.0 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4 // indirect
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
+	golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/tools v0.0.0-20181211221832-59cd96f77e7e // indirect
 	google.golang.org/appengine v1.3.0 // indirect
