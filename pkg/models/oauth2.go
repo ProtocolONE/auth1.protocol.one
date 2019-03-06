@@ -9,6 +9,12 @@ type Oauth2LoginForm struct {
 	Challenge string `query:"login_challenge" form:"login_challenge" validate:"required"`
 }
 
+func (a *Oauth2LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Challenge", a.Challenge)
+
+	return nil
+}
+
 type Oauth2LoginSubmitForm struct {
 	Csrf      string `query:"_csrf" form:"_csrf" validate:"required"`
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
@@ -19,6 +25,12 @@ type Oauth2LoginSubmitForm struct {
 
 type Oauth2ConsentForm struct {
 	Challenge string `query:"consent_challenge" form:"consent_challenge" validate:"required"`
+}
+
+func (a *Oauth2ConsentForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Challenge", a.Challenge)
+
+	return nil
 }
 
 type Oauth2ConsentSubmitForm struct {

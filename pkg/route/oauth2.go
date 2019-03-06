@@ -40,6 +40,10 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
+	if url, _ := l.Manager.CheckAuth(ctx, form); url != "" {
+		return ctx.Redirect(http.StatusPermanentRedirect, url)
+	}
+
 	csrf, err := l.Manager.CreateCsrfSession(ctx)
 	if err != nil {
 		l.logger.Error("Error saving session", zap.Error(err))

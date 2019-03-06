@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var loginRememberKey = "login_remember"
+
 type OauthManager struct {
 	logger              *zap.Logger
 	redis               *redis.Client
@@ -61,6 +63,34 @@ func (m *OauthManager) CleanCsrfSession(ctx echo.Context) error {
 	}
 
 	return nil
+}
+
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, models.ErrorInterface) {
+	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
+	if err != nil {
+		m.logger.Error(
+			"Unable to get client from login request",
+			zap.Object("Oauth2LoginForm", form),
+			zap.Error(err),
+		)
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+	}
+
+	if req.Skip == false {
+		return "", nil
+	}
+
+	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
+	if err != nil {
+		m.logger.Error(
+			"Unable to accept login challenge",
+			zap.Object("Oauth2LoginSubmitForm", form),
+			zap.Error(err),
+		)
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+	}
+
+	return reqACL.RedirectTo, nil
 }
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
@@ -174,9 +204,14 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	}
 	http.SetCookie(ctx.Response(), cookie)
 
+	m.session.Values[loginRememberKey] = form.Remember
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving session", zap.Error(err))
+	}
+
 	// TODO: Add MFA cases
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.UserID.Hex()})
+	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.UserID.Hex(), Remember: form.Remember, RememberFor: 0})
 	if err != nil {
 		m.logger.Error(
 			"Unable to accept login challenge",
@@ -191,11 +226,44 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (string, error) {
 	scopes, err := m.GetScopes()
-
 	// TODO: What scope should be requested to send a person to accept them?
 	// TODO: For now, we automatically agree with those that the user came with.
-	reqACR, _, err := m.hydra.AcceptConsentRequest(form.Challenge, swagger.AcceptConsentRequest{GrantScope: scopes})
+
+	reqGCR, _, err := m.hydra.GetConsentRequest(form.Challenge)
 	if err != nil {
+		m.logger.Error(
+			"Unable to get consent challenge",
+			zap.Object("Oauth2ConsentForm", form),
+			zap.Error(err),
+		)
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+	}
+
+	req := swagger.AcceptConsentRequest{}
+	if reqGCR.Skip == true {
+		req = swagger.AcceptConsentRequest{
+			GrantScope: scopes,
+			Session: swagger.ConsentRequestSession{
+				AccessToken: map[string]interface{}{"remember": true},
+			},
+		}
+	} else {
+		req = swagger.AcceptConsentRequest{
+			GrantScope: scopes,
+			Remember:   m.session.Values[loginRememberKey].(bool),
+			Session: swagger.ConsentRequestSession{
+				AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey]},
+			},
+		}
+	}
+
+	reqACR, _, err := m.hydra.AcceptConsentRequest(form.Challenge, req)
+	if err != nil {
+		m.logger.Error(
+			"Unable to accept consent challenge",
+			zap.Object("Oauth2ConsentForm", form),
+			zap.Error(err),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
