@@ -252,7 +252,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 			GrantScope: scopes,
 			Remember:   m.session.Values[loginRememberKey].(bool),
 			Session: swagger.ConsentRequestSession{
-				AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey]},
+				AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey].(bool)},
 			},
 		}
 	}
