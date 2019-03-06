@@ -34,7 +34,7 @@ pipeline {
                 sh "go test ./... -coverprofile=coverage.out -covermode=atomic -p=1"
             }
         }
-*/
+
         stage('Staging Deployment') {
             steps {
                 script {
@@ -42,6 +42,7 @@ pipeline {
                 }
             }
         }
+        */
     }
     post {
         success {
