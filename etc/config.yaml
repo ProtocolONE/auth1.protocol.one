@@ -3,7 +3,7 @@ Api:
   Debug: true
   TimeoutRead: 15
   TimeoutWrite: 5
-  AllowOrigins: *
+  AllowOrigins: "*"
   AllowCredentials: false
 Logger:
   Level: "debug"
