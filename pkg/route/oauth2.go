@@ -29,6 +29,7 @@ func InitOauth2(cfg Config) error {
 	cfg.Echo.POST("/oauth2/consent", route.oauthConsentSubmit)
 	cfg.Echo.POST("/oauth2/signup", route.oauthSignUp)
 	cfg.Echo.POST("/oauth2/introspect", route.oauthIntrospect)
+	cfg.Echo.GET("/oauth2/callback", route.oauthCallback)
 
 	return nil
 }
@@ -188,4 +189,21 @@ func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+}
+
+func (l *Oauth2) oauthCallback(ctx echo.Context) error {
+	form := new(models.Oauth2CallBackForm)
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Callback page bind form failed", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	response := l.Manager.CallBack(ctx, form)
+	return ctx.Render(http.StatusOK, "oauth_callback.html", map[string]interface{}{
+		"Success":      response.Success,
+		"ErrorMessage": response.ErrorMessage,
+		"AccessToken":  response.AccessToken,
+		"ExpiresIn":    response.ExpiresIn,
+		"IdToken":      response.IdToken,
+	})
 }

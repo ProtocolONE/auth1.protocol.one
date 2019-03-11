@@ -3,6 +3,8 @@ package manager
 import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
+	"fmt"
+	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
@@ -14,7 +16,10 @@ import (
 	"time"
 )
 
-var loginRememberKey = "login_remember"
+var (
+	loginRememberKey   = "login_remember"
+	clientIdSessionKey = "oauth_client_id"
+)
 
 type OauthManager struct {
 	logger              *zap.Logger
@@ -487,6 +492,60 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	return reqACL.RedirectTo, nil
+}
+
+func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackForm) *models.Oauth2CallBackResponse {
+	clientId := m.session.Values[clientIdSessionKey].(string)
+	if clientId == "" {
+		m.logger.Error(
+			"Unable to get client id from session",
+			zap.Object("Oauth2CallBackForm", form),
+		)
+		return &models.Oauth2CallBackResponse{
+			Success:      false,
+			ErrorMessage: `unknown_client_id`,
+		}
+	}
+
+	app, err := m.appService.Get(bson.ObjectIdHex(clientId))
+	if err != nil {
+		m.logger.Error(
+			"Unable to get application",
+			zap.Object("Oauth2CallBackForm", form),
+			zap.Error(err),
+		)
+		return &models.Oauth2CallBackResponse{
+			Success:      false,
+			ErrorMessage: `invalid_client_id`,
+		}
+	}
+
+	settings := jwtverifier.Config{
+		ClientID:     clientId,
+		ClientSecret: app.AuthSecret,
+		RedirectURL:  fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host),
+		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
+	}
+	jwtv := jwtverifier.NewJwtVerifier(settings)
+	tokens, err := jwtv.Exchange(ctx.Request().Context(), form.Code)
+	if err != nil {
+		return &models.Oauth2CallBackResponse{
+			Success:      false,
+			ErrorMessage: `unable_exchange_code`,
+		}
+	}
+
+	expIn := 0
+	if tokens.AccessToken != "" {
+		expIn = int(tokens.Expiry.Sub(time.Now()).Seconds())
+	}
+
+	return &models.Oauth2CallBackResponse{
+		Success:     true,
+		AccessToken: tokens.AccessToken,
+		IdToken:     tokens.Extra("id_token").(string),
+		ExpiresIn:   expIn,
+	}
 }
 
 func (m *OauthManager) loadRemoteScopes(scopes []string) error {

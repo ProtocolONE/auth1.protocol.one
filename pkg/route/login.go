@@ -5,11 +5,9 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 	"net/http"
-	"strings"
 )
 
 type (
@@ -22,7 +20,7 @@ type (
 
 func InitLogin(cfg Config) error {
 	route := &Login{
-		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
+		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}
@@ -221,21 +219,12 @@ func (l *Login) LoginPage(ctx echo.Context) (err error) {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	scopes := []string{"openid", "offline"}
-	if form.Scopes != "" {
-		scopes = strings.Split(form.Scopes, " ")
+	url, err := l.Manager.CreateAuthUrl(ctx, form)
+	if err != nil {
+		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
 	}
 
-	settings := jwtverifier.Config{
-		ClientID:     form.ClientID,
-		ClientSecret: "",
-		Scopes:       scopes,
-		RedirectURL:  form.RedirectUri,
-		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
-	}
-	jwtv := jwtverifier.NewJwtVerifier(settings)
-
-	return ctx.Redirect(http.StatusPermanentRedirect, jwtv.CreateAuthUrl(form.State))
+	return ctx.Redirect(http.StatusMovedPermanently, url)
 }
 
 func (l *Login) LoginByOTT(ctx echo.Context) error {

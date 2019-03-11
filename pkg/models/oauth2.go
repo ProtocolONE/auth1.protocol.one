@@ -39,12 +39,6 @@ type Oauth2ConsentSubmitForm struct {
 	Scope     []string `query:"scope" form:"scope" validate:"required"`
 }
 
-type Oauth2CallbackForm struct {
-	Code  string `query:"code" form:"code" validate:"required"`
-	State string `query:"state" form:"state" validate:"required"`
-	Scope string `query:"scope" form:"scope" validate:"false"`
-}
-
 func (a *Oauth2LoginSubmitForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Challenge", a.Challenge)
 	enc.AddString("Email", a.Email)
@@ -86,4 +80,26 @@ func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Csrf", a.Csrf)
 
 	return nil
+}
+
+type Oauth2CallBackForm struct {
+	Code  string `query:"code" form:"code" validate:"required"`
+	State string `query:"state" form:"state" validate:"required"`
+	Scope string `query:"scope" form:"scope" validate:"required"`
+}
+
+func (a *Oauth2CallBackForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Code", a.Code)
+	enc.AddString("State", a.State)
+	enc.AddString("Scope", a.Scope)
+
+	return nil
+}
+
+type Oauth2CallBackResponse struct {
+	Success      bool   `json:"success"`
+	ErrorMessage string `json:"error_message,omitempty"`
+	AccessToken  string `json:"access_token,omitempty"`
+	IdToken      string `json:"id_token,omitempty"`
+	ExpiresIn    int    `json:"expires_in,omitempty"`
 }
