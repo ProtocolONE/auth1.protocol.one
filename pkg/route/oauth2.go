@@ -30,6 +30,7 @@ func InitOauth2(cfg Config) error {
 	cfg.Echo.POST("/oauth2/signup", route.oauthSignUp)
 	cfg.Echo.POST("/oauth2/introspect", route.oauthIntrospect)
 	cfg.Echo.GET("/oauth2/callback", route.oauthCallback)
+	cfg.Echo.GET("/oauth2/logout", route.oauthLogout)
 
 	return nil
 }
@@ -206,4 +207,23 @@ func (l *Oauth2) oauthCallback(ctx echo.Context) error {
 		"ExpiresIn":    response.ExpiresIn,
 		"IdToken":      response.IdToken,
 	})
+}
+
+func (l *Oauth2) oauthLogout(ctx echo.Context) error {
+	form := new(models.Oauth2LogoutForm)
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("Callback page bind form failed", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	url, err := l.Manager.Logout(ctx, form)
+	if err != nil {
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	if url != "" {
+		return ctx.Redirect(http.StatusPermanentRedirect, url)
+	}
+
+	return ctx.Render(http.StatusOK, "oauth_logout.html", map[string]interface{}{})
 }

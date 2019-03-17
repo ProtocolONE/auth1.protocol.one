@@ -103,3 +103,7 @@ type Oauth2CallBackResponse struct {
 	IdToken      string `json:"id_token,omitempty"`
 	ExpiresIn    int    `json:"expires_in,omitempty"`
 }
+
+type Oauth2LogoutForm struct {
+	RedirectUri string `query:"redirect_uri"`
+}

@@ -19,6 +19,8 @@ import (
 var (
 	loginRememberKey   = "login_remember"
 	clientIdSessionKey = "oauth_client_id"
+	logoutSessionKey   = "oauth_logout_redirect_uri"
+	logoutHydraUrl     = "/oauth2/auth/sessions/login/revoke"
 )
 
 type OauthManager struct {
@@ -100,7 +102,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
 	csrf := m.session.Values["csrf"]
-	if form.Csrf != "" && csrf != form.Csrf {
+	if csrf == nil || form.Csrf == "" || csrf != form.Csrf {
 		m.logger.Error(
 			"Unable to get application",
 			zap.Object("Oauth2LoginSubmitForm", form),
@@ -333,7 +335,7 @@ func (m *OauthManager) GetScopes() (scopes []string, err error) {
 
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, models.ErrorInterface) {
 	csrf := m.session.Values["csrf"]
-	if form.Csrf != "" && csrf != form.Csrf {
+	if csrf == nil || form.Csrf == "" || csrf != form.Csrf {
 		m.logger.Error(
 			"Unable to get application",
 			zap.Object("Oauth2SignUpForm", form),
@@ -546,6 +548,30 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 		IdToken:     tokens.Extra("id_token").(string),
 		ExpiresIn:   expIn,
 	}
+}
+
+func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, error) {
+	logoutRedirectUri := m.session.Values[logoutSessionKey]
+	if logoutRedirectUri == nil {
+		m.session.Values[logoutSessionKey] = form.RedirectUri
+		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+			m.logger.Error("Error saving session", zap.Error(err))
+			return "", err
+		}
+		return logoutHydraUrl, nil
+	}
+
+	m.session.Values[logoutSessionKey] = nil
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving session", zap.Error(err))
+		return "", err
+	}
+
+	if logoutRedirectUri != "" {
+		return logoutRedirectUri.(string), nil
+	}
+
+	return "", nil
 }
 
 func (m *OauthManager) loadRemoteScopes(scopes []string) error {
