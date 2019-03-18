@@ -551,11 +551,11 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 }
 
 func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, error) {
-	logoutRedirectUri := m.session.Values[logoutSessionKey].(string)
+	logoutRedirectUri := m.session.Values[logoutSessionKey]
 	if form.RedirectUri == "" {
 		form.RedirectUri = "auth1"
 	}
-	if logoutRedirectUri == "" {
+	if logoutRedirectUri == "" || logoutRedirectUri == nil {
 		m.session.Values[logoutSessionKey] = form.RedirectUri
 		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
 			m.logger.Error("Error saving session", zap.Error(err))
@@ -571,7 +571,7 @@ func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (
 	}
 
 	if logoutRedirectUri != "auth1" {
-		return logoutRedirectUri, nil
+		return logoutRedirectUri.(string), nil
 	}
 
 	return "", nil
