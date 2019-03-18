@@ -62,7 +62,6 @@ hydra:
   - OAUTH2_ISSUER_URL
   - OAUTH2_LOGOUT_REDIRECT_URL
   - OIDC_SUBJECT_TYPE_PAIRWISE_SALT
-  - LOGOUT_REDIRECT_URL
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
