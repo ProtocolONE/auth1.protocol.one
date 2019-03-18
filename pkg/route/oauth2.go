@@ -43,7 +43,7 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 	}
 
 	if url, _ := l.Manager.CheckAuth(ctx, form); url != "" {
-		return ctx.Redirect(http.StatusPermanentRedirect, url)
+		return ctx.Redirect(http.StatusFound, url)
 	}
 
 	csrf, err := l.Manager.CreateCsrfSession(ctx)
@@ -120,7 +120,7 @@ func (l *Oauth2) oauthConsent(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, url)
+	return ctx.Redirect(http.StatusFound, url)
 }
 
 func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
@@ -146,7 +146,7 @@ func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
 		})
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, url)
+	return ctx.Redirect(http.StatusFound, url)
 }
 
 func (l *Oauth2) oauthIntrospect(ctx echo.Context) error {
@@ -222,7 +222,7 @@ func (l *Oauth2) oauthLogout(ctx echo.Context) error {
 	}
 
 	if url != "" {
-		return ctx.Redirect(http.StatusPermanentRedirect, url)
+		return ctx.Redirect(http.StatusFound, url)
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_logout.html", map[string]interface{}{})
