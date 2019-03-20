@@ -16,7 +16,7 @@ build:
     - (if [ -f Dockerfile.nginx ]; then docker push $CI_REGISTRY_IMAGE:"$CI_COMMIT_REF_SLUG"-static.$CI_PIPELINE_ID ; else echo "Project without static content"; fi);
   only:
   - master
-  - devel
+  - develop
 
 
 deploy_production:
@@ -62,7 +62,7 @@ deploy_production:
   - master
   when: on_success
 
-deploy_devel:
+deploy_develop:
   stage: deploy
   environment:
     name: production
@@ -105,5 +105,5 @@ deploy_devel:
         --timeout 180
         ||(helm history --max 2 $P1_PROJECT | head -n 2 | tail -n 1 | awk "{print \$1}" | xargs helm rollback $P1_PROJECT && exit 1)'
   only:
-  - devel
+  - develop
   when: on_success
