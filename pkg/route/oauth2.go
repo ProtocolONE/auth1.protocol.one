@@ -42,20 +42,30 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	if url, _ := l.Manager.CheckAuth(ctx, form); url != "" {
+	previousLogin := ""
+	user, url, err := l.Manager.CheckAuth(ctx, form)
+	if err != nil {
+		l.logger.Error("Error checking login request", zap.Error(err))
+		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
+	}
+	if url != "" {
 		return ctx.Redirect(http.StatusFound, url)
 	}
+	if user != nil {
+		previousLogin = user.Email
+	}
 
-	csrf, err := l.Manager.CreateCsrfSession(ctx)
-	if err != nil {
-		l.logger.Error("Error saving session", zap.Error(err))
+	csrf, e := l.Manager.CreateCsrfSession(ctx)
+	if e != nil {
+		l.logger.Error("Error saving session", zap.Error(e))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
-		"AuthDomain": ctx.Scheme() + "://" + ctx.Request().Host,
-		"Challenge":  form.Challenge,
-		"Csrf":       csrf,
+		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
+		"Challenge":     form.Challenge,
+		"Csrf":          csrf,
+		"PreviousLogin": previousLogin,
 	})
 }
 

@@ -72,7 +72,7 @@ func (m *OauthManager) CleanCsrfSession(ctx echo.Context) error {
 	return nil
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, models.ErrorInterface) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (*models.User, string, models.ErrorInterface) {
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.logger.Error(
@@ -80,24 +80,53 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			zap.Object("Oauth2LoginForm", form),
 			zap.Error(err),
 		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
 
-	if req.Skip == false {
-		return "", nil
+	if req.Subject == "" {
+		return nil, "", nil
 	}
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
+	if req.Skip == true {
+		reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
+		if err != nil {
+			m.logger.Error(
+				"Unable to accept login challenge",
+				zap.Object("Oauth2LoginForm", form),
+				zap.Error(err),
+			)
+			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		}
+
+		m.session.Values[loginRememberKey] = true
+		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+			m.logger.Error("Error saving session", zap.Error(err))
+		}
+
+		return nil, reqACL.RedirectTo, nil
+	}
+
+	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
 		m.logger.Error(
-			"Unable to accept login challenge",
-			zap.Object("Oauth2LoginSubmitForm", form),
+			"Unable to get application",
+			zap.Object("Oauth2LoginForm", form),
 			zap.Error(err),
 		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		return nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	return reqACL.RedirectTo, nil
+	user, err := m.userService.Get(bson.ObjectIdHex(req.Subject))
+	if err != nil {
+		m.logger.Warn(
+			"Unable to get user identity",
+			zap.Object("Oauth2LoginSubmitForm", form),
+			zap.Object("Application", app),
+			zap.Error(err),
+		)
+	}
+
+	return user, "", nil
 }
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
@@ -120,96 +149,102 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
-	if err != nil {
-		m.logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+	userId := req.Subject
+	if req.Subject == "" || req.Subject != form.PreviousLogin {
+		app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
+		if err != nil {
+			m.logger.Error(
+				"Unable to get application",
+				zap.Object("Oauth2LoginSubmitForm", form),
+				zap.Error(err),
+			)
+			return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		}
+
+		userIdentity, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
+		if err != nil {
+			m.logger.Warn(
+				"Unable to get user identity",
+				zap.Object("Oauth2LoginSubmitForm", form),
+				zap.Object("Application", app),
+				zap.Error(err),
+			)
+		}
+
+		if userIdentity == nil || err != nil {
+			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+		}
+
+		passwordSettings, err := m.appService.LoadPasswordSettings()
+		if err != nil {
+			m.logger.Error(
+				"Unable to load password settings for application",
+				zap.Object("Oauth2LoginSubmitForm", form),
+				zap.Error(err),
+			)
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
+		}
+
+		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passwordSettings.BcryptCost})
+		err = encryptor.Compare(userIdentity.Credential, form.Password)
+		if err != nil {
+			m.logger.Error(
+				"Unable to crypt password for application",
+				zap.String("Password", form.Password),
+				zap.Object("Oauth2LoginSubmitForm", form),
+				zap.Error(err),
+			)
+			return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+		}
+
+		user, err := m.userService.Get(userIdentity.UserID)
+		if err != nil {
+			m.logger.Error(
+				"Unable to get user",
+				zap.Object("UserIdentity", userIdentity),
+				zap.Error(err),
+			)
+
+			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+		}
+
+		if err := m.authLogService.Add(ctx, user, ""); err != nil {
+			m.logger.Error(
+				"Unable to add auth log for user",
+				zap.Object("User", user),
+				zap.Error(err),
+			)
+
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
+		}
+
+		cookieSettings, err := m.appService.LoadSessionSettings()
+		if err != nil {
+			m.logger.Error(
+				"Unable to add user auth log to application",
+				zap.Object("User", user),
+				zap.Object("Application", app),
+				zap.Error(err),
+			)
+
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
+		}
+		cookie, err := models.NewCookie(app, user).Crypt(cookieSettings)
+		if err != nil {
+			m.logger.Error(
+				"Unable to create user cookie for application",
+				zap.Object("User", user),
+				zap.Object("Application", app),
+				zap.Error(err),
+			)
+
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
+		}
+		http.SetCookie(ctx.Response(), cookie)
+		userId = userIdentity.UserID.Hex()
+	} else {
+		form.Remember = true
 	}
-
-	userIdentity, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get user identity",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-	}
-
-	if userIdentity == nil || err != nil {
-		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
-	}
-
-	passwordSettings, err := m.appService.LoadPasswordSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to load password settings for application",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
-	}
-
-	encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passwordSettings.BcryptCost})
-	err = encryptor.Compare(userIdentity.Credential, form.Password)
-	if err != nil {
-		m.logger.Error(
-			"Unable to crypt password for application",
-			zap.String("Password", form.Password),
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
-	}
-
-	user, err := m.userService.Get(userIdentity.UserID)
-	if err != nil {
-		m.logger.Error(
-			"Unable to get user",
-			zap.Object("UserIdentity", userIdentity),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
-	}
-
-	if err := m.authLogService.Add(ctx, user, ""); err != nil {
-		m.logger.Error(
-			"Unable to add auth log for user",
-			zap.Object("User", user),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
-	}
-
-	cookieSettings, err := m.appService.LoadSessionSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to add user auth log to application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	cookie, err := models.NewCookie(app, user).Crypt(cookieSettings)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), cookie)
 
 	m.session.Values[loginRememberKey] = form.Remember
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
@@ -218,7 +253,14 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 	// TODO: Add MFA cases
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.UserID.Hex(), Remember: form.Remember, RememberFor: 0})
+	reqACL, _, err := m.hydra.AcceptLoginRequest(
+		form.Challenge,
+		swagger.AcceptLoginRequest{
+			Subject:     userId,
+			Remember:    form.Remember,
+			RememberFor: 0,
+		},
+	)
 	if err != nil {
 		m.logger.Error(
 			"Unable to accept login challenge",
@@ -246,21 +288,14 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	req := swagger.AcceptConsentRequest{}
+	req := swagger.AcceptConsentRequest{GrantScope: scopes}
 	if reqGCR.Skip == true {
-		req = swagger.AcceptConsentRequest{
-			GrantScope: scopes,
-			Session: swagger.ConsentRequestSession{
-				AccessToken: map[string]interface{}{"remember": true},
-			},
+		req.Session = swagger.ConsentRequestSession{
+			AccessToken: map[string]interface{}{"remember": true},
 		}
 	} else {
-		req = swagger.AcceptConsentRequest{
-			GrantScope: scopes,
-			Remember:   m.session.Values[loginRememberKey].(bool),
-			Session: swagger.ConsentRequestSession{
-				AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey].(bool)},
-			},
+		req.Session = swagger.ConsentRequestSession{
+			AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey].(bool)},
 		}
 	}
 
