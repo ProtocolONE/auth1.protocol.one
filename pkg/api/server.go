@@ -109,7 +109,9 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(ZapLogger(c.Logger))
 	server.Echo.Use(middleware.Recover())
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowHeaders: []string{"authorization", "content-type"},
+		AllowHeaders:     []string{"authorization", "content-type"},
+		AllowOrigins:     c.ApiConfig.AllowOrigins,
+		AllowCredentials: c.ApiConfig.AllowCredentials,
 	}))
 
 	registerCustomValidator(server.Echo)

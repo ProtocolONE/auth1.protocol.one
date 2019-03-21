@@ -82,6 +82,8 @@ type LoginForm struct {
 type LoginPageForm struct {
 	ClientID    string `form:"client_id" query:"client_id"`
 	RedirectUri string `form:"redirect_uri" query:"redirect_uri"`
+	State       string `form:"state" query:"state"`
+	Scopes      string `form:"scopes" query:"scopes"`
 }
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -141,6 +143,10 @@ func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m CaptchaRequiredError) Error() string {
 	return m.Message
+}
+
+func (m *CaptchaRequiredError) GetHttpCode() int {
+	return m.HttpCode
 }
 
 func (m *CaptchaRequiredError) GetCode() string {

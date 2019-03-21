@@ -2,8 +2,11 @@ server {
     listen ${NGINX_PORT};
     server_name ${NGINX_HOST};
 
+    location ~* ^/oauth2/auth/sessions/login/revoke(.*)$ {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
     location ~* ^/oauth2/(auth|token|revoke)(.*)$ {
-        #rewrite ^(.*)$ /oauth2/$1$2 break;
         proxy_pass ${HYDRA_SERVER};
     }
 

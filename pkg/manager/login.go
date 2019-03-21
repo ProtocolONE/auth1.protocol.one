@@ -7,11 +7,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -24,6 +27,7 @@ var (
 type LoginManager struct {
 	logger              *zap.Logger
 	redis               *redis.Client
+	session             *sessions.Session
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
@@ -31,10 +35,11 @@ type LoginManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *LoginManager {
+func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client, session *sessions.Session) *LoginManager {
 	m := &LoginManager{
 		logger:              logger,
 		redis:               redis,
+		session:             session,
 		appService:          models.NewApplicationService(h),
 		userService:         models.NewUserService(h),
 		userIdentityService: models.NewUserIdentityService(h),
@@ -524,7 +529,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 			}
 
-			return nil, &models.MFARequiredError{Message: ott.Token}
+			return nil, &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
 		}
 
 		user, err = m.userService.Get(userIdentity.UserID)
@@ -618,13 +623,13 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token interface{}, error models.ErrorInterface) {
 	if form.Email == `captcha@required.com` {
-		return nil, &models.CaptchaRequiredError{Message: models.ErrorCaptchaRequired}
+		return nil, &models.CaptchaRequiredError{HttpCode: http.StatusPreconditionRequired, Message: models.ErrorCaptchaRequired}
 	}
 	if form.Captcha == `incorrect` {
 		return nil, &models.CommonError{Code: `captcha`, Message: models.ErrorCaptchaIncorrect}
 	}
 	if form.Email == `temporary@locked.com` {
-		return nil, &models.TemporaryLockedError{Message: models.ErrorAuthTemporaryLocked}
+		return nil, &models.TemporaryLockedError{HttpCode: http.StatusLocked, Message: models.ErrorAuthTemporaryLocked}
 	}
 
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
@@ -717,7 +722,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
 
-		return nil, &models.MFARequiredError{Message: ott.Token}
+		return nil, &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
 	}
 
 	t, err := helper.CreateAuthToken(ctx, m.appService, user)
@@ -818,4 +823,31 @@ func (m *LoginManager) LoginByOTT(form *models.OneTimeTokenForm) (token *models.
 	}
 
 	return token, nil
+}
+
+func (m *LoginManager) CreateAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {
+	scopes := []string{"openid"}
+	if form.Scopes != "" {
+		scopes = strings.Split(form.Scopes, " ")
+	}
+
+	if form.RedirectUri == "" {
+		form.RedirectUri = fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
+		m.session.Values[clientIdSessionKey] = form.ClientID
+		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+			m.logger.Error("Error saving session", zap.Error(err))
+			return "", err
+		}
+	}
+
+	settings := jwtverifier.Config{
+		ClientID:     form.ClientID,
+		ClientSecret: "",
+		Scopes:       scopes,
+		RedirectURL:  form.RedirectUri,
+		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
+	}
+	jwtv := jwtverifier.NewJwtVerifier(settings)
+
+	return jwtv.CreateAuthUrl(form.State), nil
 }

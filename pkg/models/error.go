@@ -1,17 +1,5 @@
 package models
 
-type (
-	ErrorInterface interface {
-		GetCode() string
-		GetMessage() string
-	}
-
-	CommonError struct {
-		Code    string `json:"error,omitempty"`
-		Message string `json:"error_message,omitempty"`
-	}
-)
-
 var (
 	ErrorUnknownError             = "Unknown error"
 	ErrorInvalidRequestParameters = "Invalid request parameters"
@@ -41,10 +29,29 @@ var (
 	ErrorMfaRequired              = "MFA required"
 	ErrorMfaClientAdd             = "Unable to add MFA"
 	ErrorMfaCodeInvalid           = "Invalid MFA code"
+	ErrorCsrfSignature            = "Invalid csrf signature"
+	ErrorLoginChallenge           = "Invalid login challenge"
 )
+
+type ErrorInterface interface {
+	GetHttpCode() int
+	GetCode() string
+	GetMessage() string
+	Error() string
+}
+
+type CommonError struct {
+	HttpCode int    `json:"error,omitempty"`
+	Code     string `json:"error,omitempty"`
+	Message  string `json:"error_message,omitempty"`
+}
 
 func (m *CommonError) Error() string {
 	return m.Message
+}
+
+func (m *CommonError) GetHttpCode() int {
+	return m.HttpCode
 }
 
 func (m *CommonError) GetCode() string {

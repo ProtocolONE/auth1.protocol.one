@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+</head>
+<body>
+<h1>{{index . "Success"}}</h1>
+<div id="auth-form"></div>
+<script>
+    window.AUTH_CALLBACK_PAYLOAD = {
+        success: "{{index . "Success"}}",
+        error_message: "{{index . "ErrorMessage"}}",
+        access_token: "{{index . "AccessToken"}}",
+        expires_in: "{{index . "ExpiresIn"}}",
+        id_token: "{{index . "IdToken"}}",
+    };
+</script>
+<script src="https://static.protocol.one/auth/form/dev/auth-web-form.js"></script>
+</body>
+</html>

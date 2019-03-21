@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/globalsign/mgo/bson"
+	"github.com/labstack/echo"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
@@ -91,7 +92,7 @@ func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
 	return s, nil
 }
 
-func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models.Application, error) {
+func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, error) {
 	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {
 		m.logger.Error(
@@ -101,6 +102,9 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 		)
 		return nil, err
 	}
+
+	defaultRedirectUri := fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
+	form.Application.AuthRedirectUrls = append(form.Application.AuthRedirectUrls, defaultRedirectUri)
 
 	app := &models.Application{
 		ID:               bson.NewObjectId(),
@@ -145,7 +149,7 @@ func (m *ManageManager) CreateApplication(form *models.ApplicationForm) (*models
 	return app, nil
 }
 
-func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationForm) (*models.Application, error) {
+func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
 		m.logger.Error(
@@ -163,6 +167,18 @@ func (m *ManageManager) UpdateApplication(id string, form *models.ApplicationFor
 			zap.Error(err),
 		)
 		return nil, errors.New("space not exists")
+	}
+
+	defaultRedirectUri := fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
+	hasDefaultRedirectUri := false
+	for _, url := range form.Application.AuthRedirectUrls {
+		if url == defaultRedirectUri {
+			hasDefaultRedirectUri = true
+		}
+
+	}
+	if hasDefaultRedirectUri == false {
+		form.Application.AuthRedirectUrls = append(form.Application.AuthRedirectUrls, defaultRedirectUri)
 	}
 
 	a.SpaceId = form.SpaceId

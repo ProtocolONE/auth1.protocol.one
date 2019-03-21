@@ -150,7 +150,7 @@ func (l *Manage) CreateApplication(ctx echo.Context) error {
 		)
 	}
 
-	app, err := l.Manager.CreateApplication(applicationForm)
+	app, err := l.Manager.CreateApplication(ctx, applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
@@ -199,7 +199,7 @@ func (l *Manage) UpdateApplication(ctx echo.Context) error {
 		)
 	}
 
-	app, err := l.Manager.UpdateApplication(id, applicationForm)
+	app, err := l.Manager.UpdateApplication(ctx, id, applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
 	}

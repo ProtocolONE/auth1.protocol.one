@@ -20,7 +20,7 @@ type (
 
 func InitLogin(cfg Config) error {
 	route := &Login{
-		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
+		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}
@@ -219,10 +219,12 @@ func (l *Login) LoginPage(ctx echo.Context) (err error) {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	return ctx.Render(http.StatusOK, "login_form.html", map[string]interface{}{
-		"ClientID":    form.ClientID,
-		"RedirectUri": form.RedirectUri,
-	})
+	url, err := l.Manager.CreateAuthUrl(ctx, form)
+	if err != nil {
+		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
+	}
+
+	return ctx.Redirect(http.StatusMovedPermanently, url)
 }
 
 func (l *Login) LoginByOTT(ctx echo.Context) error {

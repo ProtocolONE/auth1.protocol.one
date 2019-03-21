@@ -9,10 +9,12 @@ import (
 
 type (
 	ApiConfig struct {
-		Port         int
-		Debug        bool
-		TimeoutRead  int
-		TimeoutWrite int
+		Port             int
+		Debug            bool
+		TimeoutRead      int
+		TimeoutWrite     int
+		AllowOrigins     []string
+		AllowCredentials bool
 	}
 
 	JwtConfig struct {

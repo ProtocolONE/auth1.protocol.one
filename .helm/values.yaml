@@ -3,11 +3,12 @@
 
 enableRedis: true
 enableMongo: true
-enableHydra: false
+enableHydra: true
 enableCertIssuer: true
 
 ingress:
   hostname: auth1.tst.protocol.one
+  hostnamePrefix:
   path: /
 
 certIssuer:
@@ -24,6 +25,28 @@ backend:
     type: ClusterIP
     port: 8080
     protocol: TCP
+  env:
+  - API_PORT
+  - API_DEBUG
+  - API_TIMEOUTREAD
+  - API_TIMEOUTWRITE
+  - API_ALLOWORIGINS
+  - API_ALLOWCREDENTIALS
+  - LOGGER_LEVEL
+  - DATABASE_HOST
+  - DATABASE_DATABASE
+  - DATABASE_USER
+  - DATABASE_PASSWORD
+  - SESSION_DATABASE
+  - SESSION_TABLE
+  - SESSION_SECRET
+  - SESSION_NAME
+  - SESSION_MAXAGE
+  - SESSION_ENSURETTL
+  - HYDRA_PUBLICURL
+  - HYDRA_ADMINURL
+  - REDIS_ADDR
+  - REDIS_PASSWORD
 
 hydra:
   env:
@@ -39,7 +62,6 @@ hydra:
   - OAUTH2_ISSUER_URL
   - OAUTH2_LOGOUT_REDIRECT_URL
   - OIDC_SUBJECT_TYPE_PAIRWISE_SALT
-
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
