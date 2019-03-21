@@ -16,7 +16,7 @@ func (a *Oauth2LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 type Oauth2LoginSubmitForm struct {
-	Csrf          string `query:"_csrf" form:"_csrf" validate:"required"`
+	Csrf          string `query:"csrf" form:"csrf" validate:"required"`
 	Challenge     string `query:"challenge" form:"challenge" validate:"required"`
 	Email         string `query:"email" form:"email"`
 	Password      string `query:"password" form:"password"`
@@ -35,7 +35,7 @@ func (a *Oauth2ConsentForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 type Oauth2ConsentSubmitForm struct {
-	Csrf      string   `query:"_csrf" form:"_csrf" validate:"required"`
+	Csrf      string   `query:"csrf" form:"csrf" validate:"required"`
 	Challenge string   `query:"challenge" form:"challenge" validate:"required"`
 	Scope     []string `query:"scope" form:"scope" validate:"required"`
 }
@@ -68,7 +68,7 @@ type Oauth2TokenIntrospection struct {
 }
 
 type Oauth2SignUpForm struct {
-	Csrf      string `query:"_csrf" form:"_csrf" validate:"required"`
+	Csrf      string `query:"csrf" form:"csrf" validate:"required"`
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 	Email     string `query:"email" form:"email" validate:"required"`
 	Password  string `query:"password" form:"password" validate:"required"`
