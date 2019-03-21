@@ -72,7 +72,7 @@ type Oauth2SignUpForm struct {
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 	Email     string `query:"email" form:"email" validate:"required"`
 	Password  string `query:"password" form:"password" validate:"required"`
-	Remember  bool   `query:"remember"`
+	Remember  bool   `query:"remember" form:"remember"`
 }
 
 func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
