@@ -76,7 +76,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorMfaCodeInvalid}
 	}
 
-	app, err := m.appService.Get(mp.UserIdentity.AppID)
+	app, err := m.appService.Get(mp.UserIdentity.ApplicationID)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get application",

@@ -19,15 +19,16 @@ type ApplicationService struct {
 }
 
 type Application struct {
-	ID               bson.ObjectId `bson:"_id" json:"id"`                                                    // unique application identifier
-	SpaceId          bson.ObjectId `bson:"space_id" json:"space_id"`                                         // application space owner
-	Name             string        `bson:"name" json:"name" validate:"required"`                             // application name
-	Description      string        `bson:"description" json:"description"`                                   // application description
-	IsActive         bool          `bson:"is_active" json:"is_active"`                                       // is application active
-	CreatedAt        time.Time     `bson:"created_at" json:"-"`                                              // date of create application
-	UpdatedAt        time.Time     `bson:"updated_at" json:"-"`                                              // date of update application
-	AuthSecret       string        `bson:"auth_secret" json:"auth_secret" validate:"required"`               // auth secret key
-	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // list of callbacks urls
+	ID               bson.ObjectId `bson:"_id" json:"id"`
+	SpaceId          bson.ObjectId `bson:"space_id" json:"space_id"`
+	Name             string        `bson:"name" json:"name" validate:"required"`
+	Description      string        `bson:"description" json:"description"`
+	IsActive         bool          `bson:"is_active" json:"is_active"`
+	CreatedAt        time.Time     `bson:"created_at" json:"-"`
+	UpdatedAt        time.Time     `bson:"updated_at" json:"-"`
+	AuthSecret       string        `bson:"auth_secret" json:"auth_secret" validate:"required"`
+	AuthRedirectUrls []string      `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
+	HasSharedUsers   bool          `bson:"has_shared_users" json:"has_shared_users"`
 }
 
 func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
@@ -38,21 +39,7 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("IsActive", a.IsActive)
 	enc.AddTime("CreatedAt", a.CreatedAt)
 	enc.AddTime("UpdatedAt", a.UpdatedAt)
-
-	return nil
-}
-
-func (a *ApplicationForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("SpaceId", a.SpaceId.String())
-	enc.AddObject("Application", a.Application)
-
-	return nil
-}
-
-func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Name", a.Name)
-	enc.AddString("Description", a.Description)
-	enc.AddBool("IsActive", a.IsActive)
+	enc.AddBool("HasSharedUsers", a.HasSharedUsers)
 
 	return nil
 }
@@ -90,17 +77,29 @@ func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
 	return a, nil
 }
 
-func (s ApplicationService) LoadPasswordSettings() (*PasswordSettings, error) {
-	return &PasswordSettings{
-		BcryptCost:        10,
-		Min:               4,
-		Max:               10,
-		RequireNumber:     false,
-		RequireSpecial:    false,
-		RequireUpper:      false,
-		ChangeTokenLength: 128,
-		ChangeTokenTTL:    86400,
-	}, nil
+func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSettings) error {
+	if _, err := s.GetPasswordSettings(app); err == mgo.ErrNotFound {
+		if err := s.db.C(database.TableAppPasswordSettings).Insert(ps); err != nil {
+			return err
+		}
+	} else {
+		if err := s.db.C(database.TableAppPasswordSettings).Update(bson.M{"app_id": app.ID}, bson.M{"$set": ps}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s ApplicationService) GetPasswordSettings(app *Application) (*PasswordSettings, error) {
+	ps := &PasswordSettings{}
+	if err := s.db.C(database.TableAppPasswordSettings).
+		Find(bson.M{"app_id": app.ID}).
+		One(&ps); err != nil {
+		return nil, err
+	}
+
+	return ps, nil
 }
 
 func (s ApplicationService) LoadAuthTokenSettings() (*AuthTokenSettings, error) {
@@ -127,65 +126,61 @@ func (s ApplicationService) LoadSocialSettings() (*SocialSettings, error) {
 	}, nil
 }
 
-func (s ApplicationService) GetUserIdentityConnection(app *Application, provider string, connection string) (*UserIdentityConnection, error) {
+func (s ApplicationService) GetUserIdentityConnection(app *Application, provider string, connection string) (*AppIdentityProvider, error) {
 	switch provider {
-	case UserIdentityProviderSocial:
+	case AppIdentityProviderTypeSocial:
 		switch connection {
 		case "facebook":
-			return &UserIdentityConnection{
+			return &AppIdentityProvider{
 				ID:                  bson.NewObjectId(),
-				AppID:               app.ID,
-				Provider:            UserIdentityProviderSocial,
-				IsSocial:            true,
+				ApplicationID:       app.ID,
+				Type:                AppIdentityProviderTypeSocial,
 				ClientID:            "",
 				ClientSecret:        "",
 				ClientScopes:        []string{"email", "user_birthday", "user_friends"},
 				EndpointAuthURL:     facebook.Endpoint.AuthURL,
 				EndpointTokenURL:    facebook.Endpoint.TokenURL,
 				EndpointUserInfoURL: "https://graph.facebook.com/me?fields=id,name,first_name,last_name,email,birthday,picture&access_token=%s",
-				Connection:          "facebook",
+				Name:                "facebook",
 			}, nil
 		case "twitch":
-			return &UserIdentityConnection{
+			return &AppIdentityProvider{
 				ID:                  bson.NewObjectId(),
-				AppID:               app.ID,
-				Provider:            UserIdentityProviderSocial,
-				IsSocial:            true,
+				ApplicationID:       app.ID,
+				Type:                AppIdentityProviderTypeSocial,
 				ClientID:            "",
 				ClientSecret:        "",
 				ClientScopes:        []string{"user_read", "channel_subscriptions"},
 				EndpointAuthURL:     twitch.Endpoint.AuthURL,
 				EndpointTokenURL:    twitch.Endpoint.TokenURL,
 				EndpointUserInfoURL: "https://api.twitch.tv/kraken/user?client_id=r0elllpn5whuyf3et3pm6apqifn9yg&oauth_token=%s",
-				Connection:          "twitch",
+				Name:                "twitch",
 			}, nil
 		case "google":
-			return &UserIdentityConnection{
+			return &AppIdentityProvider{
 				ID:                  bson.NewObjectId(),
-				AppID:               app.ID,
-				Provider:            UserIdentityProviderSocial,
-				IsSocial:            true,
+				ApplicationID:       app.ID,
+				Type:                AppIdentityProviderTypeSocial,
 				ClientID:            "",
 				ClientSecret:        "",
 				ClientScopes:        []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
 				EndpointAuthURL:     google.Endpoint.AuthURL,
 				EndpointTokenURL:    google.Endpoint.TokenURL,
 				EndpointUserInfoURL: "https://www.googleapis.com/oauth2/v1/userinfo?access_token=%s",
-				Connection:          "google",
+				Name:                "google",
 			}, nil
 		case "vk":
-			return &UserIdentityConnection{
+			return &AppIdentityProvider{
 				ID:                  bson.NewObjectId(),
-				AppID:               app.ID,
-				Provider:            UserIdentityProviderSocial,
-				IsSocial:            true,
+				ApplicationID:       app.ID,
+				Type:                AppIdentityProviderTypeSocial,
 				ClientID:            "",
 				ClientSecret:        "",
 				ClientScopes:        []string{"email", "friends"},
 				EndpointAuthURL:     vk.Endpoint.AuthURL,
 				EndpointTokenURL:    vk.Endpoint.TokenURL,
 				EndpointUserInfoURL: "https://api.vk.com/method/users.get?fields=bdate,photo_50&v=5.92&access_token=%s",
-				Connection:          "vk",
+				Name:                "vk",
 			}, nil
 		}
 	}

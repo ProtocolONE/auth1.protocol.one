@@ -1,19 +1,47 @@
 package models
 
-import "unicode"
-
-type (
-	PasswordSettings struct {
-		BcryptCost        int
-		Min               int
-		Max               int
-		RequireNumber     bool
-		RequireUpper      bool
-		RequireSpecial    bool
-		ChangeTokenLength int
-		ChangeTokenTTL    int
-	}
+import (
+	"github.com/globalsign/mgo/bson"
+	"go.uber.org/zap/zapcore"
+	"unicode"
 )
+
+var (
+	PasswordBcryptCostDefault     = 10
+	PasswordMinDefault            = 4
+	PasswordMaxDefault            = 30
+	PasswordRequireNumberDefault  = true
+	PasswordRequireUpperDefault   = true
+	PasswordRequireSpecialDefault = false
+	PasswordTokenLengthDefault    = 128
+	PasswordTokenTTLDefault       = 3600
+)
+
+type PasswordSettings struct {
+	ApplicationID  bson.ObjectId `bson:"app_id" json:"application_id"`
+	BcryptCost     int           `bson:"bcrypt_cost" json:"bcrypt_cost"`
+	Min            int           `bson:"min" json:"min"`
+	Max            int           `bson:"max" json:"max"`
+	RequireNumber  bool          `bson:"require_number" json:"require_number"`
+	RequireUpper   bool          `bson:"require_upper" json:"require_upper"`
+	RequireSpecial bool          `bson:"require_special" json:"require_special"`
+	TokenLength    int           `bson:"token_length" json:"token_length"`
+	TokenTTL       int           `bson:"token_ttl" json:"token_ttl"`
+}
+
+func (ps *PasswordSettings) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ApplicationID", ps.ApplicationID.String())
+	enc.AddInt("BcryptCost", ps.BcryptCost)
+	enc.AddInt("Min", ps.Min)
+	enc.AddInt("Max", ps.Max)
+	enc.AddBool("RequireNumber", ps.RequireNumber)
+	enc.AddBool("RequireUpper", ps.RequireUpper)
+	enc.AddBool("RequireSpecial", ps.RequireSpecial)
+	enc.AddInt("TokenLength", ps.TokenLength)
+	enc.AddInt("TokenTTL", ps.TokenTTL)
+
+	return nil
+}
 
 func (ps *PasswordSettings) IsValid(password string) bool {
 	letters := 0

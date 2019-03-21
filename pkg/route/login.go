@@ -30,7 +30,6 @@ func InitLogin(cfg Config) error {
 	cfg.Echo.GET("/authorize", route.Authorize)
 	cfg.Echo.GET("/login/form", route.LoginPage)
 	cfg.Echo.GET("/login/ott", route.LoginByOTT)
-	cfg.Echo.POST("/login", route.Login)
 
 	return nil
 }
@@ -150,65 +149,6 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, t)
-}
-
-func (l *Login) Login(ctx echo.Context) (err error) {
-	form := new(models.LoginForm)
-
-	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Login bind form failed", zap.Error(err))
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
-			"Login validate form failed",
-			zap.Object("LoginForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
-	}
-
-	res, e := l.Manager.Login(ctx, form)
-	if e != nil {
-		httpCode := http.StatusBadRequest
-		code := BadRequiredCodeCommon
-		message := fmt.Sprint(e)
-
-		switch e.(type) {
-		case *models.CaptchaRequiredError:
-			httpCode = http.StatusPreconditionRequired
-			code = CaptchaRequiredCode
-		case *models.MFARequiredError:
-			httpCode = http.StatusForbidden
-			code = MFARequiredCode
-		case *models.TemporaryLockedError:
-			httpCode = http.StatusLocked
-			code = TemporaryLockedCode
-		case *models.CommonError:
-			code = e.GetCode()
-			message = e.GetMessage()
-		default:
-			code = UnknownErrorCode
-			message = models.ErrorUnknownError
-		}
-
-		return helper.NewErrorResponse(ctx, httpCode, code, message)
-	}
-
-	return ctx.JSON(http.StatusOK, res)
 }
 
 func (l *Login) LoginPage(ctx echo.Context) (err error) {

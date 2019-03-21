@@ -9,18 +9,20 @@ import (
 )
 
 type ChangePasswordManager struct {
-	redis               *redis.Client
-	logger              *zap.Logger
-	appService          *models.ApplicationService
-	userIdentityService *models.UserIdentityService
+	redis                   *redis.Client
+	logger                  *zap.Logger
+	appService              *models.ApplicationService
+	userIdentityService     *models.UserIdentityService
+	identityProviderService *models.AppIdentityProviderService
 }
 
 func NewChangePasswordManager(logger *zap.Logger, db *database.Handler, r *redis.Client) *ChangePasswordManager {
 	m := &ChangePasswordManager{
-		redis:               r,
-		logger:              logger,
-		appService:          models.NewApplicationService(db),
-		userIdentityService: models.NewUserIdentityService(db),
+		redis:                   r,
+		logger:                  logger,
+		appService:              models.NewApplicationService(db),
+		userIdentityService:     models.NewUserIdentityService(db),
+		identityProviderService: models.NewAppIdentityProviderService(db),
 	}
 
 	return m
@@ -28,7 +30,6 @@ func NewChangePasswordManager(logger *zap.Logger, db *database.Handler, r *redis
 
 func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.CommonError {
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
-
 	if err != nil {
 		m.logger.Warn(
 			"Unable to receive client id",
@@ -39,8 +40,16 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, form.Email)
+	ipc, err := m.identityProviderService.FindByTypeAndName(a, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if err != nil {
+		m.logger.Warn(
+			"Unable to get identity provider",
+			zap.Object("ChangePasswordStartForm", form),
+			zap.Error(err),
+		)
+	}
 
+	ui, err := m.userIdentityService.Get(a, ipc, form.Email)
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get user identity by email",
@@ -54,7 +63,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return nil
 	}
 
-	ps, err := m.appService.LoadPasswordSettings()
+	ps, err := m.appService.GetPasswordSettings(a)
 	if err != nil {
 		m.logger.Warn(
 			"Unable to load password settings an application",
@@ -81,8 +90,8 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 
 func (m *ChangePasswordManager) createOneTimeTokenSettings(email string, ps *models.PasswordSettings) error {
 	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.ChangeTokenLength,
-		TTL:    ps.ChangeTokenTTL,
+		Length: ps.TokenLength,
+		TTL:    ps.TokenTTL,
 	}
 	os := models.NewOneTimeTokenService(m.redis, ottSettings)
 
@@ -107,7 +116,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ps, err := m.appService.LoadPasswordSettings()
+	ps, err := m.appService.GetPasswordSettings(a)
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get app password settings",
@@ -123,8 +132,8 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.ChangeTokenLength,
-		TTL:    ps.ChangeTokenTTL,
+		Length: ps.TokenLength,
+		TTL:    ps.TokenTTL,
 	}
 
 	os := models.NewOneTimeTokenService(m.redis, ottSettings)
@@ -140,8 +149,16 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
 	}
 
-	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, ts.Email)
+	ipc, err := m.identityProviderService.FindByTypeAndName(a, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if err != nil {
+		m.logger.Warn(
+			"Unable to get identity provider",
+			zap.Object("ChangePasswordVerifyForm", form),
+			zap.Error(err),
+		)
+	}
 
+	ui, err := m.userIdentityService.Get(a, ipc, ts.Email)
 	if err != nil {
 		m.logger.Warn(
 			"Unable to get user identity for the application",
