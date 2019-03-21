@@ -378,6 +378,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `csrf`, Message: models.ErrorCsrfSignature}
 	}
 
+	m.session.Values[loginRememberKey] = form.Remember
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving session", zap.Error(err))
+	}
+
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.logger.Error(

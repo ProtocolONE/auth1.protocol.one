@@ -44,6 +44,7 @@ type CommonError struct {
 	HttpCode int    `json:"error,omitempty"`
 	Code     string `json:"error,omitempty"`
 	Message  string `json:"error_message,omitempty"`
+	Csrf     string `json:"csrf,omitempty"`
 }
 
 func (m *CommonError) Error() string {

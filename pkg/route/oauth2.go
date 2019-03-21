@@ -111,7 +111,17 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 		if err.GetMessage() != "" {
 			message = err.GetMessage()
 		}
-		return helper.NewErrorResponse(ctx, httpCode, code, message)
+
+		csrf, e := l.Manager.CreateCsrfSession(ctx)
+		if e != nil {
+			l.logger.Error("Error saving session", zap.Error(e))
+			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
+		}
+		return ctx.JSON(httpCode, &models.CommonError{
+			Code:    code,
+			Message: message,
+			Csrf:    csrf,
+		})
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -196,7 +206,17 @@ func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
 		if err.GetMessage() != "" {
 			message = err.GetMessage()
 		}
-		return helper.NewErrorResponse(ctx, httpCode, code, message)
+
+		csrf, e := l.Manager.CreateCsrfSession(ctx)
+		if e != nil {
+			l.logger.Error("Error saving session", zap.Error(e))
+			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
+		}
+		return ctx.JSON(httpCode, &models.CommonError{
+			Code:    code,
+			Message: message,
+			Csrf:    csrf,
+		})
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
