@@ -32,7 +32,7 @@ jobs:
       -e JENKINS_BUILD_PROJECT=$TRAVIS_REPO_SLUG
       -e JENKINS_BUILD_BRANCH=$TRAVIS_BRANCH
       p1hub/p1jenkinstrigger
-      
+
 notifications:
   email: false
   slack:
