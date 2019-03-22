@@ -10,11 +10,27 @@ type ApplicationForm struct {
 	Application *ApplicationFormApp `json:"application" validate:"required"` // application data
 }
 
+func (a *ApplicationForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("SpaceId", a.SpaceId.String())
+	enc.AddObject("Application", a.Application)
+
+	return nil
+}
+
 type ApplicationFormApp struct {
-	Name             string   `bson:"name" json:"name" validate:"required"`                             // application name
-	Description      string   `bson:"description" json:"description"`                                   // application description
-	IsActive         bool     `bson:"is_active" json:"is_active"`                                       // is application active
-	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"` // list of callbacks urls
+	Name             string   `bson:"name" json:"name" validate:"required"`
+	Description      string   `bson:"description" json:"description"`
+	IsActive         bool     `bson:"is_active" json:"is_active"`
+	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
+	HasSharedUsers   bool     `bson:"has_shared_users" json:"has_shared_users"`
+}
+
+func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("Name", a.Name)
+	enc.AddString("Description", a.Description)
+	enc.AddBool("IsActive", a.IsActive)
+
+	return nil
 }
 
 type ApplicationKeysForm struct {

@@ -8,17 +8,17 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"go.uber.org/zap"
-	"net/http"
 	"time"
 )
 
 type SignUpManager struct {
-	logger              *zap.Logger
-	redis               *redis.Client
-	appService          *models.ApplicationService
-	userService         *models.UserService
-	userIdentityService *models.UserIdentityService
-	authLogService      *models.AuthLogService
+	logger                  *zap.Logger
+	redis                   *redis.Client
+	appService              *models.ApplicationService
+	userService             *models.UserService
+	userIdentityService     *models.UserIdentityService
+	authLogService          *models.AuthLogService
+	identityProviderService *models.AppIdentityProviderService
 }
 
 func InitSignUpManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *SignUpManager {
@@ -46,7 +46,7 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ps, err := m.appService.LoadPasswordSettings()
+	ps, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
 		m.logger.Error(
 			"Unable to load password settings for application",
@@ -74,7 +74,16 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 		return nil, &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
-	ui, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
+	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if err != nil {
+		m.logger.Warn(
+			"Unable to get identity provider",
+			zap.Object("SignUpForm", form),
+			zap.Error(err),
+		)
+	}
+
+	ui, err := m.userIdentityService.Get(app, ipc, form.Email)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get user with identity for application",
@@ -111,16 +120,15 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 	}
 
 	ui = &models.UserIdentity{
-		ID:         bson.NewObjectId(),
-		UserID:     user.ID,
-		AppID:      app.ID,
-		ExternalID: form.Email,
-		Provider:   models.UserIdentityProviderPassword,
-		Connection: "initial",
-		Credential: ep,
-		Email:      form.Email,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		ID:                 bson.NewObjectId(),
+		UserID:             user.ID,
+		ApplicationID:      app.ID,
+		ExternalID:         form.Email,
+		IdentityProviderID: ipc.ID,
+		Credential:         ep,
+		Email:              form.Email,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 	if err := m.userIdentityService.Create(ui); err != nil {
 		m.logger.Error(
@@ -153,30 +161,6 @@ func (m *SignUpManager) SignUp(ctx echo.Context, form *models.SignUpForm) (token
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
-
-	cs, err := m.appService.LoadSessionSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to add user auth log to application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	c, err := models.NewCookie(app, user).Crypt(cs)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), c)
 
 	if form.RedirectUri != "" {
 		ottSettings := &models.OneTimeTokenSettings{

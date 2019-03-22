@@ -88,7 +88,7 @@ type LoginPageForm struct {
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", a.ID.String())
-	enc.AddString("AppID", a.AppID.String())
+	enc.AddString("ApplicationID", a.AppID.String())
 	enc.AddString("Email", a.Email)
 	enc.AddBool("EmailVerified", a.EmailVerified)
 	enc.AddTime("CreatedAt", a.CreatedAt)
@@ -99,7 +99,7 @@ func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (a *AuthorizeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientID", a.ClientID)
-	enc.AddString("Connection", a.Connection)
+	enc.AddString("Name", a.Connection)
 	enc.AddString("RedirectUri", a.RedirectUri)
 	enc.AddString("State", a.State)
 
@@ -134,7 +134,7 @@ func (a *LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientID", a.ClientID)
-	enc.AddString("Connection", a.Connection)
+	enc.AddString("Name", a.Connection)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")
 

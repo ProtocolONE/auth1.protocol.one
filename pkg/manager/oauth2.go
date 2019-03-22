@@ -12,7 +12,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
-	"net/http"
 	"time"
 )
 
@@ -24,15 +23,16 @@ var (
 )
 
 type OauthManager struct {
-	logger              *zap.Logger
-	redis               *redis.Client
-	hydra               *hydra.CodeGenSDK
-	session             *sessions.Session
-	appService          *models.ApplicationService
-	userService         *models.UserService
-	userIdentityService *models.UserIdentityService
-	mfaService          *models.MfaService
-	authLogService      *models.AuthLogService
+	logger                  *zap.Logger
+	redis                   *redis.Client
+	hydra                   *hydra.CodeGenSDK
+	session                 *sessions.Session
+	appService              *models.ApplicationService
+	userService             *models.UserService
+	userIdentityService     *models.UserIdentityService
+	mfaService              *models.MfaService
+	authLogService          *models.AuthLogService
+	identityProviderService *models.AppIdentityProviderService
 }
 
 func NewOauthManager(logger *zap.Logger, db *database.Handler, redis *redis.Client, h *hydra.CodeGenSDK, s *sessions.Session) *OauthManager {
@@ -161,7 +161,16 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 		}
 
-		userIdentity, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
+		ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+		if err != nil {
+			m.logger.Warn(
+				"Unable to get identity provider",
+				zap.Object("Oauth2LoginSubmitForm", form),
+				zap.Error(err),
+			)
+		}
+
+		userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
 		if err != nil {
 			m.logger.Warn(
 				"Unable to get user identity",
@@ -175,7 +184,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 		}
 
-		passwordSettings, err := m.appService.LoadPasswordSettings()
+		passwordSettings, err := m.appService.GetPasswordSettings(app)
 		if err != nil {
 			m.logger.Error(
 				"Unable to load password settings for application",
@@ -217,30 +226,6 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 		}
-
-		cookieSettings, err := m.appService.LoadSessionSettings()
-		if err != nil {
-			m.logger.Error(
-				"Unable to add user auth log to application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-		cookie, err := models.NewCookie(app, user).Crypt(cookieSettings)
-		if err != nil {
-			m.logger.Error(
-				"Unable to create user cookie for application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-		http.SetCookie(ctx.Response(), cookie)
 		userId = userIdentity.UserID.Hex()
 	} else {
 		form.Remember = true
@@ -403,7 +388,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	passwordSettings, err := m.appService.LoadPasswordSettings()
+	passwordSettings, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
 		m.logger.Error(
 			"Unable to load password settings for application",
@@ -431,7 +416,16 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
-	userIdentity, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
+	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if err != nil {
+		m.logger.Warn(
+			"Unable to get identity provider",
+			zap.Object("SignUpForm", form),
+			zap.Error(err),
+		)
+	}
+
+	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get user with identity for application",
@@ -468,16 +462,15 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	userIdentity = &models.UserIdentity{
-		ID:         bson.NewObjectId(),
-		UserID:     user.ID,
-		AppID:      app.ID,
-		ExternalID: form.Email,
-		Provider:   models.UserIdentityProviderPassword,
-		Connection: "initial",
-		Credential: ep,
-		Email:      form.Email,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		ID:                 bson.NewObjectId(),
+		UserID:             user.ID,
+		ApplicationID:      app.ID,
+		ExternalID:         form.Email,
+		IdentityProviderID: ipc.ID,
+		Credential:         ep,
+		Email:              form.Email,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 	if err := m.userIdentityService.Create(userIdentity); err != nil {
 		m.logger.Error(
@@ -498,30 +491,6 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
-
-	cookieSettings, err := m.appService.LoadSessionSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to add user auth log to application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	cookie, err := models.NewCookie(app, user).Crypt(cookieSettings)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), cookie)
 
 	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.ID.Hex()})
 	if err != nil {

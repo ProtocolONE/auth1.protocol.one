@@ -16,7 +16,7 @@ var (
 	ErrorPasswordRepeat           = "Password repeat is not equal to password"
 	ErrorUnableValidatePassword   = "Unable to validate password"
 	ErrorClientIdIncorrect        = "Client ID is incorrect"
-	ErrorConnectionIncorrect      = "Connection is incorrect"
+	ErrorConnectionIncorrect      = "Name is incorrect"
 	ErrorCannotCreateToken        = "Cannot create token"
 	ErrorCannotUseToken           = "Cannot use this token"
 	ErrorRedirectUriIncorrect     = "Redirect URI is incorrect"

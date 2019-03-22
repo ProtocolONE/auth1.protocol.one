@@ -80,7 +80,7 @@ type MfaConnection struct {
 
 func (m *MfaProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", m.ID.String())
-	enc.AddString("AppID", m.AppID.String())
+	enc.AddString("ApplicationID", m.AppID.String())
 	enc.AddString("Name", m.Name)
 	enc.AddString("Type", m.Type)
 	enc.AddString("Channel", m.Channel)
@@ -89,7 +89,7 @@ func (m *MfaProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *MfaVerifyForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", m.ClientId)
-	enc.AddString("AppID", m.ProviderId)
+	enc.AddString("ApplicationID", m.ProviderId)
 	enc.AddString("Token", "[HIDDEN]")
 	enc.AddString("Code", "[HIDDEN]")
 
@@ -120,7 +120,7 @@ func (m *MfaApplicationProviderForm) MarshalLogObject(enc zapcore.ObjectEncoder)
 
 func (m *MfaChallengeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientId", m.ClientId)
-	enc.AddString("Connection", m.Connection)
+	enc.AddString("Name", m.Connection)
 	enc.AddString("Type", m.Type)
 	enc.AddString("Token", m.Token)
 
