@@ -353,6 +353,12 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
+	m.session.Values[clientIdSessionKey] = reqGCR.Client.ClientId
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving session", zap.Error(err))
+		return "", err
+	}
+
 	return reqACR.RedirectTo, nil
 }
 

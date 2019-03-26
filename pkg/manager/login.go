@@ -560,11 +560,6 @@ func (m *LoginManager) CreateAuthUrl(ctx echo.Context, form *models.LoginPageFor
 
 	if form.RedirectUri == "" {
 		form.RedirectUri = fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
-		m.session.Values[clientIdSessionKey] = form.ClientID
-		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-			m.logger.Error("Error saving session", zap.Error(err))
-			return "", err
-		}
 	}
 
 	settings := jwtverifier.Config{
