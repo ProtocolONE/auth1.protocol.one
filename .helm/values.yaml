@@ -26,7 +26,6 @@ backend:
     port: 8080
     protocol: TCP
   env:
-  - ACCESS_TOKEN_LIFESPAN
   - API_PORT
   - API_DEBUG
   - API_TIMEOUTREAD
