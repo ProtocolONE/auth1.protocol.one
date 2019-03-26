@@ -377,6 +377,12 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 		return nil, err
 	}
 
+	m.session.Values[clientIdSessionKey] = form.ClientID
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving session", zap.Error(err))
+		return nil, err
+	}
+
 	return &models.Oauth2TokenIntrospection{client}, nil
 }
 
