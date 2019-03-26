@@ -164,13 +164,17 @@ func (os *OneTimeTokenService) Create(s interface{}) (*OneTimeToken, error) {
 		Token: GetRandString(os.Settings.Length),
 	}
 
-	s, err := json.Marshal(s)
+	data, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
 	}
 
-	result := os.Redis.Set(fmt.Sprintf(OneTimeTokenStoragePattern, t.Token), s, time.Duration(os.Settings.TTL)*time.Second)
-	return t, result.Err()
+	resSet := os.Redis.Set(fmt.Sprintf(OneTimeTokenStoragePattern, t.Token), data, 0)
+	if resSet.Err() != nil {
+		return nil, resSet.Err()
+	}
+	resExp := os.Redis.Expire(fmt.Sprintf(OneTimeTokenStoragePattern, t.Token), time.Duration(os.Settings.TTL)*time.Second)
+	return t, resExp.Err()
 }
 
 func (os *OneTimeTokenService) Get(token string, d interface{}) error {

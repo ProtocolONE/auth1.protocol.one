@@ -21,7 +21,8 @@ type Oauth2LoginSubmitForm struct {
 	Email         string `query:"email" form:"email"`
 	Password      string `query:"password" form:"password"`
 	PreviousLogin string `query:"previous_login" form:"previous_login"`
-	Remember      bool   `query:"remember"`
+	Token         string `query:"token" form:"token"`
+	Remember      bool   `query:"remember" form:"remember"`
 }
 
 type Oauth2ConsentForm struct {

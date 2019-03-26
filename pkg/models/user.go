@@ -65,10 +65,11 @@ type AuthorizeResultResponse struct {
 }
 
 type AuthorizeLinkForm struct {
-	ClientID string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
-	Code     string `query:"code" form:"code" json:"code" validate:"required"`
-	Action   string `query:"action" form:"action" json:"action" validate:"required"`
-	Password string `query:"password" form:"password" json:"password"`
+	Challenge string `query:"challenge" form:"challenge" json:"challenge" validate:"required"`
+	ClientID  string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
+	Code      string `query:"code" form:"code" json:"code" validate:"required"`
+	Action    string `query:"action" form:"action" json:"action" validate:"required"`
+	Password  string `query:"password" form:"password" json:"password"`
 }
 
 type LoginForm struct {

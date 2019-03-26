@@ -43,7 +43,7 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 	}
 
 	previousLogin := ""
-	user, url, err := l.Manager.CheckAuth(ctx, form)
+	appID, user, url, err := l.Manager.CheckAuth(ctx, form)
 	if err != nil {
 		l.logger.Error("Error checking login request", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
@@ -64,6 +64,7 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
 		"Challenge":     form.Challenge,
+		"ClientID":      appID,
 		"Csrf":          csrf,
 		"PreviousLogin": previousLogin,
 	})

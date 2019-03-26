@@ -2,6 +2,16 @@ package models
 
 import "go.uber.org/zap/zapcore"
 
+type ChangePasswordForm struct {
+	ClientID string `json:"client_id" query:"client_id" validate:"required"`
+}
+
+func (a *ChangePasswordForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ClientID", a.ClientID)
+
+	return nil
+}
+
 type ChangePasswordStartForm struct {
 	ClientID   string `json:"client_id" form:"client_id" validate:"required"`
 	Connection string `json:"connection" form:"connection"`

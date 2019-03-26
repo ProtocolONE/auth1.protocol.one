@@ -97,9 +97,5 @@ func (us UserIdentityService) Get(app *Application, identityProvider *AppIdentit
 		Find(bson.M{"app_id": app.ID, "identity_provider_id": identityProvider.ID, "external_id": externalId}).
 		One(&ui)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return ui, nil
+	return ui, err
 }

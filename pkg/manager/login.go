@@ -2,16 +2,18 @@ package manager
 
 import (
 	"auth-one-api/pkg/database"
-	"auth-one-api/pkg/helper"
 	"auth-one-api/pkg/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
+	"github.com/ory/hydra/sdk/go/hydra"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -34,18 +36,21 @@ type LoginManager struct {
 	mfaService              *models.MfaService
 	authLogService          *models.AuthLogService
 	identityProviderService *models.AppIdentityProviderService
+	hydra                   *hydra.CodeGenSDK
 }
 
-func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client, session *sessions.Session) *LoginManager {
+func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client, session *sessions.Session, hydra *hydra.CodeGenSDK) *LoginManager {
 	m := &LoginManager{
-		logger:              logger,
-		redis:               redis,
-		session:             session,
-		appService:          models.NewApplicationService(h),
-		userService:         models.NewUserService(h),
-		userIdentityService: models.NewUserIdentityService(h),
-		mfaService:          models.NewMfaService(h),
-		authLogService:      models.NewAuthLogService(h),
+		logger:                  logger,
+		redis:                   redis,
+		session:                 session,
+		hydra:                   hydra,
+		appService:              models.NewApplicationService(h),
+		userService:             models.NewUserService(h),
+		userIdentityService:     models.NewUserIdentityService(h),
+		mfaService:              models.NewMfaService(h),
+		authLogService:          models.NewAuthLogService(h),
+		identityProviderService: models.NewAppIdentityProviderService(h),
 	}
 
 	return m
@@ -56,7 +61,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.CommonError{Message: models.ErrorConnectionIncorrect}
 	}
 
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.logger.Error(
 			"Unable to get application",
@@ -67,7 +72,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	uic, err := m.appService.GetUserIdentityConnection(a, models.AppIdentityProviderTypeSocial, form.Connection)
+	ip, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, form.Connection)
 	if err != nil {
 		m.logger.Error(
 			"Unable to load user identity settings for application",
@@ -79,7 +84,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 
-	u, err := uic.GetAuthUrl(ctx, form)
+	u, err := ip.GetAuthUrl(ctx, form)
 	if err != nil {
 		m.logger.Error(
 			"Unable to get auth url from authorize form",
@@ -128,7 +133,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	uic, err := m.appService.GetUserIdentityConnection(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
+	ip, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
 	if err != nil {
 		m.logger.Error(
 			"Unable to load user identity settings for application",
@@ -139,7 +144,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorConnectionIncorrect}
 	}
 
-	cp, err := uic.GetClientProfile(ctx)
+	cp, err := m.identityProviderService.GetSocialProfile(ctx, ip)
 	if err != nil || cp.ID == "" {
 		m.logger.Error(
 			"Unable to load identity profile for application",
@@ -150,17 +155,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialData}
 	}
 
-	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get identity provider",
-			zap.Object("AuthorizeForm", form),
-			zap.Error(err),
-		)
-	}
-
-	userIdentity, err := m.userIdentityService.Get(app, ipc, cp.ID)
-	if userIdentity != nil {
+	userIdentity, err := m.userIdentityService.Get(app, ip, cp.ID)
+	if userIdentity != nil && err != mgo.ErrNotFound {
 		user, err := m.userService.Get(userIdentity.UserID)
 		if err != nil {
 			m.logger.Error(
@@ -173,19 +169,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorLoginIncorrect}
 		}
 
-		t, err := helper.CreateAuthToken(ctx, m.appService, user)
-		if err != nil {
-			m.logger.Error(
-				"Unable to create user auth token for application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return nil, &models.CommonError{Code: `common`, Message: err.Error()}
-		}
-
-		if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
+		if err := m.authLogService.Add(ctx, user, ""); err != nil {
 			m.logger.Error(
 				"Unable to log authorization for user",
 				zap.Object("User", user),
@@ -195,37 +179,12 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 		}
 
-		cs, err := m.appService.LoadSessionSettings()
-		if err != nil {
-			m.logger.Error(
-				"Unable to load session settings for application",
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-
-		c, err := models.NewCookie(app, user).Crypt(cs)
-		if err != nil {
-			m.logger.Error(
-				"Unable to create user cookie for application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-
-		http.SetCookie(ctx.Response(), c)
-
 		ottSettings := &models.OneTimeTokenSettings{
 			Length: 64,
 			TTL:    3600,
 		}
 		os := models.NewOneTimeTokenService(m.redis, ottSettings)
-		ott, err := os.Create(&t)
+		ott, err := os.Create(userIdentity)
 		if err != nil {
 			m.logger.Error(
 				"Unable to create one-time token for application",
@@ -238,81 +197,74 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
 
-		url, err := helper.PrepareRedirectUrl(authForm.RedirectUri, ott)
-		if err != nil {
-			m.logger.Error(
-				"Unable to create redirect url",
-				zap.Object("LoginForm", form),
-				zap.Object("OneTimeToken", ott),
-				zap.Error(err),
-			)
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
-		}
-
 		return &models.AuthorizeResultResponse{
 			Result:  SocialAccountSuccess,
-			Payload: map[string]interface{}{"url": url},
+			Payload: map[string]interface{}{"token": ott.Token},
 		}, nil
 	}
 
-	ipcDB, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get identity provider",
-			zap.Object("AuthorizeResultForm", form),
-			zap.Error(err),
-		)
-	}
-
-	userIdentity, err = m.userIdentityService.Get(app, ipcDB, cp.Email)
-	if userIdentity != nil {
-		ss, err := m.appService.LoadSocialSettings()
+	if cp.Email != "" {
+		ipPass, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 		if err != nil {
 			m.logger.Error(
-				"Unable to load social settings for application",
+				"Unable to load user identity settings for application",
 				zap.Object("AuthorizeForm", authForm),
-				zap.Object("UserIdentitySocial", cp),
-				zap.Object("Application", app),
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialSettings}
+			return nil, &models.CommonError{Code: `common`, Message: models.ErrorConnectionIncorrect}
 		}
 
-		ottSettings := &models.OneTimeTokenSettings{
-			Length: ss.LinkedTokenLength,
-			TTL:    ss.LinkedTTL,
-		}
-		os := models.NewOneTimeTokenService(m.redis, ottSettings)
-		ott, err := os.Create(&models.UserIdentity{
-			ID:                 bson.NewObjectId(),
-			UserID:             userIdentity.UserID,
-			ApplicationID:      app.ID,
-			IdentityProviderID: ipc.ID,
-			ExternalID:         cp.ID,
-			Credential:         cp.Token,
-			Email:              cp.Email,
-			Name:               cp.Name,
-			CreatedAt:          time.Now(),
-			UpdatedAt:          time.Now(),
-		})
-
-		if err != nil {
-			m.logger.Error(
-				"Unable to create one-time token for application",
-				zap.Object("AuthorizeForm", authForm),
-				zap.Object("UserIdentitySocial", cp),
-				zap.Object("Application", app),
+		userIdentity, err := m.userIdentityService.Get(app, ipPass, cp.Email)
+		if err != nil && err != mgo.ErrNotFound {
+			m.logger.Warn(
+				"Unable to get user identity",
+				zap.Object("AuthorizeResultForm", form),
 				zap.Error(err),
 			)
-
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
 
-		return &models.AuthorizeResultResponse{
-			Result:  SocialAccountCanLink,
-			Payload: map[string]interface{}{"token": ott.Token, "email": cp.Email},
-		}, nil
+		if userIdentity != nil {
+			ss, err := m.appService.LoadSocialSettings()
+			if err != nil {
+				m.logger.Error(
+					"Unable to load social settings for application",
+					zap.Object("AuthorizeForm", authForm),
+					zap.Object("UserIdentitySocial", cp),
+					zap.Object("Application", app),
+					zap.Error(err),
+				)
+
+				return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialSettings}
+			}
+
+			ottSettings := &models.OneTimeTokenSettings{
+				Length: ss.LinkedTokenLength,
+				TTL:    ss.LinkedTTL,
+			}
+			os := models.NewOneTimeTokenService(m.redis, ottSettings)
+			userIdentity.IdentityProviderID = ip.ID
+			userIdentity.ExternalID = cp.ID
+			userIdentity.Email = cp.Email
+			ott, err := os.Create(userIdentity)
+
+			if err != nil {
+				m.logger.Error(
+					"Unable to create one-time token for application",
+					zap.Object("AuthorizeForm", authForm),
+					zap.Object("UserIdentitySocial", cp),
+					zap.Object("Application", app),
+					zap.Error(err),
+				)
+
+				return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+			}
+
+			return &models.AuthorizeResultResponse{
+				Result:  SocialAccountCanLink,
+				Payload: map[string]interface{}{"token": ott.Token, "email": cp.Email},
+			}, nil
+		}
 	}
 
 	user := &models.User{
@@ -327,7 +279,6 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
-
 	if err := m.userService.Create(user); err != nil {
 		m.logger.Error(
 			"Unable to create user with identity for application",
@@ -344,7 +295,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		ID:                 bson.NewObjectId(),
 		UserID:             user.ID,
 		ApplicationID:      app.ID,
-		IdentityProviderID: ipc.ID,
+		IdentityProviderID: ip.ID,
 		Email:              cp.Email,
 		ExternalID:         cp.ID,
 		Name:               cp.Name,
@@ -352,7 +303,6 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		UpdatedAt:          time.Now(),
 		Credential:         cp.Token,
 	}
-
 	if err := m.userIdentityService.Create(userIdentity); err != nil {
 		m.logger.Error(
 			"Unable to create user identity for an application",
@@ -365,20 +315,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
 	}
 
-	t, err := helper.CreateAuthToken(ctx, m.appService, user)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user [%s] auth token for application[%s] with error: %s",
-			zap.Object("AuthorizeForm", authForm),
-			zap.Object("UserIdentitySocial", cp),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
-	}
-
-	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
+	if err := m.authLogService.Add(ctx, user, ""); err != nil {
 		m.logger.Error(
 			"Unable to log auth for user",
 			zap.Object("User", user),
@@ -387,35 +324,12 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	cs, err := m.appService.LoadSessionSettings()
-	if err != nil {
-		m.logger.Error(
-			"Unable to load session settings for application",
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	c, err := models.NewCookie(app, user).Crypt(cs)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), c)
-
 	ottSettings := &models.OneTimeTokenSettings{
 		Length: 64,
 		TTL:    3600,
 	}
 	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-	ott, err := os.Create(&t)
+	ott, err := os.Create(&userIdentity)
 	if err != nil {
 		m.logger.Error(
 			"Unable to create one-time token for application",
@@ -428,24 +342,13 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 	}
 
-	url, err := helper.PrepareRedirectUrl(authForm.RedirectUri, ott)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create redirect url",
-			zap.Object("LoginForm", form),
-			zap.Object("OneTimeToken", ott),
-			zap.Error(err),
-		)
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
-	}
-
 	return &models.AuthorizeResultResponse{
 		Result:  SocialAccountSuccess,
-		Payload: map[string]interface{}{"url": url},
+		Payload: map[string]interface{}{"token": ott.Token},
 	}, nil
 }
 
-func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (token *models.AuthToken, error models.ErrorInterface) {
+func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, models.ErrorInterface) {
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.logger.Error(
@@ -454,26 +357,26 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			zap.Error(err),
 		)
 
-		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
 	ottSettings := &models.OneTimeTokenSettings{}
 	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-	sl := &models.UserIdentity{}
-	if err := os.Get(form.Code, sl); err != nil {
+	storedUserIdentity := &models.UserIdentity{}
+	if err := os.Use(form.Code, storedUserIdentity); err != nil {
 		m.logger.Error(
 			"Unable to use token for application",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
 		)
 
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
 	}
 
 	user := &models.User{
 		ID:            bson.NewObjectId(),
 		AppID:         app.ID,
-		Email:         sl.Email,
+		Email:         storedUserIdentity.Email,
 		EmailVerified: false,
 		Blocked:       false,
 		LastIp:        ctx.RealIP(),
@@ -493,10 +396,10 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 		}
 		if false == ps.IsValid(form.Password) {
-			return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+			return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 		}
 
 		ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
@@ -520,7 +423,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+			return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 		}
 
 		mfa, err := m.mfaService.GetUserProviders(user)
@@ -532,7 +435,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 		}
 
 		if len(mfa) > 0 {
@@ -552,10 +455,10 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 					zap.Error(err),
 				)
 
-				return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
+				return "", &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 			}
 
-			return nil, &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
+			return "", &models.MFARequiredError{HttpCode: http.StatusForbidden, Message: ott.Token}
 		}
 
 		user, err = m.userService.Get(userIdentity.UserID)
@@ -566,19 +469,18 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 		}
 	case "new":
 		if err := m.userService.Create(user); err != nil {
 			m.logger.Error(
-				"Unable to create user with identity",
-				zap.Object("UserIdentity", sl),
+				"Unable to create user",
+				zap.Object("User", user),
 				zap.Error(err),
 			)
 
-			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
+			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
 		}
-		sl.UserID = user.ID
 	default:
 		m.logger.Error(
 			"Unknown action type for social link",
@@ -586,65 +488,50 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			zap.Error(err),
 		)
 
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	if err := m.userIdentityService.Create(sl); err != nil {
+	storedUserIdentity.ID = bson.NewObjectId()
+	storedUserIdentity.UserID = user.ID
+	storedUserIdentity.ApplicationID = app.ID
+	if err := m.userIdentityService.Create(storedUserIdentity); err != nil {
 		m.logger.Error(
 			"Unable to create user identity for application",
-			zap.Object("UserIdentity", sl),
+			zap.Object("UserIdentity", storedUserIdentity),
 			zap.Error(err),
 		)
 
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
 	}
 
-	t, err := helper.CreateAuthToken(ctx, m.appService, user)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user auth token for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
-	}
-
-	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
+	if err := m.authLogService.Add(ctx, user, ""); err != nil {
 		m.logger.Error(
 			"Unable to log authorization for user",
 			zap.Object("User", user),
 			zap.Error(err),
 		)
 
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	cs, err := m.appService.LoadSessionSettings()
+	reqACL, _, err := m.hydra.AcceptLoginRequest(
+		form.Challenge,
+		swagger.AcceptLoginRequest{
+			Subject:     user.ID.Hex(),
+			Remember:    false,
+			RememberFor: 0,
+		},
+	)
 	if err != nil {
 		m.logger.Error(
-			"Unable to load session settings for application",
-			zap.Object("Application", app),
+			"Unable to accept login challenge",
+			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
 		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
-	c, err := models.NewCookie(app, user).Crypt(cs)
-	if err != nil {
-		m.logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
 
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), c)
-
-	return t, nil
+	return reqACL.RedirectTo, nil
 }
 
 func (m *LoginManager) LoginByOTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error models.ErrorInterface) {

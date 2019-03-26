@@ -3,6 +3,7 @@ package models
 import (
 	"auth-one-api/pkg/database"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,10 +11,13 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/twitch"
 	"golang.org/x/oauth2/vk"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -236,7 +240,7 @@ func (ipc *AppIdentityProvider) GetAuthUrl(ctx echo.Context, form interface{}) (
 	if err != nil {
 		return "", err
 	}
-	v.Set("state", string(state))
+	v.Set("state", base64.StdEncoding.EncodeToString(state))
 	if strings.Contains(ipc.EndpointAuthURL, "?") {
 		buf.WriteByte('&')
 	} else {
@@ -246,25 +250,25 @@ func (ipc *AppIdentityProvider) GetAuthUrl(ctx echo.Context, form interface{}) (
 	return buf.String(), nil
 }
 
-func (ipc *AppIdentityProvider) GetClientProfile(ctx echo.Context) (*UserIdentitySocial, error) {
-	/*rUrl := fmt.Sprintf("%s://%s/authorize/result", ctx.Scheme(), ctx.Request().Host)
+func (ipcs *AppIdentityProviderService) GetSocialProfile(ctx echo.Context, ip *AppIdentityProvider) (*UserIdentitySocial, error) {
+	rUrl := fmt.Sprintf("%s://%s/authorize/result", ctx.Scheme(), ctx.Request().Host)
 	conf := &oauth2.Config{
-		ClientID:     uic.ClientID,
-		ClientSecret: uic.ClientSecret,
-		Scopes:       uic.ClientScopes,
+		ClientID:     ip.ClientID,
+		ClientSecret: ip.ClientSecret,
+		Scopes:       ip.ClientScopes,
 		RedirectURL:  rUrl,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  uic.EndpointAuthURL,
-			TokenURL: uic.EndpointTokenURL,
+			AuthURL:  ip.EndpointAuthURL,
+			TokenURL: ip.EndpointTokenURL,
 		},
 	}
 
-	t, err := conf.Exchange(context.Background(), ctx.QueryParam("code"))
+	t, err := conf.Exchange(ctx.Request().Context(), ctx.QueryParam("code"))
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(fmt.Sprintf(uic.EndpointUserInfoURL, url.QueryEscape(t.AccessToken)))
+	resp, err := http.Get(fmt.Sprintf(ip.EndpointUserInfoURL, url.QueryEscape(t.AccessToken)))
 	if err != nil {
 		return nil, err
 	}
@@ -285,12 +289,11 @@ func (ipc *AppIdentityProvider) GetClientProfile(ctx echo.Context) (*UserIdentit
 	}
 
 	m := f.(map[string]interface{})
-	if _, err := parseResponse(uic.Name, m, uis); err != nil {
+	if _, err := parseResponse(ip.Name, m, uis); err != nil {
 		return nil, err
 	}
 
-	return uis, nil*/
-	return nil, nil
+	return uis, nil
 }
 
 func parseResponse(name string, params ...interface{}) (result *UserIdentitySocial, err error) {

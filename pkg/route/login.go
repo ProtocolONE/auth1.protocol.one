@@ -20,7 +20,7 @@ type (
 
 func InitLogin(cfg Config) error {
 	route := &Login{
-		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session),
+		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session, cfg.Hydra),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}
@@ -97,8 +97,6 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	}
 
 	t, err := l.Manager.AuthorizeResult(ctx, form)
-	// WTF result HTML/JSON???
-
 	if err != nil {
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -141,14 +139,17 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 		)
 	}
 
-	t, err := l.Manager.AuthorizeLink(ctx, form)
-
-	// WTF result HTML/JSON???
+	url, err := l.Manager.AuthorizeLink(ctx, form)
 	if err != nil {
-		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			err.GetCode(),
+			err.GetMessage(),
+		)
 	}
 
-	return ctx.JSON(http.StatusOK, t)
+	return ctx.JSON(http.StatusOK, map[string]string{"url": url})
 }
 
 func (l *Login) LoginPage(ctx echo.Context) (err error) {

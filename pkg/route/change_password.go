@@ -23,6 +23,7 @@ func InitChangePassword(cfg Config) error {
 
 	cfg.Echo.POST("/dbconnections/change_password", route.ChangePasswordStart)
 	cfg.Echo.POST("/dbconnections/change_password/verify", route.ChangePasswordVerify)
+	cfg.Echo.GET("/dbconnections/change_password/form", route.ChangePasswordForm)
 
 	return nil
 }
@@ -97,4 +98,38 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusOK)
+}
+
+func (l *ChangePassword) ChangePasswordForm(ctx echo.Context) error {
+	form := new(models.ChangePasswordForm)
+
+	if err := ctx.Bind(form); err != nil {
+		l.logger.Error("ChangePasswordForm bind form failed", zap.Error(err))
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			BadRequiredCodeCommon,
+			models.ErrorInvalidRequestParameters,
+		)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		l.logger.Error(
+			"ChangePasswordForm validate form failed",
+			zap.Object("ChangePasswordForm", form),
+			zap.Error(err),
+		)
+
+		return helper.NewErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			models.ErrorRequiredField,
+		)
+	}
+
+	return ctx.Render(http.StatusOK, "change_password.html", map[string]interface{}{
+		"ClientID": form.ClientID,
+	})
 }

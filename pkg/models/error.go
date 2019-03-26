@@ -7,6 +7,7 @@ var (
 	ErrorAddAuthLog               = "Unable to add auth log"
 	ErrorCreateCookie             = "Unable to create cookie"
 	ErrorCreateUser               = "Unable to create user"
+	ErrorUpdateUser               = "Unable to update user"
 	ErrorCreateUserIdentity       = "Unable to create user identity"
 	ErrorLoginIncorrect           = "Login is incorrect"
 	ErrorCryptPassword            = "Unable to crypt password"
