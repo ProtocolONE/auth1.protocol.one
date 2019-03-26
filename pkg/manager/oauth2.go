@@ -311,14 +311,35 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
+	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Subject))
+	if err != nil {
+		m.logger.Error(
+			"Unable to get user",
+			zap.String("Subject", reqGCR.Subject),
+			zap.Error(err),
+		)
+
+		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+	}
+
 	req := swagger.AcceptConsentRequest{GrantScope: scopes}
+	userInfo := map[string]interface{}{
+		"email":                 user.Email,
+		"email_verified":        user.EmailVerified,
+		"phone_number":          user.PhoneNumber,
+		"phone_number_verified": user.PhoneVerified,
+		"name":                  user.Name,
+		"picture":               user.Picture,
+	}
 	if reqGCR.Skip == true {
 		req.Session = swagger.ConsentRequestSession{
 			AccessToken: map[string]interface{}{"remember": true},
+			IdToken:     userInfo,
 		}
 	} else {
 		req.Session = swagger.ConsentRequestSession{
 			AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey].(bool)},
+			IdToken:     userInfo,
 		}
 	}
 
