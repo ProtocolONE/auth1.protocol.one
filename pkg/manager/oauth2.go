@@ -550,7 +550,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: userIdentity.ID.Hex()})
+	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
 	if err != nil {
 		m.logger.Error(
 			"Unable to accept login challenge",
