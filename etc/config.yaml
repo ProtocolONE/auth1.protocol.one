@@ -13,9 +13,9 @@ Database:
   User: ""
   Password: ""
 Session:
-  Size: 10
+  Size: 1
   Network: "tcp"
-  Address: ":6379"
+  Address: "127.0.0.1:6379"
   Password: ""
   Name: "sessid"
   Secret: "secretkey"

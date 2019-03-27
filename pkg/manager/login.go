@@ -83,7 +83,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
-	fmt.Print(u)
+
 	return u, nil
 }
 

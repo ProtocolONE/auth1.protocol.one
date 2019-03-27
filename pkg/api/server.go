@@ -2,12 +2,12 @@ package api
 
 import (
 	"auth-one-api/pkg/config"
-	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"auth-one-api/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
+	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -27,17 +27,17 @@ import (
 
 type ServerConfig struct {
 	ApiConfig      *config.ApiConfig
-	Logger         *zap.Logger
 	JwtConfig      *config.JwtConfig
 	DatabaseConfig *config.DatabaseConfig
-	RedisConfig    *config.RedisConfig
 	Kubernetes     *config.KubernetesConfig
 	HydraConfig    *config.HydraConfig
 	SessionConfig  *config.SessionConfig
+	MongoDB        *mgo.Session
+	SessionStore   *redistore.RediStore
+	RedisClient    *redis.Client
 }
 
 type Server struct {
-	Log           *zap.Logger
 	Echo          *echo.Echo
 	ServerConfig  *config.ApiConfig
 	RedisHandler  *redis.Client
@@ -51,24 +51,13 @@ type Template struct {
 }
 
 func NewServer(c *ServerConfig) (*Server, error) {
-	db, err := database.NewConnection(c.DatabaseConfig)
-	if err != nil {
-		c.Logger.Fatal("Database connection failed with error", zap.Error(err))
-	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     c.RedisConfig.Addr,
-		Password: c.RedisConfig.Password,
-	})
-	defer redisClient.Close()
-
 	var service micro.Service
 	if c.Kubernetes.Service.Host == "" {
 		service = micro.NewService()
-		c.Logger.Info("Initialize micro service")
+		zap.L().Info("Initialize micro service")
 	} else {
 		service = k8s.NewService()
-		c.Logger.Info("Initialize k8s service")
+		zap.L().Info("Initialize k8s service")
 	}
 	service.Init()
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
@@ -77,25 +66,12 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		AdminURL: c.HydraConfig.AdminURL,
 	})
 	if err != nil {
-		c.Logger.Fatal("Hydra SDK creation failed", zap.Error(err))
+		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
 	}
-
-	store, err := redistore.NewRediStore(
-		c.SessionConfig.Size,
-		c.SessionConfig.Network,
-		c.SessionConfig.Address,
-		c.SessionConfig.Password,
-		[]byte(c.SessionConfig.Secret),
-	)
-	if err != nil {
-		c.Logger.Fatal("Unable to start redis session store", zap.Error(err))
-	}
-	defer store.Close()
 
 	server := &Server{
-		Log:           c.Logger,
 		Echo:          echo.New(),
-		RedisHandler:  redisClient,
+		RedisHandler:  c.RedisClient,
 		MfaService:    ms,
 		ServerConfig:  c.ApiConfig,
 		Hydra:         h,
@@ -106,7 +82,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
 	server.Echo.Renderer = t
-	server.Echo.Use(ZapLogger(c.Logger))
+	server.Echo.Use(ZapLogger(zap.L()))
 	server.Echo.Use(middleware.Recover())
 	// TODO: Validate origins for each application by settings
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -120,11 +96,11 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		CookieName:  "_csrf",
 		Skipper:     csrfSkipper,
 	}))
-	server.Echo.Use(session.Middleware(store))
+	server.Echo.Use(session.Middleware(c.SessionStore))
 	server.Echo.Use(middleware.RequestID())
 	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			s := db.Copy()
+			s := c.MongoDB.Copy()
 			defer s.Close()
 
 			ctx.Set("database", s)
@@ -135,7 +111,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	registerCustomValidator(server.Echo)
 
 	if err := server.setupRoutes(); err != nil {
-		server.Log.Fatal("Setup routes failed", zap.Error(err))
+		zap.L().Fatal("Setup routes failed", zap.Error(err))
 	}
 
 	return server, nil
@@ -164,7 +140,6 @@ func (s *Server) Start() error {
 func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
 		Echo:          s.Echo,
-		Logger:        s.Log,
 		Redis:         s.RedisHandler,
 		MfaService:    s.MfaService,
 		Hydra:         s.Hydra,

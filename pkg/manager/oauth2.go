@@ -8,6 +8,7 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra"
@@ -65,6 +66,17 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return nil, "", nil
 	}
 
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		zap.L().Error("Unable to get session", zap.Error(err))
+		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+	}
+	sess.Values[loginRememberKey] = req.Skip == true
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		zap.L().Error("Error saving session", zap.Error(err))
+		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+	}
+
 	if req.Skip == true {
 		reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
 		if err != nil {
@@ -74,17 +86,6 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 				zap.Error(err),
 			)
 			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
-		}
-
-		sess, err := session.Get(m.sessionConfig.Name, ctx)
-		if err != nil {
-			zap.L().Error("Unable to get session", zap.Error(err))
-			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
-		}
-		sess.Values[loginRememberKey] = true
-		if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-			zap.L().Error("Error saving session", zap.Error(err))
-			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 		}
 
 		return nil, reqACL.RedirectTo, nil
@@ -204,7 +205,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	}
 
 	sess.Values[loginRememberKey] = form.Remember
-	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
 		zap.L().Error("Error saving session", zap.Error(err))
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}

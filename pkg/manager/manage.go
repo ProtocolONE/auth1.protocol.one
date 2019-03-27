@@ -125,7 +125,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		return nil, err
 	}
 
-	client, response, err := m.hydraSDK.AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
+	_, response, err := m.hydraSDK.AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
 		ClientId:      app.ID.Hex(),
 		ClientName:    app.Name,
 		ClientSecret:  app.AuthSecret,
@@ -142,7 +142,6 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		)
 		return nil, err
 	}
-	fmt.Printf("Client created: %+v", client)
 
 	return app, nil
 }
