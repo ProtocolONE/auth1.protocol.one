@@ -10,28 +10,18 @@ import (
 	"net/http"
 )
 
-type PasswordLess struct {
-	Manager *manager.PasswordLessManager
-	logger  *zap.Logger
-}
-
 func InitPasswordLess(cfg Config) error {
-	route := &PasswordLess{
-		Manager: manager.NewPasswordLessManager(cfg.Logger),
-		logger:  cfg.Logger,
-	}
-
-	cfg.Echo.POST("/passwordless/start", route.PasswordLessStart)
-	cfg.Echo.POST("/passwordless/verify", route.PasswordLessVerify)
+	cfg.Echo.POST("/passwordless/start", passwordLessStart)
+	cfg.Echo.POST("/passwordless/verify", passwordLessVerify)
 
 	return nil
 }
 
-func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
+func passwordLessStart(ctx echo.Context) error {
 	form := new(models.PasswordLessStartForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("PasswordLessStart bind form failed", zap.Error(err))
+		zap.L().Error("PasswordLessStart bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -42,7 +32,7 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"PasswordLessStart validate form failed",
 			zap.Object("PasswordLessStartForm", form),
 			zap.Error(err),
@@ -55,8 +45,9 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 			models.ErrorRequiredField,
 		)
 	}
+	m := manager.NewPasswordLessManager()
 
-	token, e := l.Manager.PasswordLessStart(form)
+	token, e := m.PasswordLessStart(form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}
@@ -64,11 +55,11 @@ func (l *PasswordLess) PasswordLessStart(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, token)
 }
 
-func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
+func passwordLessVerify(ctx echo.Context) error {
 	form := new(models.PasswordLessVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("PasswordLessVerify bind form failed", zap.Error(err))
+		zap.L().Error("PasswordLessVerify bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -79,7 +70,7 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"PasswordLessVerify validate form failed",
 			zap.Object("PasswordLessVerifyForm", form),
 			zap.Error(err),
@@ -93,7 +84,9 @@ func (l *PasswordLess) PasswordLessVerify(ctx echo.Context) error {
 		)
 	}
 
-	token, e := l.Manager.PasswordLessVerify(form)
+	m := manager.NewPasswordLessManager()
+
+	token, e := m.PasswordLessVerify(form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
 	}

@@ -5,33 +5,33 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
+	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type ChangePassword struct {
-	Manager *manager.ChangePasswordManager
-	logger  *zap.Logger
-}
-
 func InitChangePassword(cfg Config) error {
-	route := &ChangePassword{
-		Manager: manager.NewChangePasswordManager(cfg.Logger, cfg.Database, cfg.Redis),
-		logger:  cfg.Logger,
-	}
+	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			db := c.Get("database").(*mgo.Session)
+			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Redis))
 
-	cfg.Echo.POST("/dbconnections/change_password", route.ChangePasswordStart)
-	cfg.Echo.POST("/dbconnections/change_password/verify", route.ChangePasswordVerify)
+			return next(c)
+		}
+	})
+
+	g.POST("/change_password", changePasswordStart)
+	g.POST("/change_password/verify", changePasswordVerify)
 
 	return nil
 }
 
-func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
+func changePasswordStart(ctx echo.Context) error {
 	form := new(models.ChangePasswordStartForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("ChangePasswordStart bind form failed", zap.Error(err))
+		zap.L().Error("ChangePasswordStart bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -42,7 +42,7 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"ChangePasswordStart validate form failed",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
@@ -56,18 +56,19 @@ func (l *ChangePassword) ChangePasswordStart(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.ChangePasswordStart(form); err != nil {
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	if err := m.ChangePasswordStart(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
+func changePasswordVerify(ctx echo.Context) error {
 	form := new(models.ChangePasswordVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("ChangePasswordVerify bind form failed", zap.Error(err))
+		zap.L().Error("ChangePasswordVerify bind form failed", zap.Error(err))
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -78,7 +79,7 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"ChangePasswordVerify validate form failed",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
@@ -92,7 +93,8 @@ func (l *ChangePassword) ChangePasswordVerify(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.ChangePasswordVerify(form); err != nil {
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	if err := m.ChangePasswordVerify(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
