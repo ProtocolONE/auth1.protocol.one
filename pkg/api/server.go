@@ -114,6 +114,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
 		TokenLookup: "header:X-XSRF-TOKEN",
 		CookieName:  "_csrf",
+		Skipper:     CsrfSkipper,
 	}))
 	server.Echo.Use(session.Middleware(store))
 	server.Echo.Use(middleware.RequestID())
@@ -191,4 +192,11 @@ func (s *Server) setupRoutes() error {
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, ctx echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func CsrfSkipper(ctx echo.Context) bool {
+	if (ctx.Path() == "/oauth2/login" && ctx.Request().Method == http.MethodPost) || ctx.Path() == "/oauth2/signup" {
+		return false
+	}
+	return true
 }
