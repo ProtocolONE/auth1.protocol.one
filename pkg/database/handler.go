@@ -14,11 +14,7 @@ func NewConnection(c *config.DatabaseConfig) (*mgo.Session, error) {
 	}
 
 	info.Timeout = 10 * time.Second
-
-	session, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:    []string{},
-		Database: c.Database,
-	})
+	session, err := mgo.DialWithInfo(info)
 
 	if err == nil {
 		session.SetSyncTimeout(1 * time.Minute)
