@@ -52,7 +52,7 @@ spec:
       initContainers:
       - name: hydra-migrate
         #image: oryd/hydra:v0.11.14-alpine
-        image: oryd/hydra:unstable
+        image: "oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine"
         command: ["hydra", "migrate", "sql", "-e"]
         env:
         - name: DATABASE_URL
@@ -65,7 +65,7 @@ spec:
       containers:
         - name: hydra
           #image: oryd/hydra:v0.11.14-alpine
-          image: oryd/hydra:unstable
+          image: "oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine"
           imagePullPolicy: Always
           command: ["hydra", "serve","all", "--dangerous-force-http"]
           #volumeMounts:
