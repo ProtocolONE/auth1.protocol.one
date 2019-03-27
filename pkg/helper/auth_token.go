@@ -2,7 +2,7 @@ package helper
 
 import (
 	"auth-one-api/pkg/models"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"time"
 )

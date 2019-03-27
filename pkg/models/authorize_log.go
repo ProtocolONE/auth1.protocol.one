@@ -4,7 +4,7 @@ import (
 	"auth-one-api/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type (

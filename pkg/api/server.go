@@ -8,10 +8,10 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
 	"github.com/kidstuff/mongostore"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
 	"github.com/ory/hydra/sdk/go/hydra"
@@ -37,14 +37,14 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	Log          *zap.Logger
-	Echo         *echo.Echo
-	ServerConfig *config.ApiConfig
-	DbHandler    *database.Handler
-	RedisHandler *redis.Client
-	MfaService   proto.MfaService
-	Hydra        *hydra.CodeGenSDK
-	Session      *sessions.Session
+	Log           *zap.Logger
+	Echo          *echo.Echo
+	ServerConfig  *config.ApiConfig
+	DbHandler     *database.Handler
+	RedisHandler  *redis.Client
+	MfaService    proto.MfaService
+	Hydra         *hydra.CodeGenSDK
+	SessionConfig *config.SessionConfig
 }
 
 type Template struct {
@@ -86,20 +86,16 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		c.SessionConfig.EnsureTTL,
 		[]byte(c.SessionConfig.Secret),
 	)
-	s, err := store.Get(&http.Request{}, c.SessionConfig.Name)
-	if err != nil {
-		c.Logger.Error(err.Error())
-	}
 
 	server := &Server{
-		Log:          c.Logger,
-		Echo:         echo.New(),
-		DbHandler:    &database.Handler{Name: c.DatabaseConfig.Database, Session: db},
-		RedisHandler: r,
-		MfaService:   ms,
-		ServerConfig: c.ApiConfig,
-		Hydra:        h,
-		Session:      s,
+		Log:           c.Logger,
+		Echo:          echo.New(),
+		DbHandler:     &database.Handler{Name: c.DatabaseConfig.Database, Session: db},
+		RedisHandler:  r,
+		MfaService:    ms,
+		ServerConfig:  c.ApiConfig,
+		Hydra:         h,
+		SessionConfig: c.SessionConfig,
 	}
 
 	t := &Template{
@@ -108,11 +104,18 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Renderer = t
 	server.Echo.Use(ZapLogger(c.Logger))
 	server.Echo.Use(middleware.Recover())
+	// TODO: Validate origins for each application by settings
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowHeaders:     []string{"authorization", "content-type"},
 		AllowOrigins:     c.ApiConfig.AllowOrigins,
 		AllowCredentials: c.ApiConfig.AllowCredentials,
+		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
+	server.Echo.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+		TokenLookup: "header:X-XSRF-TOKEN",
+		CookieName:  "_csrf",
+	}))
+	server.Echo.Use(session.Middleware(store))
 
 	registerCustomValidator(server.Echo)
 
@@ -145,13 +148,13 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
-		Echo:       s.Echo,
-		Logger:     s.Log,
-		Database:   s.DbHandler,
-		Redis:      s.RedisHandler,
-		MfaService: s.MfaService,
-		Hydra:      s.Hydra,
-		Session:    s.Session,
+		Echo:          s.Echo,
+		Logger:        s.Log,
+		Database:      s.DbHandler,
+		Redis:         s.RedisHandler,
+		MfaService:    s.MfaService,
+		Hydra:         s.Hydra,
+		SessionConfig: s.SessionConfig,
 	}
 
 	if err := route.InitLogout(routeConfig); err != nil {
@@ -167,9 +170,6 @@ func (s *Server) setupRoutes() error {
 		return err
 	}
 	if err := route.InitChangePassword(routeConfig); err != nil {
-		return err
-	}
-	if err := route.InitUserInfo(routeConfig); err != nil {
 		return err
 	}
 	if err := route.InitMFA(routeConfig); err != nil {

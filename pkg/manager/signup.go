@@ -6,7 +6,7 @@ import (
 	"auth-one-api/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
