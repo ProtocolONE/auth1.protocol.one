@@ -49,12 +49,12 @@ type (
 	}
 
 	SessionConfig struct {
-		Database  string
-		Table     string
-		Secret    string
-		Name      string
-		MaxAge    int
-		EnsureTTL bool
+		Size     int
+		Network  string
+		Secret   string
+		Name     string
+		Address  string
+		Password string
 	}
 
 	Config struct {

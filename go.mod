@@ -4,6 +4,7 @@ require (
 	cloud.google.com/go v0.34.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190304132955-c9a221d256ec
 	github.com/ProtocolONE/mfa-service v0.1.0
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
