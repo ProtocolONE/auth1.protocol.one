@@ -5,7 +5,7 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -20,7 +20,7 @@ type (
 
 func InitLogin(cfg Config) error {
 	route := &Login{
-		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session),
+		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}

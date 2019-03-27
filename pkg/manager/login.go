@@ -10,8 +10,7 @@ import (
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -27,7 +26,6 @@ var (
 type LoginManager struct {
 	logger              *zap.Logger
 	redis               *redis.Client
-	session             *sessions.Session
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
@@ -35,11 +33,10 @@ type LoginManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client, session *sessions.Session) *LoginManager {
+func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *LoginManager {
 	m := &LoginManager{
 		logger:              logger,
 		redis:               redis,
-		session:             session,
 		appService:          models.NewApplicationService(h),
 		userService:         models.NewUserService(h),
 		userIdentityService: models.NewUserIdentityService(h),
@@ -188,7 +185,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		cs, err := m.appService.LoadSessionSettings()
 		if err != nil {
 			m.logger.Error(
-				"Unable to load session settings for application",
+				"Unable to load sessionConfig settings for application",
 				zap.Object("Application", app),
 				zap.Error(err),
 			)
@@ -373,7 +370,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load session settings for application",
+			"Unable to load sessionConfig settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
@@ -598,7 +595,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load session settings for application",
+			"Unable to load sessionConfig settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
@@ -751,7 +748,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load session settings for application",
+			"Unable to load sessionConfig settings for application",
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),

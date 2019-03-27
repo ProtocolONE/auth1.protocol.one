@@ -4,7 +4,7 @@ import (
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -42,7 +42,7 @@ func (m *LogoutManager) Logout(r *echo.Response, form *models.LogoutForm) (error
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load session settings an application",
+			"Unable to load sessionConfig settings an application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)

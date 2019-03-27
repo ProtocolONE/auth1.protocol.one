@@ -32,13 +32,6 @@ type User struct {
 	UpdatedAt     time.Time     `bson:"updated_at" json:"updated_at"`
 }
 
-type UserProfile struct {
-	ID            bson.ObjectId `bson:"_id" json:"id"`
-	AppID         bson.ObjectId `bson:"app_id" json:"app_id"`
-	Email         string        `bson:"email" json:"email" validate:"required,email"`
-	EmailVerified bool          `bson:"email_verified" json:"email_verified"`
-}
-
 type SignUpForm struct {
 	ClientID    string `form:"client_id" json:"client_id" validate:"required"`
 	Connection  string `form:"connection" json:"connection" validate:"required"`

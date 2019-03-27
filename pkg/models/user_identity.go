@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/oauth2"
 	"io/ioutil"

@@ -5,7 +5,7 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )

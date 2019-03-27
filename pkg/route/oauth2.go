@@ -5,7 +5,7 @@ import (
 	"auth-one-api/pkg/manager"
 	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -18,7 +18,7 @@ type Oauth2 struct {
 
 func InitOauth2(cfg Config) error {
 	route := &Oauth2{
-		Manager: manager.NewOauthManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Hydra, cfg.Session),
+		Manager: manager.NewOauthManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Hydra, cfg.SessionConfig),
 		Http:    cfg.Echo,
 		logger:  cfg.Logger,
 	}
@@ -55,16 +55,14 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 		previousLogin = user.Email
 	}
 
-	csrf, e := l.Manager.CreateCsrfSession(ctx)
-	if e != nil {
-		l.logger.Error("Error saving session", zap.Error(e))
+	if err := l.Manager.SaveCsrfInSession(ctx); err != nil {
+		l.logger.Error("Error saving session", zap.Error(err))
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
 		"Challenge":     form.Challenge,
-		"Csrf":          csrf,
 		"PreviousLogin": previousLogin,
 	})
 }
@@ -112,15 +110,9 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 			message = err.GetMessage()
 		}
 
-		csrf, e := l.Manager.CreateCsrfSession(ctx)
-		if e != nil {
-			l.logger.Error("Error saving session", zap.Error(e))
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-		}
 		return ctx.JSON(httpCode, &models.CommonError{
 			Code:    code,
 			Message: message,
-			Csrf:    csrf,
 		})
 	}
 
@@ -160,7 +152,6 @@ func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
 
 		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 			"Challenge": form.Challenge,
-			"Csrf":      form.Csrf,
 			"Scope":     scopes,
 			"Error":     err.Error(),
 		})
@@ -207,15 +198,9 @@ func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
 			message = err.GetMessage()
 		}
 
-		csrf, e := l.Manager.CreateCsrfSession(ctx)
-		if e != nil {
-			l.logger.Error("Error saving session", zap.Error(e))
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-		}
 		return ctx.JSON(httpCode, &models.CommonError{
 			Code:    code,
 			Message: message,
-			Csrf:    csrf,
 		})
 	}
 

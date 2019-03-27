@@ -8,7 +8,7 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -124,7 +124,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.Logger.Error(
-			"Unable to load session settings for application",
+			"Unable to load sessionConfig settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
