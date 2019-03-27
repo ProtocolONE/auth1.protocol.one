@@ -40,7 +40,6 @@ type Server struct {
 	Log           *zap.Logger
 	Echo          *echo.Echo
 	ServerConfig  *config.ApiConfig
-	DbHandler     *database.Handler
 	RedisHandler  *redis.Client
 	MfaService    proto.MfaService
 	Hydra         *hydra.CodeGenSDK
@@ -90,7 +89,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server := &Server{
 		Log:           c.Logger,
 		Echo:          echo.New(),
-		DbHandler:     &database.Handler{Name: c.DatabaseConfig.Database, Session: db},
 		RedisHandler:  r,
 		MfaService:    ms,
 		ServerConfig:  c.ApiConfig,
@@ -118,6 +116,15 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	}))
 	server.Echo.Use(session.Middleware(store))
 	server.Echo.Use(middleware.RequestID())
+	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			s := db.Copy()
+			defer s.Close()
+
+			ctx.Set("database", s)
+			return next(ctx)
+		}
+	})
 
 	registerCustomValidator(server.Echo)
 
@@ -152,37 +159,32 @@ func (s *Server) setupRoutes() error {
 	routeConfig := route.Config{
 		Echo:          s.Echo,
 		Logger:        s.Log,
-		Database:      s.DbHandler,
 		Redis:         s.RedisHandler,
 		MfaService:    s.MfaService,
 		Hydra:         s.Hydra,
 		SessionConfig: s.SessionConfig,
 	}
 
-	if err := route.InitLogout(routeConfig); err != nil {
-		return err
-	}
 	if err := route.InitLogin(routeConfig); err != nil {
 		return err
 	}
-	if err := route.InitSignUp(routeConfig); err != nil {
-		return err
-	}
+
 	if err := route.InitPasswordLess(routeConfig); err != nil {
 		return err
 	}
+
 	if err := route.InitChangePassword(routeConfig); err != nil {
 		return err
 	}
+
 	if err := route.InitMFA(routeConfig); err != nil {
 		return err
 	}
-	if err := route.InitToken(routeConfig); err != nil {
-		return err
-	}
+
 	if err := route.InitManage(routeConfig); err != nil {
 		return err
 	}
+
 	if err := route.InitOauth2(routeConfig); err != nil {
 		return err
 	}
