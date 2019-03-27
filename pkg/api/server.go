@@ -103,6 +103,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Renderer = t
 	server.Echo.Use(ZapLogger(c.Logger))
 	server.Echo.Use(middleware.Recover())
+	// TODO: Validate origins for each application by settings
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowHeaders:     []string{"authorization", "content-type"},
 		AllowOrigins:     c.ApiConfig.AllowOrigins,
