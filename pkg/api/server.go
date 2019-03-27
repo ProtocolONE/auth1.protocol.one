@@ -113,6 +113,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		AllowOrigins:     c.ApiConfig.AllowOrigins,
 		AllowCredentials: c.ApiConfig.AllowCredentials,
 	}))
+	server.Echo.Use(middleware.RequestID())
 
 	registerCustomValidator(server.Echo)
 
