@@ -55,11 +55,6 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 		previousLogin = user.Email
 	}
 
-	if err := l.Manager.SaveCsrfInSession(ctx); err != nil {
-		l.logger.Error("Error saving session", zap.Error(err))
-		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-	}
-
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
 		"Challenge":     form.Challenge,

@@ -10,7 +10,6 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
@@ -51,20 +50,6 @@ func NewOauthManager(logger *zap.Logger, db *database.Handler, redis *redis.Clie
 	}
 
 	return m
-}
-
-func (m *OauthManager) SaveCsrfInSession(ctx echo.Context) error {
-	sess, err := session.Get(m.sessionConfig.Name, ctx)
-	if err != nil {
-		m.logger.Error("Unable to get session", zap.Error(err))
-		return err
-	}
-	sess.Values["csrf"] = ctx.Get(middleware.DefaultCSRFConfig.ContextKey).(string)
-	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.logger.Error("Error saving session", zap.Error(err))
-		return err
-	}
-	return nil
 }
 
 func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (*models.User, string, models.ErrorInterface) {
@@ -135,15 +120,6 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	if err != nil {
 		m.logger.Error("Unable to get session", zap.Error(err))
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
-	}
-	csrfValue := ctx.Get(middleware.DefaultCSRFConfig.ContextKey).(string)
-	csrfStored := sess.Values["csrf"].(string)
-	if csrfValue == "" || csrfStored == "" || csrfStored != csrfValue {
-		m.logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2LoginSubmitForm", form),
-		)
-		return "", &models.CommonError{HttpCode: http.StatusForbidden, Code: `csrf`, Message: models.ErrorCsrfSignature}
 	}
 
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
@@ -390,15 +366,6 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	if err != nil {
 		m.logger.Error("Unable to get session", zap.Error(err))
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
-	}
-	csrfValue := ctx.Get(middleware.DefaultCSRFConfig.ContextKey).(string)
-	csrfStored := sess.Values["csrf"].(string)
-	if csrfValue == "" || csrfStored == "" || csrfStored != csrfValue {
-		m.logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2SignUpForm", form),
-		)
-		return "", &models.CommonError{HttpCode: http.StatusForbidden, Code: `csrf`, Message: models.ErrorCsrfSignature}
 	}
 
 	sess.Values[loginRememberKey] = form.Remember

@@ -29,7 +29,6 @@ var (
 	ErrorMfaRequired              = "MFA required"
 	ErrorMfaClientAdd             = "Unable to add MFA"
 	ErrorMfaCodeInvalid           = "Invalid MFA code"
-	ErrorCsrfSignature            = "Invalid request, start authorization or registration again"
 	ErrorLoginChallenge           = "Invalid login challenge"
 )
 
