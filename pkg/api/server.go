@@ -116,6 +116,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		CookieName:  "_csrf",
 	}))
 	server.Echo.Use(session.Middleware(store))
+	server.Echo.Use(middleware.RequestID())
 
 	registerCustomValidator(server.Echo)
 
