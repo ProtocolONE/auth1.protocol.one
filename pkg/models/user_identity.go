@@ -104,8 +104,8 @@ func (a *UserIdentitySocial) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewUserIdentityService(dbHandler *database.Handler) *UserIdentityService {
-	return &UserIdentityService{dbHandler.Session.DB(dbHandler.Name)}
+func NewUserIdentityService(dbHandler *mgo.Session) *UserIdentityService {
+	return &UserIdentityService{db: dbHandler.DB("")}
 }
 
 func (us UserIdentityService) Create(userIdentity *UserIdentity) error {

@@ -150,8 +150,8 @@ func (m *CaptchaRequiredError) GetMessage() string {
 	return m.Message
 }
 
-func NewUserService(dbHandler *database.Handler) *UserService {
-	return &UserService{dbHandler.Session.DB(dbHandler.Name)}
+func NewUserService(dbHandler *mgo.Session) *UserService {
+	return &UserService{db: dbHandler.DB("")}
 }
 
 func (us UserService) Create(user *User) error {

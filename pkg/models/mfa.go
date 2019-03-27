@@ -143,8 +143,8 @@ func (m *MFARequiredError) GetMessage() string {
 	return m.Message
 }
 
-func NewMfaService(dbHandler *database.Handler) *MfaService {
-	return &MfaService{dbHandler.Session.DB(dbHandler.Name)}
+func NewMfaService(dbHandler *mgo.Session) *MfaService {
+	return &MfaService{db: dbHandler.DB("")}
 }
 
 func (s MfaService) Add(provider *MfaProvider) error {

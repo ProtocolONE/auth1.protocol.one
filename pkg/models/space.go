@@ -44,8 +44,8 @@ func (s *SpaceForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewSpaceService(dbHandler *database.Handler) *SpaceService {
-	return &SpaceService{dbHandler.Session.DB(dbHandler.Name)}
+func NewSpaceService(dbHandler *mgo.Session) *SpaceService {
+	return &SpaceService{db: dbHandler.DB("")}
 }
 
 func (ss SpaceService) CreateSpace(space *Space) error {

@@ -31,8 +31,8 @@ type AuthLogService struct {
 	db *mgo.Database
 }
 
-func NewAuthLogService(h *database.Handler) *AuthLogService {
-	return &AuthLogService{h.Session.DB(h.Name)}
+func NewAuthLogService(h *mgo.Session) *AuthLogService {
+	return &AuthLogService{db: h.DB("")}
 }
 
 func (s AuthLogService) Add(ctx echo.Context, user *User, token string) error {
