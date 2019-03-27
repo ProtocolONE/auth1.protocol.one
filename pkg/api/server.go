@@ -19,6 +19,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
 	"io"
+	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
@@ -108,9 +109,11 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		AllowHeaders:     []string{"authorization", "content-type"},
 		AllowOrigins:     c.ApiConfig.AllowOrigins,
 		AllowCredentials: c.ApiConfig.AllowCredentials,
+		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
 	server.Echo.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
 		TokenLookup: "header:X-XSRF-TOKEN",
+		CookieName:  "_csrf",
 	}))
 	server.Echo.Use(session.Middleware(store))
 

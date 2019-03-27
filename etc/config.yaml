@@ -4,7 +4,7 @@ Api:
   TimeoutRead: 15
   TimeoutWrite: 5
   AllowOrigins: "*"
-  AllowCredentials: false
+  AllowCredentials: true
 Logger:
   Level: "debug"
 Database:
