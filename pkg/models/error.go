@@ -29,7 +29,6 @@ var (
 	ErrorMfaRequired              = "MFA required"
 	ErrorMfaClientAdd             = "Unable to add MFA"
 	ErrorMfaCodeInvalid           = "Invalid MFA code"
-	ErrorCsrfSignature            = "Invalid request, start authorization or registration again"
 	ErrorLoginChallenge           = "Invalid login challenge"
 )
 
@@ -44,7 +43,6 @@ type CommonError struct {
 	HttpCode int    `json:"error,omitempty"`
 	Code     string `json:"error,omitempty"`
 	Message  string `json:"error_message,omitempty"`
-	Csrf     string `json:"csrf,omitempty"`
 }
 
 func (m *CommonError) Error() string {

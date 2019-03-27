@@ -8,7 +8,7 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )

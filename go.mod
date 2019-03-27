@@ -17,12 +17,13 @@ require (
 	github.com/golang/protobuf v1.2.0
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/sessions v0.0.0-20160922145804-ca9ada445741
+	github.com/gorilla/sessions v1.1.3
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
-	github.com/labstack/echo v3.3.5+incompatible
+	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
+	github.com/labstack/echo/v4 v4.0.0
 	github.com/labstack/gommon v0.2.8
 	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.1 // indirect

@@ -10,8 +10,7 @@ import (
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -27,7 +26,6 @@ var (
 type LoginManager struct {
 	logger              *zap.Logger
 	redis               *redis.Client
-	session             *sessions.Session
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
@@ -35,11 +33,10 @@ type LoginManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client, session *sessions.Session) *LoginManager {
+func NewLoginManager(logger *zap.Logger, h *database.Handler, redis *redis.Client) *LoginManager {
 	m := &LoginManager{
 		logger:              logger,
 		redis:               redis,
-		session:             session,
 		appService:          models.NewApplicationService(h),
 		userService:         models.NewUserService(h),
 		userIdentityService: models.NewUserIdentityService(h),

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"

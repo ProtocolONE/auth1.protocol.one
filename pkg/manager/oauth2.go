@@ -1,14 +1,15 @@
 package manager
 
 import (
+	"auth-one-api/pkg/config"
 	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"fmt"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
@@ -27,7 +28,7 @@ type OauthManager struct {
 	logger              *zap.Logger
 	redis               *redis.Client
 	hydra               *hydra.CodeGenSDK
-	session             *sessions.Session
+	sessionConfig       *config.SessionConfig
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
@@ -35,12 +36,12 @@ type OauthManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewOauthManager(logger *zap.Logger, db *database.Handler, redis *redis.Client, h *hydra.CodeGenSDK, s *sessions.Session) *OauthManager {
+func NewOauthManager(logger *zap.Logger, db *database.Handler, redis *redis.Client, h *hydra.CodeGenSDK, s *config.SessionConfig) *OauthManager {
 	m := &OauthManager{
 		logger:              logger,
 		redis:               redis,
 		hydra:               h,
-		session:             s,
+		sessionConfig:       s,
 		appService:          models.NewApplicationService(db),
 		userService:         models.NewUserService(db),
 		userIdentityService: models.NewUserIdentityService(db),
@@ -49,27 +50,6 @@ func NewOauthManager(logger *zap.Logger, db *database.Handler, redis *redis.Clie
 	}
 
 	return m
-}
-
-func (m *OauthManager) CreateCsrfSession(ctx echo.Context) (csrf string, err error) {
-	c := models.GetRandString(64)
-	m.session.Values["csrf"] = c
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.logger.Error("Error saving session", zap.Error(err))
-		return "", err
-	}
-
-	return c, nil
-}
-
-func (m *OauthManager) CleanCsrfSession(ctx echo.Context) error {
-	m.session.Values["csrf"] = ""
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.logger.Error("Error saving session", zap.Error(err))
-		return err
-	}
-
-	return nil
 }
 
 func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (*models.User, string, models.ErrorInterface) {
@@ -98,9 +78,15 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 		}
 
-		m.session.Values[loginRememberKey] = true
-		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		sess, err := session.Get(m.sessionConfig.Name, ctx)
+		if err != nil {
+			m.logger.Error("Unable to get session", zap.Error(err))
+			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		}
+		sess.Values[loginRememberKey] = true
+		if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 			m.logger.Error("Error saving session", zap.Error(err))
+			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 		}
 
 		return nil, reqACL.RedirectTo, nil
@@ -130,13 +116,10 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 }
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
-	csrf := m.session.Values["csrf"]
-	if csrf == nil || form.Csrf == "" || csrf != form.Csrf {
-		m.logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2LoginSubmitForm", form),
-		)
-		return "", &models.CommonError{Code: `csrf`, Message: models.ErrorCsrfSignature}
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		m.logger.Error("Unable to get session", zap.Error(err))
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
@@ -217,38 +200,15 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 		}
-
-		cookieSettings, err := m.appService.LoadSessionSettings()
-		if err != nil {
-			m.logger.Error(
-				"Unable to add user auth log to application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-		cookie, err := models.NewCookie(app, user).Crypt(cookieSettings)
-		if err != nil {
-			m.logger.Error(
-				"Unable to create user cookie for application",
-				zap.Object("User", user),
-				zap.Object("Application", app),
-				zap.Error(err),
-			)
-
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-		}
-		http.SetCookie(ctx.Response(), cookie)
 		userId = userIdentity.UserID.Hex()
 	} else {
 		form.Remember = true
 	}
 
-	m.session.Values[loginRememberKey] = form.Remember
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+	sess.Values[loginRememberKey] = form.Remember
+	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 		m.logger.Error("Error saving session", zap.Error(err))
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	// TODO: Add MFA cases
@@ -299,6 +259,12 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 	}
 
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		m.logger.Error("Unable to get session", zap.Error(err))
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+	}
+
 	req := swagger.AcceptConsentRequest{GrantScope: scopes}
 	userInfo := map[string]interface{}{
 		"email":                 user.Email,
@@ -315,7 +281,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		}
 	} else {
 		req.Session = swagger.ConsentRequestSession{
-			AccessToken: map[string]interface{}{"remember": m.session.Values[loginRememberKey].(bool)},
+			AccessToken: map[string]interface{}{"remember": sess.Values[loginRememberKey].(bool)},
 			IdToken:     userInfo,
 		}
 	}
@@ -330,8 +296,8 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	m.session.Values[clientIdSessionKey] = reqGCR.Client.ClientId
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+	sess.Values[clientIdSessionKey] = reqGCR.Client.ClientId
+	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 		m.logger.Error("Error saving session", zap.Error(err))
 		return "", err
 	}
@@ -396,17 +362,14 @@ func (m *OauthManager) GetScopes() (scopes []string, err error) {
 }
 
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, models.ErrorInterface) {
-	csrf := m.session.Values["csrf"]
-	if csrf == nil || form.Csrf == "" || csrf != form.Csrf {
-		m.logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2SignUpForm", form),
-		)
-		return "", &models.CommonError{Code: `csrf`, Message: models.ErrorCsrfSignature}
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		m.logger.Error("Unable to get session", zap.Error(err))
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	m.session.Values[loginRememberKey] = form.Remember
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+	sess.Values[loginRememberKey] = form.Remember
+	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 		m.logger.Error("Error saving session", zap.Error(err))
 	}
 
@@ -564,7 +527,15 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 }
 
 func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackForm) *models.Oauth2CallBackResponse {
-	clientId := m.session.Values[clientIdSessionKey].(string)
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		m.logger.Error("Unable to get session", zap.Error(err))
+		return &models.Oauth2CallBackResponse{
+			Success:      false,
+			ErrorMessage: `unknown_client_id`,
+		}
+	}
+	clientId := sess.Values[clientIdSessionKey].(string)
 	if clientId == "" {
 		m.logger.Error(
 			"Unable to get client id from session",
@@ -618,22 +589,28 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 }
 
 func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, error) {
-	logoutRedirectUri := m.session.Values[logoutSessionKey]
+	sess, err := session.Get(m.sessionConfig.Name, ctx)
+	if err != nil {
+		m.logger.Error("Unable to get session", zap.Error(err))
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+	}
+
+	logoutRedirectUri := sess.Values[logoutSessionKey]
 	if form.RedirectUri == "" {
 		form.RedirectUri = "auth1"
 	}
 	if logoutRedirectUri == "" || logoutRedirectUri == nil {
-		m.session.Values[logoutSessionKey] = form.RedirectUri
-		if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		sess.Values[logoutSessionKey] = form.RedirectUri
+		if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 			m.logger.Error("Error saving session", zap.Error(err))
 			return "", err
 		}
 		return logoutHydraUrl, nil
 	}
 
-	m.session.Values[logoutSessionKey] = ""
-	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.logger.Error("Error saving session", zap.Error(err))
+	sess.Values[logoutSessionKey] = ""
+	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
+		m.logger.Error("Error saving sessionConfig", zap.Error(err))
 		return "", err
 	}
 
