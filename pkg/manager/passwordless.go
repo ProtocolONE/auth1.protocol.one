@@ -2,17 +2,12 @@ package manager
 
 import (
 	"auth-one-api/pkg/models"
-	"go.uber.org/zap"
 )
 
-type PasswordLessManager struct {
-	logger *zap.Logger
-}
+type PasswordLessManager struct{}
 
-func NewPasswordLessManager(logger *zap.Logger) *PasswordLessManager {
-	m := &PasswordLessManager{
-		logger: logger,
-	}
+func NewPasswordLessManager() *PasswordLessManager {
+	m := &PasswordLessManager{}
 
 	return m
 }

@@ -1,10 +1,10 @@
 package manager
 
 import (
-	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"errors"
 	"fmt"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra"
@@ -15,16 +15,14 @@ import (
 )
 
 type ManageManager struct {
-	logger       *zap.Logger
 	spaceService *models.SpaceService
 	appService   *models.ApplicationService
 	mfaService   *models.MfaService
 	hydraSDK     *hydra.CodeGenSDK
 }
 
-func NewManageManager(logger *zap.Logger, db *database.Handler, h *hydra.CodeGenSDK) *ManageManager {
+func NewManageManager(db *mgo.Session, h *hydra.CodeGenSDK) *ManageManager {
 	m := &ManageManager{
-		logger:       logger,
 		spaceService: models.NewSpaceService(db),
 		appService:   models.NewApplicationService(db),
 		mfaService:   models.NewMfaService(db),
@@ -45,7 +43,7 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 	}
 
 	if err := m.spaceService.CreateSpace(s); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to create space",
 			zap.Object("space", s),
 			zap.Error(err),
@@ -67,7 +65,7 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 	s.IsActive = form.IsActive
 
 	if err := m.spaceService.UpdateSpace(s); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to update space",
 			zap.Object("space", s),
 			zap.Error(err),
@@ -81,7 +79,7 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get space",
 			zap.String("spaceId", id),
 			zap.Error(err),
@@ -95,7 +93,7 @@ func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
 func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, error) {
 	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get space",
 			zap.String("spaceId", form.SpaceId.String()),
 			zap.Error(err),
@@ -119,7 +117,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	}
 
 	if err := m.appService.Create(app); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to create application",
 			zap.Object("Application", app),
 			zap.Error(err),
@@ -137,7 +135,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		Scope:         "openid offline",
 	})
 	if err != nil || response.StatusCode != http.StatusCreated {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to create hydra client",
 			zap.Object("Application", app),
 			zap.Error(err),
@@ -152,7 +150,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
@@ -161,7 +159,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	}
 
 	if _, err := m.spaceService.GetSpace(form.SpaceId); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get space",
 			zap.Object("ApplicationForm", form),
 			zap.Error(err),
@@ -189,7 +187,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 
 	if err := m.appService.Update(a); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to update application",
 			zap.Object("Application", a),
 			zap.Error(err),
@@ -198,14 +196,14 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	}
 
 	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
-	m.logger.Error(
+	zap.L().Error(
 		"GET HYDRA CLIENT",
 		zap.Any("Client", client),
 		zap.Any("Response", response),
 		zap.Error(err),
 	)
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
@@ -217,7 +215,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 
 	_, _, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to update hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
@@ -231,7 +229,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
 	s, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
@@ -252,7 +250,7 @@ func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvide
 	}
 
 	if err := m.mfaService.Add(p); err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to add MFA provider to application",
 			zap.Object("MfaProvider", p),
 			zap.Error(err),
