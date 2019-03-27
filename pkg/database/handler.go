@@ -4,23 +4,28 @@ import (
 	"auth-one-api/pkg/config"
 	"github.com/globalsign/mgo"
 	"net/url"
+	"time"
 )
-
-type (
-	Handler struct {
-		Name    string
-		Session *mgo.Session
-	}
-)
-
-func (h Handler) Clone() *mgo.Session {
-	db := h.Session.Clone()
-
-	return db
-}
 
 func NewConnection(c *config.DatabaseConfig) (*mgo.Session, error) {
-	return mgo.Dial(BuildConnString(c))
+	info, err := mgo.ParseURL(BuildConnString(c))
+	if err != nil {
+		return nil, err
+	}
+
+	info.Timeout = 10 * time.Second
+
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:    []string{},
+		Database: c.Database,
+	})
+
+	if err == nil {
+		session.SetSyncTimeout(1 * time.Minute)
+		session.SetSocketTimeout(1 * time.Minute)
+	}
+
+	return session, err
 }
 
 func Migrate(db *mgo.Database, direction string) error {
