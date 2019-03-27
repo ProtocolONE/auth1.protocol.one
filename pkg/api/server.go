@@ -7,8 +7,8 @@ import (
 	"auth-one-api/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
+	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
-	"github.com/kidstuff/mongostore"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -57,10 +57,11 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		c.Logger.Fatal("Database connection failed with error", zap.Error(err))
 	}
 
-	r := redis.NewClient(&redis.Options{
+	redisClient := redis.NewClient(&redis.Options{
 		Addr:     c.RedisConfig.Addr,
 		Password: c.RedisConfig.Password,
 	})
+	defer redisClient.Close()
 
 	var service micro.Service
 	if c.Kubernetes.Service.Host == "" {
@@ -80,18 +81,23 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		c.Logger.Fatal("Hydra SDK creation failed", zap.Error(err))
 	}
 
-	store := mongostore.NewMongoStore(
-		db.DB(c.SessionConfig.Database).C(c.SessionConfig.Table),
-		c.SessionConfig.MaxAge,
-		c.SessionConfig.EnsureTTL,
+	store, err := redistore.NewRediStore(
+		c.SessionConfig.Size,
+		c.SessionConfig.Network,
+		c.SessionConfig.Address,
+		c.SessionConfig.Password,
 		[]byte(c.SessionConfig.Secret),
 	)
+	if err != nil {
+		c.Logger.Fatal("Unable to start redis session store", zap.Error(err))
+	}
+	defer store.Close()
 
 	server := &Server{
 		Log:           c.Logger,
 		Echo:          echo.New(),
 		DbHandler:     &database.Handler{Name: c.DatabaseConfig.Database, Session: db},
-		RedisHandler:  r,
+		RedisHandler:  redisClient,
 		MfaService:    ms,
 		ServerConfig:  c.ApiConfig,
 		Hydra:         h,

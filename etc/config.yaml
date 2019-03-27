@@ -13,12 +13,12 @@ Database:
   User: ""
   Password: ""
 Session:
-  Database: "auth-one"
-  Table: "session"
-  Secret: "secretkey"
+  Size: 10
+  Network: "tcp"
+  Address: ":6379"
+  Password: ""
   Name: "sessid"
-  MaxAge: 3600
-  EnsureTTL: true
+  Secret: "secretkey"
 Redis:
   Addr: "127.0.0.1:6379"
   Password: ""

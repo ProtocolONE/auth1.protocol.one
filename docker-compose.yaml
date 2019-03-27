@@ -73,6 +73,7 @@ services:
       - LOGGER_LEVEL="debug"
       - HYDRA_PUBLICURL=http://localhost:4444
       - HYDRA_ADMINURL=http://localhost:4445
+      - SESSION_ADDRESS="auth1-redis:6379"
 
 volumes:
   auth1-mongo:
