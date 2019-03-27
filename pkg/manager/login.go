@@ -185,7 +185,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		cs, err := m.appService.LoadSessionSettings()
 		if err != nil {
 			m.logger.Error(
-				"Unable to load sessionConfig settings for application",
+				"Unable to load session settings for application",
 				zap.Object("Application", app),
 				zap.Error(err),
 			)
@@ -370,7 +370,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load sessionConfig settings for application",
+			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
@@ -595,7 +595,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load sessionConfig settings for application",
+			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
@@ -748,7 +748,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.logger.Error(
-			"Unable to load sessionConfig settings for application",
+			"Unable to load session settings for application",
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),

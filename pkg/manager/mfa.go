@@ -124,7 +124,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	cs, err := m.appService.LoadSessionSettings()
 	if err != nil {
 		m.Logger.Error(
-			"Unable to load sessionConfig settings for application",
+			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
 		)
