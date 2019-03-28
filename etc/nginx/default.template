@@ -22,4 +22,16 @@ server {
     location / {
         proxy_pass ${AUTHONE_SERVER};
     }
+
+    location /debug {
+        proxy_pass ${AUTHONE_DEBUG};
+    }
+}
+server {
+    listen ${DEBUG_PORT};
+    server_name ${NGINX_HOST};
+
+    location /debug {
+        proxy_pass ${AUTHONE_DEBUG};
+    }
 }
