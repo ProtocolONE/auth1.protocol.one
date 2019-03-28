@@ -89,6 +89,12 @@ spec:
           - name: TRACING_PROVIDER_JAEGER_SAMPLING_VALUE
             value: "1"
           {{- end }}
+          - name: BCRYPT_COST
+            value: "8"
+          - name: LOG_FORMAT
+            value: "json"
+          - name: DISABLE_TELEMETRY
+            value: "1"
           {{- range .Values.hydra.env }}
           - name: {{ . }}
             valueFrom:
@@ -96,6 +102,22 @@ spec:
                 name: p1auth1hydra-env
                 key: {{ . }}
           {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
 
 #          resources:
 #            requests:
