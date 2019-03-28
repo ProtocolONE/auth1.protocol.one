@@ -421,7 +421,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, models.UserIdentityProviderPassword, "", form.Email)
-	if err != nil {
+	if err != nil && err.Error() != "not found" {
 		zap.L().Error(
 			"Unable to get user with identity for application",
 			zap.Object("SignUpForm", form),
@@ -429,7 +429,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		)
 	}
 
-	if userIdentity != nil || (err != nil && err.Error() != "not found") {
+	if userIdentity == nil || userIdentity.ID.Hex() == "" {
 		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 	}
 
