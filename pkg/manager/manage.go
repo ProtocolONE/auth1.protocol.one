@@ -1,9 +1,9 @@
 package manager
 
 import (
-	"auth-one-api/pkg/models"
 	"errors"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"

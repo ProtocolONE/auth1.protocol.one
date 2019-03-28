@@ -1,12 +1,12 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
@@ -130,11 +130,7 @@ func (us UserIdentityService) Get(app *Application, provider string, connection 
 		Find(bson.M{"app_id": app.ID, "provider": provider, "external_id": externalId}).
 		One(&ui)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return ui, nil
+	return ui, err
 }
 
 func (uic *UserIdentityConnection) GetAuthUrl(ctx echo.Context, form interface{}) (string, error) {

@@ -1,10 +1,10 @@
 package route
 
 import (
-	"auth-one-api/pkg/helper"
-	"auth-one-api/pkg/manager"
-	"auth-one-api/pkg/models"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"

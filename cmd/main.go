@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"auth-one-api/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"os"

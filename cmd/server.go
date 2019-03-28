@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"auth-one-api/pkg/api"
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
 	"github.com/spf13/cobra"

@@ -1,11 +1,11 @@
 package manager
 
 import (
-	"auth-one-api/pkg/helper"
-	"auth-one-api/pkg/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"

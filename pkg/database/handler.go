@@ -1,7 +1,7 @@
 package database
 
 import (
-	"auth-one-api/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/globalsign/mgo"
 	"net/url"
 	"time"

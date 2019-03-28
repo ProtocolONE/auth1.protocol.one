@@ -1,4 +1,4 @@
-module auth-one-api
+module github.com/ProtocolONE/auth1.protocol.one
 
 require (
 	cloud.google.com/go v0.34.0 // indirect

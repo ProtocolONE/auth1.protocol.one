@@ -1,9 +1,9 @@
 package manager
 
 import (
-	"auth-one-api/pkg/helper"
-	"auth-one-api/pkg/models"
 	"context"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"

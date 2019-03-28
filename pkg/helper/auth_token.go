@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"auth-one-api/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"time"

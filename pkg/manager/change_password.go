@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"auth-one-api/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"

@@ -1,10 +1,10 @@
 package api
 
 import (
-	"auth-one-api/pkg/config"
-	"auth-one-api/pkg/database"
-	"auth-one-api/pkg/models"
-	"auth-one-api/pkg/route"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"

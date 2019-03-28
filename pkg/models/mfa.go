@@ -1,7 +1,7 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"

@@ -1,7 +1,7 @@
 package route
 
 import (
-	"auth-one-api/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"

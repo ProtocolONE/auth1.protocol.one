@@ -1,8 +1,8 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
 	"errors"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -91,7 +91,7 @@ func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
 
 func (s ApplicationService) LoadPasswordSettings() (*PasswordSettings, error) {
 	return &PasswordSettings{
-		BcryptCost:        10,
+		BcryptCost:        8,
 		Min:               4,
 		Max:               10,
 		RequireNumber:     false,

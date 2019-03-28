@@ -1,7 +1,7 @@
 package main
 
 import (
-	"auth-one-api/cmd"
+	"github.com/ProtocolONE/auth1.protocol.one/cmd"
 )
 
 func main() {
