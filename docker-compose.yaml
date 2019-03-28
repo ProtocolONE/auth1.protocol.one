@@ -27,7 +27,7 @@ services:
       - subnet
     environment:
       - DATABASE_URL=memory
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=warning
       - OAUTH2_ISSUER_URL=http://localhost:4444/
       - OAUTH2_CONSENT_URL=http://localhost:8080/oauth2/consent
       - OAUTH2_LOGIN_URL=http://localhost:8080/oauth2/login
@@ -73,7 +73,8 @@ services:
       - LOGGER_LEVEL="debug"
       - HYDRA_PUBLICURL=http://localhost:4444
       - HYDRA_ADMINURL=http://localhost:4445
-      - SESSION_ADDRESS="auth1-redis:6379"
+      - SESSION_NETWORK=tcp
+      - SESSION_ADDRESS=auth1-redis:6379
 
 volumes:
   auth1-mongo:
