@@ -109,6 +109,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		}
 	})
 
+	createMongoIndex(c.MongoDB)
 	registerCustomValidator(server.Echo)
 
 	if err := server.setupRoutes(); err != nil {
