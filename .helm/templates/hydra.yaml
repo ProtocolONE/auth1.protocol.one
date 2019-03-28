@@ -89,6 +89,12 @@ spec:
           - name: TRACING_PROVIDER_JAEGER_SAMPLING_VALUE
             value: "1"
           {{- end }}
+          - name: BCRYPT_COST
+            value: "8"
+          - name: LOG_FORMAT
+            value: "json"
+          - name: DISABLE_TELEMETRY
+            value: "1"
           {{- range .Values.hydra.env }}
           - name: {{ . }}
             valueFrom:
