@@ -77,6 +77,16 @@ spec:
             - name: internalsvc
               containerPort: 4445
           env:
+          - name: RACING_PROVIDER
+            value: jaeger
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL
+            value: "http://jaeger-agent:5778/sampling"
+          - name: TRACING_PROVIDER_JAEGER_LOCAL_AGENT_ADDRESS
+            value: "jaeger-agent:6831"
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_TYPE
+            value: "const"
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_VALUE
+            value: "1"
           {{- range .Values.hydra.env }}
           - name: {{ . }}
             valueFrom:
