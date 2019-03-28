@@ -2,6 +2,7 @@ package api
 
 import (
 	"auth-one-api/pkg/config"
+	"auth-one-api/pkg/database"
 	"auth-one-api/pkg/models"
 	"auth-one-api/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg"
@@ -115,6 +116,32 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	}
 
 	return server, nil
+}
+
+func createMongoIndex(db *mgo.Session) {
+	err := db.DB("").C(database.TableUser).EnsureIndex(mgo.Index{
+		Key:        []string{"app_id", "email"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     false,
+	})
+
+	if err != nil {
+		zap.L().Fatal("Ensure user collection index failed", zap.Error(err))
+	}
+
+	err = db.DB("").C(database.TableUserIdentity).EnsureIndex(mgo.Index{
+		Key:        []string{"app_id", "external_id", "connection"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     false,
+	})
+
+	if err != nil {
+		zap.L().Fatal("Ensure user collection index failed", zap.Error(err))
+	}
 }
 
 func registerCustomValidator(e *echo.Echo) {
