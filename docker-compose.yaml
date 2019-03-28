@@ -71,8 +71,8 @@ services:
       - REDIS_ADDR="auth1-redis:6379"
       - REDIS_PASSWORD=""
       - LOGGER_LEVEL="debug"
-      - HYDRA_PUBLICURL=http://localhost:4444
-      - HYDRA_ADMINURL=http://localhost:4445
+      - HYDRA_PUBLICURL=http://hydra:4444
+      - HYDRA_ADMINURL=http://hydra:4445
       - SESSION_NETWORK=tcp
       - SESSION_ADDRESS=auth1-redis:6379
 

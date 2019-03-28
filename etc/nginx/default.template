@@ -19,7 +19,7 @@ server {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location /* {
+    location / {
         proxy_pass ${AUTHONE_SERVER};
     }
 }

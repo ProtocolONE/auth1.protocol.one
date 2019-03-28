@@ -16,10 +16,12 @@ require (
 	github.com/golang/mock v1.2.0 // indirect
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.2.0
+	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.3
 	github.com/gorilla/websocket v1.4.0 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
