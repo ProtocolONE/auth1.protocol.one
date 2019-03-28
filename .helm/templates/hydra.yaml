@@ -102,6 +102,22 @@ spec:
                 name: p1auth1hydra-env
                 key: {{ . }}
           {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
 
 #          resources:
 #            requests:
