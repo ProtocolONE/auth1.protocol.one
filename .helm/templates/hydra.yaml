@@ -77,7 +77,7 @@ spec:
             - name: internalsvc
               containerPort: 4445
           env:
-          - name: RACING_PROVIDER
+          - name: TRACING_PROVIDER
             value: jaeger
           - name: TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL
             value: "http://jaeger-agent:5778/sampling"
