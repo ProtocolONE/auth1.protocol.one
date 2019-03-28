@@ -88,7 +88,7 @@ spec:
             value: "const"
           - name: TRACING_PROVIDER_JAEGER_SAMPLING_VALUE
             value: "1"
-          {{-end -}}
+          {{- end }}
           {{- range .Values.hydra.env }}
           - name: {{ . }}
             valueFrom:
