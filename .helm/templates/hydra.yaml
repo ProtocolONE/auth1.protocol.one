@@ -77,6 +77,8 @@ spec:
             - name: internalsvc
               containerPort: 4445
           env:
+          - name: PROFILING
+            value: cpu
           - name: TRACING_PROVIDER
             value: jaeger
           - name: TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL
