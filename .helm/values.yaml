@@ -5,7 +5,7 @@ enableRedis: true
 enableMongo: true
 enableHydra: true
 enableCertIssuer: true
-hydraDebug: "on"
+enableHydraDebug: false
 
 ingress:
   hostname: auth1.tst.protocol.one
