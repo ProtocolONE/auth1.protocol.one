@@ -46,10 +46,10 @@ services:
       - subnet
     environment:
       - DATABASE_URL=postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable
-      - LOG_LEVEL=warning
-      - OAUTH2_ISSUER_URL=http://192.168.5.12/
-      - OAUTH2_CONSENT_URL=http://192.168.5.12/oauth2/consent
-      - OAUTH2_LOGIN_URL=http://192.168.5.12/oauth2/login
+      - LOG_LEVEL=debug
+      - OAUTH2_ISSUER_URL=http://localhost
+      - OAUTH2_CONSENT_URL=http://localhost/oauth2/consent
+      - OAUTH2_LOGIN_URL=http://localhost/oauth2/login
       - BCRYPT_COST=8
       - ACCESS_TOKEN_LIFESPAN=3h
       - REFRESH_TOKEN_LIFESPAN=720h
