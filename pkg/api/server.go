@@ -2,18 +2,15 @@ package api
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
-	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/micro/go-micro"
-	k8s "github.com/micro/kubernetes/go/micro"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
@@ -26,13 +23,13 @@ import (
 )
 
 type ServerConfig struct {
-	ApiConfig      *config.ApiConfig
-	JwtConfig      *config.JwtConfig
-	DatabaseConfig *config.DatabaseConfig
-	Kubernetes     *config.KubernetesConfig
-	HydraConfig    *config.HydraConfig
-	SessionConfig  *config.SessionConfig
-	MongoDB        *mgo.Session
+	ApiConfig      *config.Server
+	DatabaseConfig *config.Database
+	HydraConfig    *config.Hydra
+	SessionConfig  *config.Session
+	MfaService     proto.MfaService
+	ConnectionPool *database.ConnectionPool
+	Hydra          *hydra.CodeGenSDK
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
 	MongoPoolSize  int
@@ -40,11 +37,11 @@ type ServerConfig struct {
 
 type Server struct {
 	Echo          *echo.Echo
-	ServerConfig  *config.ApiConfig
+	ServerConfig  *config.Server
 	RedisHandler  *redis.Client
 	MfaService    proto.MfaService
 	Hydra         *hydra.CodeGenSDK
-	SessionConfig *config.SessionConfig
+	SessionConfig *config.Session
 }
 
 type Template struct {
@@ -52,30 +49,12 @@ type Template struct {
 }
 
 func NewServer(c *ServerConfig) (*Server, error) {
-	var service micro.Service
-	if c.Kubernetes.Service.Host == "" {
-		service = micro.NewService()
-		zap.L().Info("Initialize micro service")
-	} else {
-		service = k8s.NewService()
-		zap.L().Info("Initialize k8s service")
-	}
-	service.Init()
-	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
-
-	h, err := hydra.NewSDK(&hydra.Configuration{
-		AdminURL: c.HydraConfig.AdminURL,
-	})
-	if err != nil {
-		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
-	}
-
 	server := &Server{
 		Echo:          echo.New(),
 		RedisHandler:  c.RedisClient,
-		MfaService:    ms,
+		MfaService:    c.MfaService,
 		ServerConfig:  c.ApiConfig,
-		Hydra:         h,
+		Hydra:         c.Hydra,
 		SessionConfig: c.SessionConfig,
 	}
 
@@ -101,7 +80,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.RequestID())
 	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			s := c.MongoDB.Copy()
+			s := c.ConnectionPool.Session()
 			defer s.Close()
 
 			ctx.Set("database", s)

@@ -15,5 +15,5 @@ type Config struct {
 	Redis         *redis.Client
 	MfaService    proto.MfaService
 	Hydra         *hydra.CodeGenSDK
-	SessionConfig *config.SessionConfig
+	SessionConfig *config.Session
 }
