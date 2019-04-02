@@ -81,7 +81,7 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	zap.L().Info("Starting up server")
 	if err = server.Start(); err != nil {
-		zap.L().Fatal("Failed to start server", zap.Error(err))
+		zap.L().Fatal("Error running server", zap.Error(err))
 	}
 }
 

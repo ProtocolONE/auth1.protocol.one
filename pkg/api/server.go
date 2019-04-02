@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -17,9 +18,12 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
 	"reflect"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 type ServerConfig struct {
@@ -114,7 +118,22 @@ func registerCustomValidator(e *echo.Echo) {
 }
 
 func (s *Server) Start() error {
-	return s.Echo.Start(":" + strconv.Itoa(s.ServerConfig.Port))
+	go func() {
+		err := s.Echo.Start(":" + strconv.Itoa(s.ServerConfig.Port))
+		if err != nil {
+			zap.L().Fatal("Failed to start server", zap.Error(err))
+		}
+	}()
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	select {
+	// wait on kill signal
+	case <-shutdown:
+	}
+
+	return s.Echo.Shutdown(context.Background())
 }
 
 func (s *Server) setupRoutes() error {
