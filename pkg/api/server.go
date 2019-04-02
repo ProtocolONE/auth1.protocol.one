@@ -145,28 +145,19 @@ func (s *Server) setupRoutes() error {
 		SessionConfig: s.SessionConfig,
 	}
 
-	if err := route.InitLogin(routeConfig); err != nil {
-		return err
+	routes := []func(c route.Config) error{
+		route.InitLogin,
+		route.InitPasswordLess,
+		route.InitChangePassword,
+		route.InitMFA,
+		route.InitManage,
+		route.InitOauth2,
 	}
 
-	if err := route.InitPasswordLess(routeConfig); err != nil {
-		return err
-	}
-
-	if err := route.InitChangePassword(routeConfig); err != nil {
-		return err
-	}
-
-	if err := route.InitMFA(routeConfig); err != nil {
-		return err
-	}
-
-	if err := route.InitManage(routeConfig); err != nil {
-		return err
-	}
-
-	if err := route.InitOauth2(routeConfig); err != nil {
-		return err
+	for _, r := range routes {
+		if err := r(routeConfig); err != nil {
+			return err
+		}
 	}
 
 	return nil
