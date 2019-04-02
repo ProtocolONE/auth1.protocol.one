@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type ServerConfig struct {
@@ -133,7 +134,11 @@ func (s *Server) Start() error {
 	case <-shutdown:
 	}
 
-	return s.Echo.Shutdown(context.Background())
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return s.Echo.Shutdown(ctx)
 }
 
 func (s *Server) setupRoutes() error {
