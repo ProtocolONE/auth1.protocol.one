@@ -24,22 +24,6 @@ func NewConnection(c *config.DatabaseConfig) (*mgo.Session, error) {
 	return session, err
 }
 
-func Migrate(db *mgo.Database, direction string) error {
-	var err error
-
-	/*migrate.SetDatabase(db)
-
-	if direction == "up" {
-		err = migrate.Up(migrate.AllAvailable)
-	}
-
-	if direction == "down" {
-		err = migrate.Down(migrate.AllAvailable)
-	}*/
-
-	return err
-}
-
 func BuildConnString(c *config.DatabaseConfig) string {
 	if c.Database == "" {
 		return ""

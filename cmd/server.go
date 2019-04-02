@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/boj/redistore"
+	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -32,10 +34,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 	defer store.Close()
 
-	db, err := database.NewConnection(&cfg.Database)
-	if err != nil {
-		zap.L().Fatal("Database connection failed with error", zap.Error(err))
-	}
+	db := createDatabase(&cfg.Database)
 	defer db.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -66,4 +65,16 @@ func runServer(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.L().Fatal("Failed to start server", zap.Error(err))
 	}
+}
+
+func createDatabase(cfg *config.DatabaseConfig) *mgo.Session {
+	db, err := database.NewConnection(cfg)
+	if err != nil {
+		zap.L().Fatal("Database connection failed with error", zap.Error(err))
+	}
+
+	if err := database.MigrateDb(db, cfg.Database); err != nil {
+		zap.L().Fatal("Error in db migration", zap.Error(err))
+	}
+	return db
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg"
@@ -36,6 +35,7 @@ type ServerConfig struct {
 	MongoDB        *mgo.Session
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
+	MongoPoolSize  int
 }
 
 type Server struct {
@@ -109,7 +109,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		}
 	})
 
-	//createMongoIndex(c.MongoDB)
 	registerCustomValidator(server.Echo)
 
 	if err := server.setupRoutes(); err != nil {
@@ -117,32 +116,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	}
 
 	return server, nil
-}
-
-func createMongoIndex(db *mgo.Session) {
-	err := db.DB("").C(database.TableUser).EnsureIndex(mgo.Index{
-		Key:        []string{"app_id", "email"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     false,
-	})
-
-	if err != nil {
-		zap.L().Fatal("Ensure user collection index failed", zap.Error(err))
-	}
-
-	err = db.DB("").C(database.TableUserIdentity).EnsureIndex(mgo.Index{
-		Key:        []string{"app_id", "external_id", "connection"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     false,
-	})
-
-	if err != nil {
-		zap.L().Fatal("Ensure user collection index failed", zap.Error(err))
-	}
 }
 
 func registerCustomValidator(e *echo.Echo) {
