@@ -7,8 +7,6 @@ services:
 before_script:
   - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 env:
-  - AUTHONE_DATABASE_USER=travis
-  - AUTHONE_DATABASE_PASSWORD=test
   global:
     - GO111MODULE=on
 
@@ -21,6 +19,9 @@ jobs:
   include:
     - stage: test
       install: true
+      env:
+        - AUTHONE_DATABASE_USER=travis
+        - AUTHONE_DATABASE_PASSWORD=test
       script:
         - go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
       after_success:
