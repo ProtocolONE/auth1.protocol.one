@@ -1,7 +1,7 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
@@ -143,8 +143,8 @@ func (m *MFARequiredError) GetMessage() string {
 	return m.Message
 }
 
-func NewMfaService(dbHandler *database.Handler) *MfaService {
-	return &MfaService{dbHandler.Session.DB(dbHandler.Name)}
+func NewMfaService(dbHandler *mgo.Session) *MfaService {
+	return &MfaService{db: dbHandler.DB("")}
 }
 
 func (s MfaService) Add(provider *MfaProvider) error {

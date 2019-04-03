@@ -1,10 +1,22 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/oauth2"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"reflect"
+	"regexp"
 	"time"
 )
 
@@ -71,8 +83,8 @@ func (a *UserIdentitySocial) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewUserIdentityService(dbHandler *database.Handler) *UserIdentityService {
-	return &UserIdentityService{dbHandler.Session.DB(dbHandler.Name)}
+func NewUserIdentityService(dbHandler *mgo.Session) *UserIdentityService {
+	return &UserIdentityService{db: dbHandler.DB("")}
 }
 
 func (us UserIdentityService) Create(userIdentity *UserIdentity) error {

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
@@ -44,8 +44,8 @@ func (s *SpaceForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewSpaceService(dbHandler *database.Handler) *SpaceService {
-	return &SpaceService{dbHandler.Session.DB(dbHandler.Name)}
+func NewSpaceService(dbHandler *mgo.Session) *SpaceService {
+	return &SpaceService{db: dbHandler.DB("")}
 }
 
 func (ss SpaceService) CreateSpace(space *Space) error {

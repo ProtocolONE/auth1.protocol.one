@@ -1,9 +1,11 @@
-module auth-one-api
+module github.com/ProtocolONE/auth1.protocol.one
 
 require (
 	cloud.google.com/go v0.34.0 // indirect
-	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190304132955-c9a221d256ec
+	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
 	github.com/ProtocolONE/mfa-service v0.1.0
+	github.com/appleboy/mgo-migrate v0.0.0-20180815064022-63ab506a9f84
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
@@ -15,14 +17,18 @@ require (
 	github.com/golang/mock v1.2.0 // indirect
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.2.0
+	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/sessions v0.0.0-20160922145804-ca9ada445741
+	github.com/gorilla/sessions v1.1.3
 	github.com/gorilla/websocket v1.4.0 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
+	github.com/juju/mgosession v1.0.0 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
-	github.com/labstack/echo v3.3.5+incompatible
+	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
+	github.com/labstack/echo/v4 v4.0.0
 	github.com/labstack/gommon v0.2.8
 	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.1 // indirect
@@ -45,6 +51,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
+	github.com/stretchr/testify v1.3.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.uber.org/zap v1.9.1

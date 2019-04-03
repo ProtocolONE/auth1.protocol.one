@@ -1,51 +1,60 @@
 package route
 
 import (
-	"auth-one-api/pkg/helper"
-	"auth-one-api/pkg/manager"
-	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/globalsign/mgo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type Oauth2 struct {
-	Manager *manager.OauthManager
-	Http    *echo.Echo
-	logger  *zap.Logger
-}
-
 func InitOauth2(cfg Config) error {
-	route := &Oauth2{
-		Manager: manager.NewOauthManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Hydra, cfg.Session),
-		Http:    cfg.Echo,
-		logger:  cfg.Logger,
-	}
+	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			db := c.Get("database").(*mgo.Session)
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
 
-	cfg.Echo.GET("/oauth2/login", route.oauthLogin)
-	cfg.Echo.POST("/oauth2/login", route.oauthLoginSubmit)
-	cfg.Echo.GET("/oauth2/consent", route.oauthConsent)
-	cfg.Echo.POST("/oauth2/consent", route.oauthConsentSubmit)
-	cfg.Echo.POST("/oauth2/signup", route.oauthSignUp)
-	cfg.Echo.POST("/oauth2/introspect", route.oauthIntrospect)
-	cfg.Echo.GET("/oauth2/callback", route.oauthCallback)
-	cfg.Echo.GET("/oauth2/logout", route.oauthLogout)
+			return next(c)
+		}
+	})
+
+	g.GET("/login", oauthLogin)
+	g.POST("/login", oauthLoginSubmit)
+	g.GET("/consent", oauthConsent)
+	g.POST("/consent", oauthConsentSubmit)
+	g.POST("/signup", oauthSignUp)
+	g.POST("/introspect", oauthIntrospect)
+	g.GET("/callback", oauthCallback)
+	g.GET("/logout", oauthLogout)
 
 	return nil
 }
 
-func (l *Oauth2) oauthLogin(ctx echo.Context) error {
+func oauthLogin(ctx echo.Context) error {
 	form := new(models.Oauth2LoginForm)
+
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Login page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Login page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	previousLogin := ""
-	appID, user, url, err := l.Manager.CheckAuth(ctx, form)
+	appID, user, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
-		l.logger.Error("Error checking login request", zap.Error(err))
+		zap.L().Error(
+			"Error checking login request",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 	if url != "" {
@@ -55,25 +64,21 @@ func (l *Oauth2) oauthLogin(ctx echo.Context) error {
 		previousLogin = user.Email
 	}
 
-	csrf, e := l.Manager.CreateCsrfSession(ctx)
-	if e != nil {
-		l.logger.Error("Error saving session", zap.Error(e))
-		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-	}
-
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
 		"Challenge":     form.Challenge,
-		"ClientID":      appID,
-		"Csrf":          csrf,
 		"PreviousLogin": previousLogin,
 	})
 }
 
-func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
+func oauthLoginSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2LoginSubmitForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Login bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Login bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -83,10 +88,11 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 		)
 	}
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"Login validate form failed",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -97,7 +103,9 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 		)
 	}
 
-	url, err := l.Manager.Auth(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	url, err := m.Auth(ctx, form)
 	if err != nil {
 		httpCode := http.StatusBadRequest
 		code := BadRequiredCodeCommon
@@ -113,55 +121,69 @@ func (l *Oauth2) oauthLoginSubmit(ctx echo.Context) error {
 			message = err.GetMessage()
 		}
 
-		csrf, e := l.Manager.CreateCsrfSession(ctx)
-		if e != nil {
-			l.logger.Error("Error saving session", zap.Error(e))
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-		}
 		return ctx.JSON(httpCode, &models.CommonError{
 			Code:    code,
 			Message: message,
-			Csrf:    csrf,
 		})
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
-func (l *Oauth2) oauthConsent(ctx echo.Context) error {
+func oauthConsent(ctx echo.Context) error {
 	form := new(models.Oauth2ConsentForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Consent page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Consent page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := l.Manager.Consent(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	url, err := m.Consent(ctx, form)
 	if err != nil {
-		l.logger.Error("Unable to load scopes", zap.Error(err))
+		zap.L().Error(
+			"Unable to load scopes",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
 
 	return ctx.Redirect(http.StatusFound, url)
 }
 
-func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
+func oauthConsentSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2ConsentSubmitForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Consent page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Consent page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := l.Manager.ConsentSubmit(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	url, err := m.ConsentSubmit(ctx, form)
 	if err != nil {
-		scopes, err := l.Manager.GetScopes()
+		scopes, err := m.GetScopes()
 		if err != nil {
-			l.logger.Error("Unable to load scopes", zap.Error(err))
+			zap.L().Error(
+				"Unable to load scopes",
+				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+			)
+
 			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 		}
 
 		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 			"Challenge": form.Challenge,
-			"Csrf":      form.Csrf,
 			"Scope":     scopes,
 			"Error":     err.Error(),
 		})
@@ -170,14 +192,20 @@ func (l *Oauth2) oauthConsentSubmit(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusFound, url)
 }
 
-func (l *Oauth2) oauthIntrospect(ctx echo.Context) error {
+func oauthIntrospect(ctx echo.Context) error {
 	form := new(models.Oauth2IntrospectForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Introspect page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Introspect page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	token, err := l.Manager.Introspect(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	token, err := m.Introspect(ctx, form)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, nil)
 	}
@@ -185,14 +213,20 @@ func (l *Oauth2) oauthIntrospect(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, token)
 }
 
-func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
+func oauthSignUp(ctx echo.Context) error {
 	form := new(models.Oauth2SignUpForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("SigUp bind form failed", zap.Error(err))
+		zap.L().Error(
+			"SignUp bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := l.Manager.SignUp(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	url, err := m.SignUp(ctx, form)
 	if err != nil {
 		httpCode := http.StatusBadRequest
 		code := BadRequiredCodeCommon
@@ -208,29 +242,29 @@ func (l *Oauth2) oauthSignUp(ctx echo.Context) error {
 			message = err.GetMessage()
 		}
 
-		csrf, e := l.Manager.CreateCsrfSession(ctx)
-		if e != nil {
-			l.logger.Error("Error saving session", zap.Error(e))
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-		}
 		return ctx.JSON(httpCode, &models.CommonError{
 			Code:    code,
 			Message: message,
-			Csrf:    csrf,
 		})
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
-func (l *Oauth2) oauthCallback(ctx echo.Context) error {
+func oauthCallback(ctx echo.Context) error {
 	form := new(models.Oauth2CallBackForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Callback page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Callback page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	response := l.Manager.CallBack(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	response := m.CallBack(ctx, form)
 	return ctx.Render(http.StatusOK, "oauth_callback.html", map[string]interface{}{
 		"Success":      response.Success,
 		"ErrorMessage": response.ErrorMessage,
@@ -240,14 +274,20 @@ func (l *Oauth2) oauthCallback(ctx echo.Context) error {
 	})
 }
 
-func (l *Oauth2) oauthLogout(ctx echo.Context) error {
+func oauthLogout(ctx echo.Context) error {
 	form := new(models.Oauth2LogoutForm)
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Callback page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Callback page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := l.Manager.Logout(ctx, form)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	url, err := m.Logout(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}

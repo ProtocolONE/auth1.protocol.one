@@ -19,7 +19,15 @@ server {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location /* {
+    location / {
         proxy_pass ${AUTHONE_SERVER};
+    }
+}
+server {
+    listen ${DEBUG_PORT};
+    server_name ${NGINX_HOST};
+
+    location /debug {
+        proxy_pass ${AUTHONE_DEBUG};
     }
 }

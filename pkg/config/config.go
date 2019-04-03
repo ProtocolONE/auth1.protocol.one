@@ -1,94 +1,56 @@
 package config
 
 import (
-	"crypto/rsa"
-	"strings"
-
-	"github.com/spf13/viper"
+	"github.com/kelseyhightower/envconfig"
 )
 
-type (
-	ApiConfig struct {
-		Port             int
-		Debug            bool
-		TimeoutRead      int
-		TimeoutWrite     int
-		AllowOrigins     []string
-		AllowCredentials bool
-	}
+type Config struct {
+	Server   Server
+	Database Database
+	Redis    Redis
+	Hydra    Hydra
+	Session  Session
 
-	JwtConfig struct {
-		SignatureSecret       *rsa.PublicKey
-		SignatureSecretBase64 string
-		Algorithm             string
-	}
+	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+}
 
-	DatabaseConfig struct {
-		Host     string
-		Database string
-		User     string
-		Password string
-	}
+type Server struct {
+	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
+	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
+	TimeoutRead      int      `envconfig:"TIMEOUT_READ" required:"false" default:"15"`
+	TimeoutWrite     int      `envconfig:"TIMEOUT_WRITE" required:"false" default:"5"`
+	AllowOrigins     []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
+	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
+}
 
-	RedisConfig struct {
-		Addr     string
-		Password string
-	}
+type Database struct {
+	Host           string `envconfig:"HOST" required:"false" default:"127.0.0.1"`
+	Name           string `envconfig:"DATABASE" required:"false" default:"auth-one"`
+	User           string `envconfig:"USER" required:"false"`
+	Password       string `envconfig:"PASSWORD" required:"false"`
+	MaxConnections int    `envconfig:"MAX_CONNECTIONS" required:"false" default:"100"`
+}
 
-	HydraConfig struct {
-		PublicURL string
-		AdminURL  string
-	}
+type Redis struct {
+	Addr     string `envconfig:"ADDRESS" required:"false" default:"127.0.0.1:6379"`
+	Password string `envconfig:"PASSWORD" required:"false" default:""`
+}
 
-	KubernetesConfig struct {
-		Service KubernetesServiceConfig
-	}
+type Hydra struct {
+	PublicURL string `envconfig:"PUBLIC_URL" required:"false" default:"http://localhost:4444"`
+	AdminURL  string `envconfig:"ADMIN_URL" required:"false" default:"http://localhost:4445"`
+}
 
-	KubernetesServiceConfig struct {
-		Host string
-	}
+type Session struct {
+	Size     int    `envconfig:"SIZE" required:"false" default:"1"`
+	Network  string `envconfig:"NETWORK" required:"false" default:"tcp"`
+	Secret   string `envconfig:"SECRET" required:"false" default:"secretkey"`
+	Name     string `envconfig:"NAME" required:"false" default:"sessid"`
+	Address  string `envconfig:"ADDRESS" required:"false" default:"127.0.0.1:6379"`
+	Password string `envconfig:"PASSWORD" required:"false" default:""`
+}
 
-	SessionConfig struct {
-		Database  string
-		Table     string
-		Secret    string
-		Name      string
-		MaxAge    int
-		EnsureTTL bool
-	}
-
-	Config struct {
-		Api        ApiConfig
-		Jwt        JwtConfig
-		Database   DatabaseConfig
-		Redis      RedisConfig
-		Kubernetes KubernetesConfig
-		Hydra      HydraConfig
-		Session    SessionConfig
-	}
-)
-
-func LoadConfig(configFile string) (*Config, error) {
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName("config")
-		viper.AddConfigPath("./")
-		viper.AddConfigPath("$HOME")
-		viper.AddConfigPath("./etc")
-	}
-
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
-	}
-
-	config := new(Config)
-	if err := viper.Unmarshal(config); err != nil {
-		return nil, err
-	}
-
-	return config, nil
+func Load() (*Config, error) {
+	config := &Config{}
+	return config, envconfig.Process("AUTHONE", config)
 }

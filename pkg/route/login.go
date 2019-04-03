@@ -1,44 +1,44 @@
 package route
 
 import (
-	"auth-one-api/pkg/helper"
-	"auth-one-api/pkg/manager"
-	"auth-one-api/pkg/models"
 	"fmt"
-	"github.com/labstack/echo"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/globalsign/mgo"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type (
-	Login struct {
-		Manager *manager.LoginManager
-		Http    *echo.Echo
-		logger  *zap.Logger
-	}
-)
-
 func InitLogin(cfg Config) error {
-	route := &Login{
-		Manager: manager.NewLoginManager(cfg.Logger, cfg.Database, cfg.Redis, cfg.Session, cfg.Hydra),
-		Http:    cfg.Echo,
-		logger:  cfg.Logger,
-	}
+	cfg.Echo.GET("/login/form", loginPage)
 
-	cfg.Echo.GET("/authorize/link", route.AuthorizeLink)
-	cfg.Echo.GET("/authorize/result", route.AuthorizeResult)
-	cfg.Echo.GET("/authorize", route.Authorize)
-	cfg.Echo.GET("/login/form", route.LoginPage)
-	cfg.Echo.GET("/login/ott", route.LoginByOTT)
+	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			db := c.Get("database").(*mgo.Session)
+			c.Set("login_manager", manager.NewLoginManager(db, cfg.Redis))
+
+			return next(c)
+		}
+	})
+
+	g.GET("/link", authorizeLink)
+	g.GET("/result", authorizeResult)
+	g.GET("/", authorize)
 
 	return nil
 }
 
-func (l *Login) Authorize(ctx echo.Context) error {
+func authorize(ctx echo.Context) error {
 	form := new(models.AuthorizeForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Authorize bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Authorize bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -49,10 +49,11 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"Authorize validate form failed",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -63,7 +64,8 @@ func (l *Login) Authorize(ctx echo.Context) error {
 		)
 	}
 
-	str, err := l.Manager.Authorize(ctx, form)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
+	str, err := m.Authorize(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
 	}
@@ -71,11 +73,15 @@ func (l *Login) Authorize(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusMovedPermanently, str)
 }
 
-func (l *Login) AuthorizeResult(ctx echo.Context) error {
+func authorizeResult(ctx echo.Context) error {
 	form := new(models.AuthorizeResultForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("AuthorizeResult bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeResult bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -84,10 +90,11 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"AuthorizeResult validate form failed",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
@@ -96,7 +103,8 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 		})
 	}
 
-	t, err := l.Manager.AuthorizeResult(ctx, form)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
+	t, err := m.AuthorizeResult(ctx, form)
 	if err != nil {
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -110,11 +118,15 @@ func (l *Login) AuthorizeResult(ctx echo.Context) error {
 	})
 }
 
-func (l *Login) AuthorizeLink(ctx echo.Context) error {
+func authorizeLink(ctx echo.Context) error {
 	form := new(models.AuthorizeLinkForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("AuthorizeLink bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeLink bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -125,10 +137,11 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
+		zap.L().Error(
 			"AuthorizeLink validate form failed",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -139,7 +152,8 @@ func (l *Login) AuthorizeLink(ctx echo.Context) error {
 		)
 	}
 
-	url, err := l.Manager.AuthorizeLink(ctx, form)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
+	url, err := m.AuthorizeLink(ctx, form)
 	if err != nil {
 		return helper.NewErrorResponse(
 			ctx,
@@ -156,51 +170,18 @@ func (l *Login) LoginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
 
 	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("Login page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Login page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := l.Manager.CreateAuthUrl(ctx, form)
+	url, err := manager.CreateAuthUrl(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
 	}
 
 	return ctx.Redirect(http.StatusMovedPermanently, url)
-}
-
-func (l *Login) LoginByOTT(ctx echo.Context) error {
-	form := new(models.OneTimeTokenForm)
-
-	if err := ctx.Bind(form); err != nil {
-		l.logger.Error("TokenOTT bind form failed", zap.Error(err))
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		l.logger.Error(
-			"TokenOTT bind validate failed",
-			zap.Object("OneTimeTokenForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
-	}
-
-	token, e := l.Manager.LoginByOTT(form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
-	}
-
-	return ctx.JSON(http.StatusOK, token)
 }

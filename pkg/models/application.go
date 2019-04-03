@@ -1,8 +1,8 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
 	"errors"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -44,10 +44,9 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewApplicationService(dbHandler *database.Handler) *ApplicationService {
-	return &ApplicationService{
-		db: dbHandler.Session.DB(dbHandler.Name),
-	}
+func NewApplicationService(dbHandler *mgo.Session) *ApplicationService {
+	return &ApplicationService{db: dbHandler.DB("")}
+
 }
 
 func (s ApplicationService) Create(app *Application) error {

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
@@ -30,13 +30,6 @@ type User struct {
 	Blocked       bool          `bson:"blocked" json:"blocked"`
 	CreatedAt     time.Time     `bson:"created_at" json:"created_at"`
 	UpdatedAt     time.Time     `bson:"updated_at" json:"updated_at"`
-}
-
-type UserProfile struct {
-	ID            bson.ObjectId `bson:"_id" json:"id"`
-	AppID         bson.ObjectId `bson:"app_id" json:"app_id"`
-	Email         string        `bson:"email" json:"email" validate:"required,email"`
-	EmailVerified bool          `bson:"email_verified" json:"email_verified"`
 }
 
 type SignUpForm struct {
@@ -158,8 +151,8 @@ func (m *CaptchaRequiredError) GetMessage() string {
 	return m.Message
 }
 
-func NewUserService(dbHandler *database.Handler) *UserService {
-	return &UserService{dbHandler.Session.DB(dbHandler.Name)}
+func NewUserService(dbHandler *mgo.Session) *UserService {
+	return &UserService{db: dbHandler.DB("")}
 }
 
 func (us UserService) Create(user *User) error {
@@ -194,7 +187,7 @@ func (us UserService) GetByEmail(app *Application, email string) (*User, error) 
 	/*b, _ := us.GetUserIdentityByEmail(app, email, "password")
 	r := mgo.DBRef{
 		ID:         b.ID,
-		Database:   us.db.Name,
+		Name:   us.db.Name,
 		Collection: database.TableUser,
 	}
 

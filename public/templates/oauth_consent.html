@@ -5,7 +5,6 @@
 <h1>Please select scopes</h1>
 <form method="POST">
     <input type="hidden" name="challenge" value="{{index . "Challenge"}}">
-    <input type="hidden" name="_csrf" value="{{index . "Csrf"}}">
     <table style="">
         {{ range $key, $value := index . "Scopes"}}
             <tr>

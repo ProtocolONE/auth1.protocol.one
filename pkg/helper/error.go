@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"auth-one-api/pkg/models"
-	"github.com/labstack/echo"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/labstack/echo/v4"
 	"gopkg.in/go-playground/validator.v9"
 )
 

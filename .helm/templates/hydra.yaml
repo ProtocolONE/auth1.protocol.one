@@ -31,6 +31,11 @@ spec:
   selector:
     matchLabels:
       app: hydra
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  
   template:
     metadata:
       name: hydra
@@ -47,7 +52,7 @@ spec:
       initContainers:
       - name: hydra-migrate
         #image: oryd/hydra:v0.11.14-alpine
-        image: oryd/hydra:unstable
+        image: "oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine"
         command: ["hydra", "migrate", "sql", "-e"]
         env:
         - name: DATABASE_URL
@@ -60,7 +65,7 @@ spec:
       containers:
         - name: hydra
           #image: oryd/hydra:v0.11.14-alpine
-          image: oryd/hydra:unstable
+          image: "oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine"
           imagePullPolicy: Always
           command: ["hydra", "serve","all", "--dangerous-force-http"]
           #volumeMounts:
@@ -72,6 +77,24 @@ spec:
             - name: internalsvc
               containerPort: 4445
           env:
+          {{- if .Values.enableHydraDebug }}
+          - name: TRACING_PROVIDER
+            value: jaeger
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_SERVER_URL
+            value: "http://jaeger-agent:5778/sampling"
+          - name: TRACING_PROVIDER_JAEGER_LOCAL_AGENT_ADDRESS
+            value: "jaeger-agent:6831"
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_TYPE
+            value: "const"
+          - name: TRACING_PROVIDER_JAEGER_SAMPLING_VALUE
+            value: "1"
+          {{- end }}
+          - name: BCRYPT_COST
+            value: "8"
+          - name: LOG_FORMAT
+            value: "json"
+          - name: DISABLE_TELEMETRY
+            value: "1"
           {{- range .Values.hydra.env }}
           - name: {{ . }}
             valueFrom:
@@ -79,6 +102,22 @@ spec:
                 name: p1auth1hydra-env
                 key: {{ . }}
           {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /.well-known/jwks.json
+              port: 4444
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
 
 #          resources:
 #            requests:

@@ -1,10 +1,10 @@
 package models
 
 import (
-	"auth-one-api/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type (
@@ -31,8 +31,8 @@ type AuthLogService struct {
 	db *mgo.Database
 }
 
-func NewAuthLogService(h *database.Handler) *AuthLogService {
-	return &AuthLogService{h.Session.DB(h.Name)}
+func NewAuthLogService(h *mgo.Session) *AuthLogService {
+	return &AuthLogService{db: h.DB("")}
 }
 
 func (s AuthLogService) Add(ctx echo.Context, user *User, token string) error {
