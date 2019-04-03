@@ -1,38 +1,42 @@
 language: go
 sudo: false
 go:
-- 1.11.x
+  - 1.11.x
 services:
-- mongodb
+  - mongodb
+before_script:
+  - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 env:
+  - AUTHONE_DATABASE_USER=travis
+  - AUTHONE_DATABASE_PASSWORD=test
   global:
-  - GO111MODULE=on
+    - GO111MODULE=on
 
-stages: 
+stages:
   - test
   - name: deploy
     if: branch IN (master, develop)
 
 jobs:
   include:
-  - stage: test
-    install: true
-    script:
-    - go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
-    after_success:
-    - bash <(curl -s https://codecov.io/bash)
-  - stage: deploy
-    services: docker
-    install: true
-    script:
-    #- 'curl -H "Content-Type: application/json;" -X POST -d "{\"PROJECT\": \"$TRAVIS_REPO_SLUG\", \"BRANCH\": \"$TRAVIS_BRANCH\"}" $JENKINS'
-    - docker run -it
-      -e JENKINS_AUTH_TOKEN=$JENKINS_AUTH_TOKEN
-      -e JENKINS_BUILD_TOKEN=$JENKINS_BUILD_TOKEN
-      -e JENKINS_BUILD_PROJECT=$TRAVIS_REPO_SLUG
-      -e JENKINS_BUILD_BRANCH=$TRAVIS_BRANCH
-      p1hub/p1jenkinstrigger
-      
+    - stage: test
+      install: true
+      script:
+        - go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+    - stage: deploy
+      services: docker
+      install: true
+      script:
+        #- 'curl -H "Content-Type: application/json;" -X POST -d "{\"PROJECT\": \"$TRAVIS_REPO_SLUG\", \"BRANCH\": \"$TRAVIS_BRANCH\"}" $JENKINS'
+        - docker run -it
+          -e JENKINS_AUTH_TOKEN=$JENKINS_AUTH_TOKEN
+          -e JENKINS_BUILD_TOKEN=$JENKINS_BUILD_TOKEN
+          -e JENKINS_BUILD_PROJECT=$TRAVIS_REPO_SLUG
+          -e JENKINS_BUILD_BRANCH=$TRAVIS_BRANCH
+          p1hub/p1jenkinstrigger
+
 notifications:
   email: false
   slack:
