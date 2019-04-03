@@ -103,7 +103,7 @@ func createConnection(t *testing.T) *mgo.Session {
 
 	session, err := NewConnection(&cfg.Database)
 	if err != nil {
-		t.Fatal("Failed to init session")
+		t.Fatalf("Failed to init session with error: %s", err.Error())
 	}
 
 	return session
