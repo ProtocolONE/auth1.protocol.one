@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewConnection(c *config.DatabaseConfig) (*mgo.Session, error) {
+func NewConnection(c *config.Database) (*mgo.Session, error) {
 	info, err := mgo.ParseURL(BuildConnString(c))
 	if err != nil {
 		return nil, err
@@ -24,8 +24,8 @@ func NewConnection(c *config.DatabaseConfig) (*mgo.Session, error) {
 	return session, err
 }
 
-func BuildConnString(c *config.DatabaseConfig) string {
-	if c.Database == "" {
+func BuildConnString(c *config.Database) string {
+	if c.Name == "" {
 		return ""
 	}
 
@@ -43,7 +43,7 @@ func BuildConnString(c *config.DatabaseConfig) string {
 
 	u := url.URL{
 		Scheme:   "mongodb",
-		Path:     c.Database,
+		Path:     c.Name,
 		Host:     c.Host,
 		User:     userInfo,
 		RawQuery: vv.Encode(),

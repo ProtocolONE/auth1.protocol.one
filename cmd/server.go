@@ -4,9 +4,13 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/mfa-service/pkg"
+	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
+	"github.com/micro/go-micro"
+	k8s "github.com/micro/kubernetes/go/micro"
+	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -43,14 +47,30 @@ func runServer(cmd *cobra.Command, args []string) {
 	})
 	defer redisClient.Close()
 
+	var service micro.Service
+	if cfg.KubernetesHost == "" {
+		service = micro.NewService()
+		zap.L().Info("Initialize micro service")
+	} else {
+		service = k8s.NewService()
+		zap.L().Info("Initialize k8s service")
+	}
+	service.Init()
+	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
+
+	h, err := hydra.NewSDK(&hydra.Configuration{AdminURL: cfg.Hydra.AdminURL})
+	if err != nil {
+		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
+	}
+
 	serverConfig := api.ServerConfig{
-		JwtConfig:      &cfg.Jwt,
-		ApiConfig:      &cfg.Api,
+		ApiConfig:      &cfg.Server,
 		DatabaseConfig: &cfg.Database,
-		Kubernetes:     &cfg.Kubernetes,
 		HydraConfig:    &cfg.Hydra,
 		SessionConfig:  &cfg.Session,
-		MongoDB:        db,
+		MfaService:     ms,
+		Hydra:          h,
+		ConnectionPool: db,
 		SessionStore:   store,
 		RedisClient:    redisClient,
 	}
@@ -60,21 +80,20 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 
 	zap.L().Info("Starting up server")
-
-	err = server.Start()
-	if err != nil {
-		zap.L().Fatal("Failed to start server", zap.Error(err))
+	if err = server.Start(); err != nil {
+		zap.L().Fatal("Error running server", zap.Error(err))
 	}
 }
 
-func createDatabase(cfg *config.DatabaseConfig) *mgo.Session {
+func createDatabase(cfg *config.Database) *database.ConnectionPool {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
-		zap.L().Fatal("Database connection failed with error", zap.Error(err))
+		zap.L().Fatal("Name connection failed with error", zap.Error(err))
 	}
 
-	if err := database.MigrateDb(db, cfg.Database); err != nil {
+	if err := database.MigrateDb(db, cfg.Name); err != nil {
 		zap.L().Fatal("Error in db migration", zap.Error(err))
 	}
-	return db
+
+	return database.NewConnectionPool(db, cfg.MaxConnections)
 }

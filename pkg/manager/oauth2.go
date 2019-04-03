@@ -29,7 +29,7 @@ var (
 type OauthManager struct {
 	redis               *redis.Client
 	hydra               *hydra.CodeGenSDK
-	sessionConfig       *config.SessionConfig
+	sessionConfig       *config.Session
 	appService          *models.ApplicationService
 	userService         *models.UserService
 	userIdentityService *models.UserIdentityService
@@ -37,7 +37,7 @@ type OauthManager struct {
 	authLogService      *models.AuthLogService
 }
 
-func NewOauthManager(db *mgo.Session, redis *redis.Client, h *hydra.CodeGenSDK, s *config.SessionConfig) *OauthManager {
+func NewOauthManager(db *mgo.Session, redis *redis.Client, h *hydra.CodeGenSDK, s *config.Session) *OauthManager {
 	m := &OauthManager{
 		redis:               redis,
 		hydra:               h,
