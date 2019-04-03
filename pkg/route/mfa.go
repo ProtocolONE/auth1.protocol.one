@@ -32,7 +32,11 @@ func mfaChallenge(ctx echo.Context) error {
 	form := new(models.MfaChallengeForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAChallenge bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAChallenge bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -47,6 +51,7 @@ func mfaChallenge(ctx echo.Context) error {
 			"MFAChallenge validate form failed",
 			zap.Object("MfaChallengeForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -70,7 +75,11 @@ func mfaVerify(ctx echo.Context) error {
 	form := new(models.MfaVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAVerify bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAVerify bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -85,6 +94,7 @@ func mfaVerify(ctx echo.Context) error {
 			"MFAVerify validate form failed",
 			zap.Object("MfaVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -108,7 +118,11 @@ func mfaAdd(ctx echo.Context) error {
 	form := new(models.MfaAddForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAAdd bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAAdd bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -123,6 +137,7 @@ func mfaAdd(ctx echo.Context) error {
 			"MFAAdd validate form failed",
 			zap.Object("MfaAddForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(

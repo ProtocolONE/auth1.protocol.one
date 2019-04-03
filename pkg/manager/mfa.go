@@ -52,6 +52,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			"Unable to use token an application",
 			zap.Object("MfaVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `mfa_token`, Message: models.ErrorCannotUseToken}
@@ -67,6 +68,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		zap.L().Error(
 			"Unable to verify MFA code",
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -80,6 +82,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			"Unable to get application",
 			zap.Object("UserIdentity", mp.UserIdentity),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -91,6 +94,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			"Unable to get user",
 			zap.Object("UserIdentity", mp.UserIdentity),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
@@ -103,6 +107,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
@@ -114,6 +119,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -125,6 +131,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -136,6 +143,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -153,6 +161,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 			"Unable to receive client id",
 			zap.Object("MfaAddForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -164,6 +173,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 			"Unable to get MFA provider for application",
 			zap.Object("MfaAddForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
@@ -171,7 +181,11 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 
 	c, err := helper.GetTokenFromAuthHeader(m.appService, ctx.Request().Header)
 	if err != nil {
-		zap.L().Error("Unable to validate bearer token", zap.Error(err))
+		zap.L().Error(
+			"Unable to validate bearer token",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorClientIdIncorrect}
 	}
@@ -184,7 +198,11 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 		QrSize:     300,
 	})
 	if err != nil {
-		zap.L().Error("Unable to add MFA", zap.Error(err))
+		zap.L().Error(
+			"Unable to add MFA",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorMfaClientAdd}
 	}
@@ -199,6 +217,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 			zap.Object("mfaProvide", p),
 			zap.String("jwtUserId", c.UserId.String()),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorMfaClientAdd}

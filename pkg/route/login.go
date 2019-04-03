@@ -34,7 +34,11 @@ func authorize(ctx echo.Context) error {
 	form := new(models.AuthorizeForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("Authorize bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Authorize bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -49,6 +53,7 @@ func authorize(ctx echo.Context) error {
 			"Authorize validate form failed",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -72,7 +77,11 @@ func authorizeResult(ctx echo.Context) error {
 	form := new(models.AuthorizeResultForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("AuthorizeResult bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeResult bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -85,6 +94,7 @@ func authorizeResult(ctx echo.Context) error {
 			"AuthorizeResult validate form failed",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
@@ -114,7 +124,11 @@ func authorizeLink(ctx echo.Context) error {
 	form := new(models.AuthorizeLinkForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("AuthorizeLink bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeLink bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -129,6 +143,7 @@ func authorizeLink(ctx echo.Context) error {
 			"AuthorizeLink validate form failed",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -154,7 +169,11 @@ func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("Login page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Login page bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 

@@ -3,6 +3,7 @@ package manager
 import (
 	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
@@ -58,6 +59,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			"Unable to get client from login request",
 			zap.Object("Oauth2LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
@@ -68,12 +70,20 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 	sess.Values[loginRememberKey] = req.Skip == true
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		zap.L().Error("Error saving session", zap.Error(err))
+		zap.L().Error(
+			"Error saving session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
@@ -84,6 +94,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 				"Unable to accept login challenge",
 				zap.Object("Oauth2LoginForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 		}
@@ -97,6 +108,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			"Unable to get application",
 			zap.Object("Oauth2LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
@@ -108,6 +120,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -117,7 +130,11 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
@@ -127,6 +144,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			"Unable to get client from login request",
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
@@ -139,6 +157,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				"Unable to get application",
 				zap.Object("Oauth2LoginSubmitForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 		}
@@ -150,6 +169,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				zap.Object("Oauth2LoginSubmitForm", form),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 		}
 
@@ -163,6 +183,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				"Unable to load password settings for application",
 				zap.Object("Oauth2LoginSubmitForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 		}
@@ -175,6 +196,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				zap.String("Password", form.Password),
 				zap.Object("Oauth2LoginSubmitForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 		}
@@ -185,6 +207,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				"Unable to get user",
 				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
@@ -195,6 +218,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				"Unable to add auth log for user",
 				zap.Object("User", user),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -206,7 +230,11 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 	sess.Values[loginRememberKey] = form.Remember
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		zap.L().Error("Error saving session", zap.Error(err))
+		zap.L().Error(
+			"Error saving session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
@@ -225,6 +253,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			"Unable to accept login challenge",
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
@@ -243,6 +272,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 			"Unable to get consent challenge",
 			zap.Object("Oauth2ConsentForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
@@ -253,6 +283,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 			"Unable to get user",
 			zap.String("Subject", reqGCR.Subject),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
@@ -260,7 +291,11 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
@@ -291,13 +326,18 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 			"Unable to accept consent challenge",
 			zap.Object("Oauth2ConsentForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
 
 	sess.Values[clientIdSessionKey] = reqGCR.Client.ClientId
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		zap.L().Error("Error saving session", zap.Error(err))
+		zap.L().Error(
+			"Error saving session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", err
 	}
 
@@ -325,6 +365,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 			"Unable to get application",
 			zap.Object("Oauth2IntrospectForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
@@ -334,6 +375,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 			"Invalid secret key",
 			zap.Object("Oauth2IntrospectForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, &models.CommonError{Code: `secret`, Message: models.ErrorUnknownError}
 	}
@@ -344,6 +386,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 			"Unable to introspect token",
 			zap.Object("Oauth2IntrospectForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -363,13 +406,21 @@ func (m *OauthManager) GetScopes() (scopes []string, err error) {
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, models.ErrorInterface) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	sess.Values[loginRememberKey] = form.Remember
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		zap.L().Error("Error saving session", zap.Error(err))
+		zap.L().Error(
+			"Error saving session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 	}
 
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
@@ -378,6 +429,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to get client from login request",
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
@@ -388,6 +440,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to get application",
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
@@ -398,6 +451,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to load password settings for application",
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -415,6 +469,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			zap.String("Password", form.Password),
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
@@ -426,6 +481,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to get user with identity for application",
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -451,6 +507,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to create user with identity for application",
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
@@ -473,6 +530,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to create user identity for application",
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
@@ -483,6 +541,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to add auth log for user",
 			zap.Object("User", user),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -495,6 +554,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -506,6 +566,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -518,6 +579,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			"Unable to accept login challenge",
 			zap.Object("Oauth2LoginSubmitForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 	}
@@ -528,7 +590,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackForm) *models.Oauth2CallBackResponse {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
 			ErrorMessage: `unknown_client_id`,
@@ -539,6 +605,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 		zap.L().Error(
 			"Unable to get client id from session",
 			zap.Object("Oauth2CallBackForm", form),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
@@ -552,6 +619,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 			"Unable to get application",
 			zap.Object("Oauth2CallBackForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
@@ -590,7 +658,11 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, error) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		zap.L().Error("Unable to get session", zap.Error(err))
+		zap.L().Error(
+			"Unable to get session",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
@@ -601,7 +673,11 @@ func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (
 	if logoutRedirectUri == "" || logoutRedirectUri == nil {
 		sess.Values[logoutSessionKey] = form.RedirectUri
 		if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-			zap.L().Error("Error saving session", zap.Error(err))
+			zap.L().Error(
+				"Error saving session",
+				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+			)
 			return "", err
 		}
 		return logoutHydraUrl, nil
@@ -609,7 +685,11 @@ func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (
 
 	sess.Values[logoutSessionKey] = ""
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		zap.L().Error("Error saving sessionConfig", zap.Error(err))
+		zap.L().Error(
+			"Error saving sessionConfig",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 		return "", err
 	}
 

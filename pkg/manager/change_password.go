@@ -1,10 +1,12 @@
 package manager
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +26,7 @@ func NewChangePasswordManager(db *mgo.Session, r *redis.Client) *ChangePasswordM
 	return m
 }
 
-func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *models.ChangePasswordStartForm) *models.CommonError {
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
@@ -32,6 +34,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 			"Unable to receive client id",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -44,6 +47,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 			"Unable to get user identity by email",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -58,6 +62,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 			"Unable to load password settings an application",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
@@ -69,6 +74,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 			"Unable to create one time token settings",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableCreateOttSettings}
@@ -89,7 +95,7 @@ func (m *ChangePasswordManager) createOneTimeTokenSettings(email string, ps *mod
 	return err
 }
 
-func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *models.ChangePasswordVerifyForm) *models.CommonError {
 	if form.PasswordRepeat != form.Password {
 		return &models.CommonError{Code: `password_repeat`, Message: models.ErrorPasswordRepeat}
 	}
@@ -100,6 +106,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			"Unable to get application",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -111,6 +118,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			"Unable to get app password settings",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -133,6 +141,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			"Unable to use token of application",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
@@ -146,6 +155,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			zap.String("Email", ts.Email),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -162,6 +172,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			zap.String("Password", form.Password),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
@@ -172,6 +183,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 			"Unable to update user identity password",
 			zap.Object("UserIdentity", ui),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `password`, Message: models.ErrorUnableChangePassword}

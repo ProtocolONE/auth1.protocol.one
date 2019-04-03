@@ -56,6 +56,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 			"Unable to get application",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -68,6 +69,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 			zap.Object("AuthorizeForm", form),
 			zap.String("Provider", models.UserIdentityProviderSocial),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -79,6 +81,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 			"Unable to get auth url from authorize form",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -96,6 +99,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to decode state param",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -106,6 +110,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to unmarshal auth form",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -117,6 +122,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to get application service for client",
 			zap.Object("AuthorizeForm", authForm),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -128,6 +134,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to load user identity settings for application",
 			zap.Object("AuthorizeForm", authForm),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorConnectionIncorrect}
@@ -139,6 +146,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to load identity profile for application",
 			zap.Object("AuthorizeForm", authForm),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialData}
@@ -153,6 +161,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("UserIdentitySocial", cp),
 				zap.Object("AuthorizeForm", authForm),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorLoginIncorrect}
@@ -165,6 +174,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("User", user),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: err.Error()}
@@ -175,6 +185,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				"Unable to log authorization for user",
 				zap.Object("User", user),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -186,6 +197,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				"Unable to load session settings for application",
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -198,6 +210,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("User", user),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -218,6 +231,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("User", user),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -230,6 +244,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("LoginForm", form),
 				zap.Object("OneTimeToken", ott),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
@@ -250,6 +265,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("UserIdentitySocial", cp),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialSettings}
@@ -281,6 +297,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				zap.Object("UserIdentitySocial", cp),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -312,6 +329,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("UserIdentitySocial", cp),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
@@ -338,6 +356,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("UserIdentitySocial", cp),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
@@ -351,6 +370,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("UserIdentitySocial", cp),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
@@ -360,6 +380,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		zap.L().Error(
 			"Unable to log auth for user",
 			zap.Object("User", user),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -371,6 +392,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -382,6 +404,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -401,6 +424,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -413,6 +437,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			zap.Object("LoginForm", form),
 			zap.Object("OneTimeToken", ott),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 	}
@@ -430,6 +455,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unable to get application",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -443,6 +469,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unable to use token for application",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
@@ -469,6 +496,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				"Unable to load password settings for application",
 				zap.Object("AuthorizeLinkForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -487,6 +515,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				"Unable to crypt password for application",
 				zap.Object("AuthorizeLinkForm", form),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
@@ -499,6 +528,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				zap.Object("User", user),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -519,6 +549,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 					"Unable to create one-time token for application",
 					zap.Object("UserIdentity", userIdentity),
 					zap.Error(err),
+					zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 				)
 
 				return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -533,6 +564,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				"Unable to get user",
 				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
@@ -543,6 +575,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				"Unable to create user with identity",
 				zap.Object("UserIdentity", sl),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
@@ -553,6 +586,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unknown action type for social link",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -563,6 +597,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unable to create user identity for application",
 			zap.Object("UserIdentity", sl),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
@@ -575,6 +610,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
@@ -585,6 +621,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unable to log authorization for user",
 			zap.Object("User", user),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -596,6 +633,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			"Unable to load session settings for application",
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -607,6 +645,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -633,6 +672,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			"Unable to get application",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -644,6 +684,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			"Unable to get user identity",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -657,6 +698,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			"Unable to load password settings for application",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -670,6 +712,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			zap.String("Password", form.Password),
 			zap.Object("LoginForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
@@ -681,6 +724,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			"Unable to get user",
 			zap.Object("UserIdentity", userIdentity),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
@@ -692,6 +736,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			"Unable to load MFA providers for user",
 			zap.Object("UserIdentity", userIdentity),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
@@ -712,6 +757,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 				"Unable to create one-time token for application",
 				zap.Object("UserIdentity", userIdentity),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -727,6 +773,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
@@ -738,6 +785,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
@@ -750,6 +798,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -761,6 +810,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 			zap.Object("User", user),
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
@@ -781,6 +831,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 				zap.Object("User", user),
 				zap.Object("Application", app),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
@@ -793,6 +844,7 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 				zap.Object("LoginForm", form),
 				zap.Object("OneTimeToken", ott),
 				zap.Error(err),
+				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotCreateToken}
 		}
@@ -800,24 +852,6 @@ func (m *LoginManager) Login(ctx echo.Context, form *models.LoginForm) (token in
 	}
 
 	return t, nil
-}
-
-func (m *LoginManager) LoginByOTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error models.ErrorInterface) {
-	ottSettings := &models.OneTimeTokenSettings{}
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-	token = &models.AuthToken{}
-
-	if err := os.Get(form.Token, token); err != nil {
-		zap.L().Error(
-			"Unable to use auth token for application",
-			zap.Object("OneTimeTokenForm", form),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
-	}
-
-	return token, nil
 }
 
 func CreateAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {

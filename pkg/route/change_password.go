@@ -31,7 +31,11 @@ func changePasswordStart(ctx echo.Context) error {
 	form := new(models.ChangePasswordStartForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("ChangePasswordStart bind form failed", zap.Error(err))
+		zap.L().Error(
+			"ChangePasswordStart bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -46,6 +50,7 @@ func changePasswordStart(ctx echo.Context) error {
 			"ChangePasswordStart validate form failed",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -57,7 +62,7 @@ func changePasswordStart(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
-	if err := m.ChangePasswordStart(form); err != nil {
+	if err := m.ChangePasswordStart(ctx, form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
@@ -68,7 +73,11 @@ func changePasswordVerify(ctx echo.Context) error {
 	form := new(models.ChangePasswordVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("ChangePasswordVerify bind form failed", zap.Error(err))
+		zap.L().Error(
+			"ChangePasswordVerify bind form failed",
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -83,6 +92,7 @@ func changePasswordVerify(ctx echo.Context) error {
 			"ChangePasswordVerify validate form failed",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -94,7 +104,7 @@ func changePasswordVerify(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
-	if err := m.ChangePasswordVerify(form); err != nil {
+	if err := m.ChangePasswordVerify(ctx, form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 

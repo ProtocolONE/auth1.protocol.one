@@ -3,6 +3,7 @@ package manager
 import (
 	"errors"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -32,7 +33,7 @@ func NewManageManager(db *mgo.Session, h *hydra.CodeGenSDK) *ManageManager {
 	return m
 }
 
-func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, error) {
+func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, error) {
 	s := &models.Space{
 		Id:          bson.NewObjectId(),
 		Name:        form.Name,
@@ -47,6 +48,7 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 			"Unable to create space",
 			zap.Object("space", s),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -54,7 +56,7 @@ func (m *ManageManager) CreateSpace(form *models.SpaceForm) (*models.Space, erro
 	return s, nil
 }
 
-func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.Space, error) {
+func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.SpaceForm) (*models.Space, error) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
@@ -69,6 +71,7 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 			"Unable to update space",
 			zap.Object("space", s),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -76,13 +79,14 @@ func (m *ManageManager) UpdateSpace(id string, form *models.SpaceForm) (*models.
 	return s, nil
 }
 
-func (m *ManageManager) GetSpace(id string) (*models.Space, error) {
+func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, error) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
 		zap.L().Error(
 			"Unable to get space",
 			zap.String("spaceId", id),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -97,6 +101,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			"Unable to get space",
 			zap.String("spaceId", form.SpaceId.String()),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -121,6 +126,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			"Unable to create application",
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -139,6 +145,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			"Unable to create hydra client",
 			zap.Object("Application", app),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -153,6 +160,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("application not exists")
 	}
@@ -162,6 +170,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 			"Unable to get space",
 			zap.Object("ApplicationForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("space not exists")
 	}
@@ -190,6 +199,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 			"Unable to update application",
 			zap.Object("Application", a),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -200,12 +210,14 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 		zap.Any("Client", client),
 		zap.Any("Response", response),
 		zap.Error(err),
+		zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 	)
 	if err != nil {
 		zap.L().Error(
 			"Unable to get hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -218,6 +230,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 			"Unable to update hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -225,13 +238,14 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	return a, nil
 }
 
-func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
+func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, error) {
 	s, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
 		zap.L().Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -239,7 +253,7 @@ func (m *ManageManager) GetApplication(id string) (*models.Application, error) {
 	return s, nil
 }
 
-func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvider, error) {
+func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, error) {
 	p := &models.MfaProvider{
 		ID:      bson.NewObjectId(),
 		AppID:   f.AppId,
@@ -253,6 +267,7 @@ func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvide
 			"Unable to add MFA provider to application",
 			zap.Object("MfaProvider", p),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
