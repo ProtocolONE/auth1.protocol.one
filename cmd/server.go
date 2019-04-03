@@ -4,14 +4,17 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
+	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/spf13/cobra"
+	migrate "github.com/xakep666/mongo-migrate"
 	"go.uber.org/zap"
 )
 
@@ -91,9 +94,22 @@ func createDatabase(cfg *config.Database) *database.ConnectionPool {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))
 	}
 
-	if err := database.MigrateDb(db, cfg.Name); err != nil {
+	if err := migrateDb(db, cfg.Name); err != nil {
 		zap.L().Fatal("Error in db migration", zap.Error(err))
 	}
 
 	return database.NewConnectionPool(db, cfg.MaxConnections)
+}
+
+func migrateDb(s *mgo.Session, dbName string) error {
+	db := s.DB(dbName)
+	migrate.SetDatabase(db)
+
+	if err := migrate.Up(migrate.AllAvailable); err != nil {
+		if err := migrate.Down(migrate.AllAvailable); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

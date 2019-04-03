@@ -284,7 +284,7 @@ func addMFA(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, app)
 }
 
-func (l *Manage) setPasswordSettings(ctx echo.Context) error {
+func setPasswordSettings(ctx echo.Context) error {
 	form := &models.PasswordSettings{}
 
 	if err := ctx.Bind(form); err != nil {
@@ -318,17 +318,19 @@ func (l *Manage) setPasswordSettings(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.SetPasswordSettings(ctx, form); err != nil {
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	if err := m.SetPasswordSettings(ctx, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
 	}
 
 	return ctx.HTML(http.StatusOK, "")
 }
 
-func (l *Manage) getPasswordSettings(ctx echo.Context) error {
+func getPasswordSettings(ctx echo.Context) error {
 	id := ctx.Param("id")
 
-	ps, err := l.Manager.GetPasswordSettings(id)
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	ps, err := m.GetPasswordSettings(id)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
@@ -336,7 +338,7 @@ func (l *Manage) getPasswordSettings(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, ps)
 }
 
-func (l *Manage) addIdentityProvider(ctx echo.Context) error {
+func addIdentityProvider(ctx echo.Context) error {
 	form := &models.AppIdentityProvider{}
 	if err := ctx.Bind(form); err != nil {
 		zap.L().Error(
@@ -369,18 +371,20 @@ func (l *Manage) addIdentityProvider(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.AddAppIdentityProvider(ctx, form); err != nil {
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
 	}
 
 	return ctx.JSON(http.StatusOK, form)
 }
 
-func (l *Manage) getIdentityProvider(ctx echo.Context) error {
+func getIdentityProvider(ctx echo.Context) error {
 	appID := ctx.Param("app_id")
 	id := ctx.Param("id")
 
-	ip, err := l.Manager.GetIdentityProvider(appID, id)
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	ip, err := m.GetIdentityProvider(ctx, appID, id)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Identity provider not exists")
 	}
@@ -388,10 +392,11 @@ func (l *Manage) getIdentityProvider(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, ip)
 }
 
-func (l *Manage) getIdentityProviders(ctx echo.Context) error {
+func getIdentityProviders(ctx echo.Context) error {
 	appID := ctx.Param("id")
 
-	list, err := l.Manager.GetIdentityProviders(appID)
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	list, err := m.GetIdentityProviders(ctx, appID)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to give identity providers")
 	}
@@ -399,11 +404,12 @@ func (l *Manage) getIdentityProviders(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, list)
 }
 
-func (l *Manage) getIdentityProviderTemplates(ctx echo.Context) error {
-	return ctx.JSON(http.StatusOK, l.Manager.GetIdentityProviderTemplates())
+func getIdentityProviderTemplates(ctx echo.Context) error {
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	return ctx.JSON(http.StatusOK, m.GetIdentityProviderTemplates())
 }
 
-func (l *Manage) updateIdentityProvider(ctx echo.Context) error {
+func updateIdentityProvider(ctx echo.Context) error {
 	id := ctx.Param("id")
 	form := &models.AppIdentityProvider{}
 	if err := ctx.Bind(form); err != nil {
@@ -437,7 +443,8 @@ func (l *Manage) updateIdentityProvider(ctx echo.Context) error {
 		)
 	}
 
-	if err := l.Manager.UpdateAppIdentityProvider(ctx, id, form); err != nil {
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
 	}
 

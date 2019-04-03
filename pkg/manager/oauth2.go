@@ -15,7 +15,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
-	"net/http"
 	"time"
 )
 
@@ -77,7 +76,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			zap.Error(err),
 			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
-		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 	sess.Values[loginRememberKey] = req.Skip == true
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
@@ -86,7 +85,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			zap.Error(err),
 			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
-		return nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	if req.Skip == true {

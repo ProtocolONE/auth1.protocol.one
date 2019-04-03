@@ -326,7 +326,7 @@ func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.Passw
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
+		zap.L().Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
@@ -346,7 +346,7 @@ func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings
 	return ps, nil
 }
 
-func (m *ManageManager) AddMFA(f *models.MfaApplicationForm) (*models.MfaProvider, error) {
+func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, error) {
 	p := &models.MfaProvider{
 		ID:      bson.NewObjectId(),
 		AppID:   f.AppId,
@@ -419,8 +419,8 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 		zap.L().Error(
 			"Application not owned this identity provider",
 			zap.Object("AppIdentityProvider", form),
-			zap.Error(err)
-		zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
+			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return errors.New("application not owned this identity provider")
 	}
@@ -451,7 +451,7 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 	return nil
 }
 
-func (m *ManageManager) GetIdentityProvider(appId string, id string) (*models.AppIdentityProvider, error) {
+func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id string) (*models.AppIdentityProvider, error) {
 	ipc, err := m.identityProviderService.Get(bson.ObjectIdHex(id))
 	if err != nil {
 		zap.L().Error(
@@ -475,7 +475,7 @@ func (m *ManageManager) GetIdentityProvider(appId string, id string) (*models.Ap
 	return ipc, nil
 }
 
-func (m *ManageManager) GetIdentityProviders(appId string) ([]models.AppIdentityProvider, error) {
+func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
 	app, err := m.appService.Get(bson.ObjectIdHex(appId))
 	if err != nil {
 		zap.L().Error(

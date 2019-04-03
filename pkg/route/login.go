@@ -17,7 +17,7 @@ func InitLogin(cfg Config) error {
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("login_manager", manager.NewLoginManager(db, cfg.Redis))
+			c.Set("login_manager", manager.NewLoginManager(db, cfg.Redis, cfg.Hydra))
 
 			return next(c)
 		}
@@ -166,7 +166,7 @@ func authorizeLink(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]string{"url": url})
 }
 
-func (l *Login) LoginPage(ctx echo.Context) (err error) {
+func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
 
 	if err := ctx.Bind(form); err != nil {
@@ -178,7 +178,8 @@ func (l *Login) LoginPage(ctx echo.Context) (err error) {
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := manager.CreateAuthUrl(ctx, form)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
+	url, err := m.CreateAuthUrl(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
 	}

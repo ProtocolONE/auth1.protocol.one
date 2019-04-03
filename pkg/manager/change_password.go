@@ -44,10 +44,11 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 
 	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if err != nil {
-		m.logger.Warn(
+		zap.L().Warn(
 			"Unable to get identity provider",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
@@ -103,7 +104,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 	return nil
 }
 
-func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *models.ChangePasswordVerifyForm) *models.CommonError {
 	if form.PasswordRepeat != form.Password {
 		return &models.CommonError{Code: `password_repeat`, Message: models.ErrorPasswordRepeat}
 	}
@@ -154,10 +155,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if err != nil {
-		m.logger.Warn(
+		zap.L().Warn(
 			"Unable to get identity provider",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
+			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}

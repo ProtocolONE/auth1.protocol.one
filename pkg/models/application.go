@@ -1,16 +1,11 @@
 package models
 
 import (
-	"errors"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/oauth2/facebook"
-	"golang.org/x/oauth2/google"
-	"golang.org/x/oauth2/twitch"
-	"golang.org/x/oauth2/vk"
 	"time"
 )
 
@@ -123,68 +118,6 @@ func (s ApplicationService) LoadSocialSettings() (*SocialSettings, error) {
 		LinkedTokenLength: 128,
 		LinkedTTL:         3600,
 	}, nil
-}
-
-func (s ApplicationService) GetUserIdentityConnection(app *Application, provider string, connection string) (*AppIdentityProvider, error) {
-	switch provider {
-	case AppIdentityProviderTypeSocial:
-		switch connection {
-		case "facebook":
-			return &AppIdentityProvider{
-				ID:                  bson.NewObjectId(),
-				ApplicationID:       app.ID,
-				Type:                AppIdentityProviderTypeSocial,
-				ClientID:            "",
-				ClientSecret:        "",
-				ClientScopes:        []string{"email", "user_birthday", "user_friends"},
-				EndpointAuthURL:     facebook.Endpoint.AuthURL,
-				EndpointTokenURL:    facebook.Endpoint.TokenURL,
-				EndpointUserInfoURL: "https://graph.facebook.com/me?fields=id,name,first_name,last_name,email,birthday,picture&access_token=%s",
-				Name:                "facebook",
-			}, nil
-		case "twitch":
-			return &AppIdentityProvider{
-				ID:                  bson.NewObjectId(),
-				ApplicationID:       app.ID,
-				Type:                AppIdentityProviderTypeSocial,
-				ClientID:            "",
-				ClientSecret:        "",
-				ClientScopes:        []string{"user_read", "channel_subscriptions"},
-				EndpointAuthURL:     twitch.Endpoint.AuthURL,
-				EndpointTokenURL:    twitch.Endpoint.TokenURL,
-				EndpointUserInfoURL: "https://api.twitch.tv/kraken/user?client_id=r0elllpn5whuyf3et3pm6apqifn9yg&oauth_token=%s",
-				Name:                "twitch",
-			}, nil
-		case "google":
-			return &AppIdentityProvider{
-				ID:                  bson.NewObjectId(),
-				ApplicationID:       app.ID,
-				Type:                AppIdentityProviderTypeSocial,
-				ClientID:            "",
-				ClientSecret:        "",
-				ClientScopes:        []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
-				EndpointAuthURL:     google.Endpoint.AuthURL,
-				EndpointTokenURL:    google.Endpoint.TokenURL,
-				EndpointUserInfoURL: "https://www.googleapis.com/oauth2/v1/userinfo?access_token=%s",
-				Name:                "google",
-			}, nil
-		case "vk":
-			return &AppIdentityProvider{
-				ID:                  bson.NewObjectId(),
-				ApplicationID:       app.ID,
-				Type:                AppIdentityProviderTypeSocial,
-				ClientID:            "",
-				ClientSecret:        "",
-				ClientScopes:        []string{"email", "friends"},
-				EndpointAuthURL:     vk.Endpoint.AuthURL,
-				EndpointTokenURL:    vk.Endpoint.TokenURL,
-				EndpointUserInfoURL: "https://api.vk.com/method/users.get?fields=bdate,photo_50&v=5.92&access_token=%s",
-				Name:                "vk",
-			}, nil
-		}
-	}
-
-	return nil, errors.New("not found")
 }
 
 func (s ApplicationService) LoadMfaConnection(connection string) ([]*MfaConnection, error) {

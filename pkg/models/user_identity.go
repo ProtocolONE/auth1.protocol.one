@@ -1,22 +1,10 @@
 package models
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo/v4"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/oauth2"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"reflect"
-	"regexp"
 	"time"
 )
 

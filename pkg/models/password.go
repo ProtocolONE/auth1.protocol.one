@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	PasswordBcryptCostDefault     = 10
+	PasswordBcryptCostDefault     = 8
 	PasswordMinDefault            = 4
 	PasswordMaxDefault            = 30
 	PasswordRequireNumberDefault  = true

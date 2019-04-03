@@ -10,7 +10,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
@@ -28,7 +27,6 @@ var (
 
 type LoginManager struct {
 	redis                   *redis.Client
-	sessionConfig           *config.Session
 	appService              *models.ApplicationService
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
@@ -38,11 +36,10 @@ type LoginManager struct {
 	hydra                   *hydra.CodeGenSDK
 }
 
-func NewLoginManager(h *mgo.Session, redis *redis.Client, h *hydra.CodeGenSDK, s *config.Session) *LoginManager {
+func NewLoginManager(h *mgo.Session, redis *redis.Client, hydra *hydra.CodeGenSDK) *LoginManager {
 	m := &LoginManager{
 		redis:                   redis,
 		hydra:                   hydra,
-		sessionConfig:           s,
 		appService:              models.NewApplicationService(h),
 		userService:             models.NewUserService(h),
 		userIdentityService:     models.NewUserIdentityService(h),
@@ -500,7 +497,8 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		if err := m.userService.Create(user); err != nil {
 			zap.L().Error(
 				"Unable to create user with identity",
-				zap.Object("UserIdentity", sl),
+				zap.Object("StoredUserIdentity", storedUserIdentity),
+				zap.Object("User", user),
 				zap.Error(err),
 				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
@@ -562,25 +560,6 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	}
 
 	return reqACL.RedirectTo, nil
-}
-
-func (m *LoginManager) LoginByOTT(form *models.OneTimeTokenForm) (token *models.AuthToken, error models.ErrorInterface) {
-	ottSettings := &models.OneTimeTokenSettings{}
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-	token = &models.AuthToken{}
-
-	if err := os.Get(form.Token, token); err != nil {
-		zap.L().Error(
-			"Unable to use auth token for application",
-			zap.Object("OneTimeTokenForm", form),
-			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
-	}
-
-	return token, nil
 }
 
 func (m *LoginManager) CreateAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {
