@@ -104,8 +104,10 @@ func createDatabase(cfg *config.Database) *mgo.Session {
 func migrateDb(s *mgo.Session, dbName string) error {
 	db := s.DB(dbName)
 	migrate.SetDatabase(db)
+	migrate.SetMigrationsCollection("mongo-migrate")
 
 	if err := migrate.Up(migrate.AllAvailable); err != nil {
+		zap.L().Fatal("Error in db migration", zap.Error(err))
 		if err := migrate.Down(migrate.AllAvailable); err != nil {
 			return err
 		}

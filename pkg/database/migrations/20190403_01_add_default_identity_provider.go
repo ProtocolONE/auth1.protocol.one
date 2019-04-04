@@ -36,13 +36,13 @@ func init() {
 			}
 
 			ipc := &models.AppIdentityProvider{
-				ID:          bson.NewObjectId(),
 				Type:        models.AppIdentityProviderTypePassword,
 				Name:        models.AppIdentityProviderNameDefault,
 				DisplayName: "Initial connection",
 			}
 
 			for _, app := range apps {
+				ipc.ID = bson.NewObjectId()
 				ipc.ApplicationID = app.ID
 				if err = db.C(database.TableAppIdentityProvider).Insert(ipc); err != nil {
 					return errors.Wrapf(err, "Unable to add default application identity provider")
@@ -52,7 +52,7 @@ func init() {
 			return nil
 		},
 		func(db *mgo.Database) error {
-			if err := db.C(database.TableAppIdentityProvider).DropIndexName("Idx-AppId-Type-Name"); err != nil {
+			if err := db.C(database.TableAppIdentityProvider).DropIndex("app_id", "type", "name"); err != nil {
 				return errors.Wrapf(err, "Drop application identity provider collection `Idx-AppId-Type-Name` index failed")
 			}
 

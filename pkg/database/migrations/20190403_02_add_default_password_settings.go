@@ -51,7 +51,7 @@ func init() {
 			return nil
 		},
 		func(db *mgo.Database) error {
-			if err := db.C(database.TableAppPasswordSettings).DropIndexName("Idx-AppId"); err != nil {
+			if err := db.C(database.TableAppPasswordSettings).DropIndex("app_id"); err != nil {
 				return errors.Wrapf(err, "Drop password settings collection `Idx-AppId` index failed")
 			}
 

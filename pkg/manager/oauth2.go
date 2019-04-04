@@ -499,6 +499,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 			zap.Object("SignUpForm", form),
 			zap.Error(err),
 		)
+		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
