@@ -87,7 +87,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.RequestID())
 	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			db := c.MgoSession.Clone()
+			db := c.MgoSession.Copy()
 			defer db.Close()
 
 			ctx.Set("database", db)
