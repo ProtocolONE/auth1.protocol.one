@@ -27,14 +27,15 @@ func NewConnectionPool(s *mgo.Session, maxSessions int) *ConnectionPool {
 
 	go func() {
 		p.wg.Add(1)
-		timer := time.NewTimer(PingInterval)
+		ticker := time.NewTicker(PingInterval)
 
 		for {
 			select {
 			case <-p.quit:
+				ticker.Stop()
 				p.wg.Done()
 				return
-			case <-timer.C:
+			case <-ticker.C:
 				p.checkAlive()
 			}
 		}
