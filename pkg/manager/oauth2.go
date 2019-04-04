@@ -102,11 +102,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2LoginForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return req.Client.ClientId, nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -174,11 +170,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		} else {
 			app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 			if err != nil {
-				m.Logger.Error(
-					"Unable to get application",
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
-				)
+				m.Logger.Warn("Unable to load application", zap.Error(err))
 				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 			}
 
@@ -387,11 +379,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, error) {
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2IntrospectForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -456,11 +444,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -606,11 +590,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 
 	app, err := m.appService.Get(bson.ObjectIdHex(clientId))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("Oauth2CallBackForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
 			ErrorMessage: `invalid_client_id`,

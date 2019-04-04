@@ -32,12 +32,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to receive client id",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -106,11 +101,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get application",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 

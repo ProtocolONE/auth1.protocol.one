@@ -5,6 +5,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
@@ -62,10 +63,12 @@ func (s ApplicationService) Update(app *Application) error {
 
 func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
 	a := &Application{}
-	if err := s.db.C(database.TableApplication).
+	err := s.db.C(database.TableApplication).
 		FindId(id).
-		One(&a); err != nil {
-		return nil, err
+		One(&a)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to load application with id %s", id.String())
 	}
 
 	return a, nil
