@@ -15,7 +15,8 @@ func InitMFA(cfg Config) error {
 	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Redis, cfg.MfaService))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("mfa_manager", manager.NewMFAManager(db, logger, cfg.Redis, cfg.MfaService))
 
 			return next(c)
 		}
@@ -32,7 +33,10 @@ func mfaChallenge(ctx echo.Context) error {
 	form := new(models.MfaChallengeForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAChallenge bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAChallenge bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -70,7 +74,10 @@ func mfaVerify(ctx echo.Context) error {
 	form := new(models.MfaVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAVerify bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAVerify bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -108,7 +115,10 @@ func mfaAdd(ctx echo.Context) error {
 	form := new(models.MfaAddForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("MFAAdd bind form failed", zap.Error(err))
+		zap.L().Error(
+			"MFAAdd bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

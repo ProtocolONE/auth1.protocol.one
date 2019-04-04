@@ -15,7 +15,8 @@ func InitManage(cfg Config) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("manage_manager", manager.NewManageManager(db, cfg.Hydra))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Hydra))
 
 			return next(c)
 		}
@@ -36,7 +37,10 @@ func createSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("CreateSpace bind form failed", zap.Error(err))
+		zap.L().Error(
+			"CreateSpace bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -63,7 +67,7 @@ func createSpace(ctx echo.Context) error {
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
-	s, err := m.CreateSpace(form)
+	s, err := m.CreateSpace(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the space")
 	}
@@ -76,7 +80,7 @@ func getSpace(ctx echo.Context) error {
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
-	space, err := m.GetSpace(id)
+	space, err := m.GetSpace(ctx, id)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Space not exists")
 	}
@@ -89,7 +93,10 @@ func updateSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("UpdateSpace bind form failed", zap.Error(err))
+		zap.L().Error(
+			"UpdateSpace bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -116,7 +123,7 @@ func updateSpace(ctx echo.Context) error {
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
-	space, err := m.UpdateSpace(id, form)
+	space, err := m.UpdateSpace(ctx, id, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the space")
 	}
@@ -128,7 +135,10 @@ func createApplication(ctx echo.Context) error {
 	applicationForm := &models.ApplicationForm{}
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		zap.L().Error("CreateApplication bind form failed", zap.Error(err))
+		zap.L().Error(
+			"CreateApplication bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -167,7 +177,7 @@ func getApplication(ctx echo.Context) error {
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
-	a, err := m.GetApplication(id)
+	a, err := m.GetApplication(ctx, id)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
@@ -180,7 +190,10 @@ func updateApplication(ctx echo.Context) error {
 	applicationForm := &models.ApplicationForm{}
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		zap.L().Error("UpdateApplication bind form failed", zap.Error(err))
+		zap.L().Error(
+			"UpdateApplication bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -218,7 +231,10 @@ func addMFA(ctx echo.Context) error {
 	mfaApplicationForm := &models.MfaApplicationForm{}
 
 	if err := ctx.Bind(mfaApplicationForm); err != nil {
-		zap.L().Error("AddMFA bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AddMFA bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -244,7 +260,7 @@ func addMFA(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	app, err := m.AddMFA(mfaApplicationForm)
+	app, err := m.AddMFA(ctx, mfaApplicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}

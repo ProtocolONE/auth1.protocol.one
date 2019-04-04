@@ -15,7 +15,8 @@ func InitChangePassword(cfg Config) error {
 	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Redis))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("password_manager", manager.NewChangePasswordManager(db, logger, cfg.Redis))
 
 			return next(c)
 		}
@@ -31,7 +32,10 @@ func changePasswordStart(ctx echo.Context) error {
 	form := new(models.ChangePasswordStartForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("ChangePasswordStart bind form failed", zap.Error(err))
+		zap.L().Error(
+			"ChangePasswordStart bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -68,7 +72,10 @@ func changePasswordVerify(ctx echo.Context) error {
 	form := new(models.ChangePasswordVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("ChangePasswordVerify bind form failed", zap.Error(err))
+		zap.L().Error(
+			"ChangePasswordVerify bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,

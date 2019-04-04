@@ -17,7 +17,8 @@ func InitLogin(cfg Config) error {
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("login_manager", manager.NewLoginManager(db, cfg.Redis))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("login_manager", manager.NewLoginManager(db, logger, cfg.Redis))
 
 			return next(c)
 		}
@@ -34,7 +35,10 @@ func authorize(ctx echo.Context) error {
 	form := new(models.AuthorizeForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("Authorize bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Authorize bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -72,7 +76,10 @@ func authorizeResult(ctx echo.Context) error {
 	form := new(models.AuthorizeResultForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("AuthorizeResult bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeResult bind form failed",
+			zap.Error(err),
+		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -114,7 +121,10 @@ func authorizeLink(ctx echo.Context) error {
 	form := new(models.AuthorizeLinkForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("AuthorizeLink bind form failed", zap.Error(err))
+		zap.L().Error(
+			"AuthorizeLink bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -154,7 +164,10 @@ func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("Login page bind form failed", zap.Error(err))
+		zap.L().Error(
+			"Login page bind form failed",
+			zap.Error(err),
+		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 

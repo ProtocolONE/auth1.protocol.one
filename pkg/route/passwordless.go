@@ -21,7 +21,10 @@ func passwordLessStart(ctx echo.Context) error {
 	form := new(models.PasswordLessStartForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("PasswordLessStart bind form failed", zap.Error(err))
+		zap.L().Error(
+			"PasswordLessStart bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
@@ -59,7 +62,10 @@ func passwordLessVerify(ctx echo.Context) error {
 	form := new(models.PasswordLessVerifyForm)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error("PasswordLessVerify bind form failed", zap.Error(err))
+		zap.L().Error(
+			"PasswordLessVerify bind form failed",
+			zap.Error(err),
+		)
 
 		return helper.NewErrorResponse(
 			ctx,
