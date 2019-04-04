@@ -105,11 +105,5 @@ func migrateDb(s *mgo.Session, dbName string) error {
 	db := s.DB(dbName)
 	migrate.SetDatabase(db)
 
-	if err := migrate.Up(migrate.AllAvailable); err != nil {
-		if err := migrate.Down(migrate.AllAvailable); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return migrate.Up(migrate.AllAvailable)
 }
