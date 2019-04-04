@@ -3,9 +3,7 @@ package manager
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
@@ -14,7 +12,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -529,26 +526,4 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	}
 
 	return reqACL.RedirectTo, nil
-}
-
-func (m *LoginManager) CreateAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {
-	scopes := []string{"openid"}
-	if form.Scopes != "" {
-		scopes = strings.Split(form.Scopes, " ")
-	}
-
-	if form.RedirectUri == "" {
-		form.RedirectUri = fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
-	}
-
-	settings := jwtverifier.Config{
-		ClientID:     form.ClientID,
-		ClientSecret: "",
-		Scopes:       scopes,
-		RedirectURL:  form.RedirectUri,
-		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
-	}
-	jwtv := jwtverifier.NewJwtVerifier(settings)
-
-	return jwtv.CreateAuthUrl(form.State), nil
 }

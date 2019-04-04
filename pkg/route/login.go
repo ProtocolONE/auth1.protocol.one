@@ -5,10 +5,12 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	jwtverifier "github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 )
 
 func InitLogin(cfg Config) error {
@@ -163,20 +165,42 @@ func authorizeLink(ctx echo.Context) error {
 
 func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
-	m := ctx.Get("login_manager").(*manager.LoginManager)
+	logger := ctx.Get("logger").(*zap.Logger)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
+		logger.Error(
 			"Login page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	url, err := m.CreateAuthUrl(ctx, form)
+	url, err := createAuthUrl(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
 	}
 
 	return ctx.Redirect(http.StatusMovedPermanently, url)
+}
+
+func createAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {
+	scopes := []string{"openid"}
+	if form.Scopes != "" {
+		scopes = strings.Split(form.Scopes, " ")
+	}
+
+	if form.RedirectUri == "" {
+		form.RedirectUri = fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
+	}
+
+	settings := jwtverifier.Config{
+		ClientID:     form.ClientID,
+		ClientSecret: "",
+		Scopes:       scopes,
+		RedirectURL:  form.RedirectUri,
+		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
+	}
+	jwtv := jwtverifier.NewJwtVerifier(settings)
+
+	return jwtv.CreateAuthUrl(form.State), nil
 }
