@@ -15,7 +15,8 @@ func InitOauth2(cfg Config) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
 
 			return next(c)
 		}
@@ -40,7 +41,6 @@ func oauthLogin(ctx echo.Context) error {
 		zap.L().Error(
 			"Login page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -53,7 +53,6 @@ func oauthLogin(ctx echo.Context) error {
 		zap.L().Error(
 			"Error checking login request",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
@@ -78,7 +77,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		zap.L().Error(
 			"Login bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -93,7 +91,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			"Login validate form failed",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -137,7 +134,6 @@ func oauthConsent(ctx echo.Context) error {
 		zap.L().Error(
 			"Consent page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -149,7 +145,6 @@ func oauthConsent(ctx echo.Context) error {
 		zap.L().Error(
 			"Unable to load scopes",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
 	}
@@ -163,7 +158,6 @@ func oauthConsentSubmit(ctx echo.Context) error {
 		zap.L().Error(
 			"Consent page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -177,7 +171,6 @@ func oauthConsentSubmit(ctx echo.Context) error {
 			zap.L().Error(
 				"Unable to load scopes",
 				zap.Error(err),
-				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 
 			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
@@ -199,7 +192,6 @@ func oauthIntrospect(ctx echo.Context) error {
 		zap.L().Error(
 			"Introspect page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -220,7 +212,6 @@ func oauthSignUp(ctx echo.Context) error {
 		zap.L().Error(
 			"SignUp bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -258,7 +249,6 @@ func oauthCallback(ctx echo.Context) error {
 		zap.L().Error(
 			"Callback page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
@@ -281,7 +271,6 @@ func oauthLogout(ctx echo.Context) error {
 		zap.L().Error(
 			"Callback page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}

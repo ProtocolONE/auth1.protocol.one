@@ -15,7 +15,8 @@ func InitMFA(cfg Config) error {
 	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Redis, cfg.MfaService))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("mfa_manager", manager.NewMFAManager(db, logger, cfg.Redis, cfg.MfaService))
 
 			return next(c)
 		}
@@ -35,7 +36,6 @@ func mfaChallenge(ctx echo.Context) error {
 		zap.L().Error(
 			"MFAChallenge bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -51,7 +51,6 @@ func mfaChallenge(ctx echo.Context) error {
 			"MFAChallenge validate form failed",
 			zap.Object("MfaChallengeForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -78,7 +77,6 @@ func mfaVerify(ctx echo.Context) error {
 		zap.L().Error(
 			"MFAVerify bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -94,7 +92,6 @@ func mfaVerify(ctx echo.Context) error {
 			"MFAVerify validate form failed",
 			zap.Object("MfaVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -121,7 +118,6 @@ func mfaAdd(ctx echo.Context) error {
 		zap.L().Error(
 			"MFAAdd bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -137,7 +133,6 @@ func mfaAdd(ctx echo.Context) error {
 			"MFAAdd validate form failed",
 			zap.Object("MfaAddForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(

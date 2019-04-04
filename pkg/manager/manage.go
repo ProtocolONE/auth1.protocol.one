@@ -3,7 +3,6 @@ package manager
 import (
 	"errors"
 	"fmt"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -20,16 +19,18 @@ type ManageManager struct {
 	appService              *models.ApplicationService
 	mfaService              *models.MfaService
 	hydraSDK                *hydra.CodeGenSDK
+	logger                  *zap.Logger
 	identityProviderService *models.AppIdentityProviderService
 }
 
-func NewManageManager(db *mgo.Session, h *hydra.CodeGenSDK) *ManageManager {
+func NewManageManager(db *mgo.Session, l *zap.Logger, h *hydra.CodeGenSDK) *ManageManager {
 	m := &ManageManager{
 		spaceService:            models.NewSpaceService(db),
 		appService:              models.NewApplicationService(db),
 		mfaService:              models.NewMfaService(db),
 		identityProviderService: models.NewAppIdentityProviderService(db),
 		hydraSDK:                h,
+		logger:                  l,
 	}
 
 	return m
@@ -46,11 +47,10 @@ func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*
 	}
 
 	if err := m.spaceService.CreateSpace(s); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to create space",
 			zap.Object("space", s),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -69,11 +69,10 @@ func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.Sp
 	s.IsActive = form.IsActive
 
 	if err := m.spaceService.UpdateSpace(s); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to update space",
 			zap.Object("space", s),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -84,11 +83,10 @@ func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.Sp
 func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, error) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get space",
 			zap.String("spaceId", id),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -99,11 +97,10 @@ func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, er
 func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, error) {
 	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get space",
 			zap.String("spaceId", form.SpaceId.String()),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -125,11 +122,10 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	}
 
 	if err := m.appService.Create(app); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to create application",
 			zap.Object("Application", app),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -144,11 +140,10 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		Scope:         "openid offline",
 	})
 	if err != nil || response.StatusCode != http.StatusCreated {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to create hydra client",
 			zap.Object("Application", app),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -165,12 +160,11 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		TokenTTL:       models.PasswordTokenTTLDefault,
 	}
 	if err := m.appService.SetPasswordSettings(app, ps); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to set default password settings",
 			zap.Object("Application", app),
 			zap.Object("PasswordSettings", ps),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -183,12 +177,11 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		DisplayName:   "Initial connection",
 	}
 	if err := m.identityProviderService.Create(ipc); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to add default identity provider",
 			zap.Object("Application", app),
 			zap.Object("AppIdentityProvider", ipc),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -199,21 +192,19 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("application not exists")
 	}
 
 	if _, err := m.spaceService.GetSpace(form.SpaceId); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get space",
 			zap.Object("ApplicationForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("space not exists")
 	}
@@ -239,29 +230,26 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.HasSharedUsers = form.Application.HasSharedUsers
 
 	if err := m.appService.Update(a); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to update application",
 			zap.Object("Application", a),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
 
 	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
-	zap.L().Error(
+	m.logger.Error(
 		"GET HYDRA CLIENT",
 		zap.Any("Client", client),
 		zap.Any("Response", response),
 		zap.Error(err),
-		zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 	)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -270,11 +258,10 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 
 	_, _, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to update hydra client",
 			zap.Object("Application", a),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -285,11 +272,10 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, error) {
 	s, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
@@ -300,22 +286,20 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.PasswordSettings) error {
 	app, err := m.appService.Get(form.ApplicationID)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get application",
 			zap.String("ApplicationId", form.ApplicationID.Hex()),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return errors.New("application not exists")
 	}
 
 	if err := m.appService.SetPasswordSettings(app, form); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to set password settings",
 			zap.Object("Application", app),
 			zap.Object("PasswordSettings", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return err
 	}
@@ -326,7 +310,7 @@ func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.Passw
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
@@ -335,7 +319,7 @@ func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings
 	}
 	ps, err := m.appService.GetPasswordSettings(a)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.String("AppId", id),
 			zap.Error(err),
@@ -356,11 +340,10 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 	}
 
 	if err := m.mfaService.Add(p); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to add MFA provider to application",
 			zap.Object("MfaProvider", p),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
@@ -370,11 +353,10 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 
 func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) error {
 	if _, err := m.appService.Get(form.ApplicationID); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return errors.New("application not exists")
 	}
@@ -382,21 +364,19 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 	form.ID = bson.NewObjectId()
 	if form.Type == models.AppIdentityProviderTypeSocial {
 		if err := m.identityProviderService.NormalizeSocialConnection(form); err != nil {
-			zap.L().Error(
+			m.logger.Error(
 				"Unable to normalize identity provider",
 				zap.Object("AppIdentityProvider", form),
 				zap.Error(err),
-				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return err
 		}
 	}
 	if err := m.identityProviderService.Create(form); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to create identity provider",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return err
 	}
@@ -407,20 +387,18 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, form *models.AppIdentityProvider) error {
 	ip, err := m.identityProviderService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get identity provider",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return errors.New("identity provider not exists")
 	}
 	if ip.ApplicationID != form.ApplicationID {
-		zap.L().Error(
+		m.logger.Error(
 			"Application not owned this identity provider",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return errors.New("application not owned this identity provider")
 	}
@@ -428,22 +406,20 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 	form.ID = ip.ID
 	if form.Type == models.AppIdentityProviderTypeSocial {
 		if err := m.identityProviderService.NormalizeSocialConnection(form); err != nil {
-			zap.L().Error(
+			m.logger.Error(
 				"Unable to normalize identity provider",
 				zap.Object("AppIdentityProvider", form),
 				zap.Error(err),
-				zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 			)
 			return err
 		}
 	}
 
 	if err := m.identityProviderService.Update(form); err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to update identity provider",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return err
 	}
@@ -454,20 +430,18 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id string) (*models.AppIdentityProvider, error) {
 	ipc, err := m.identityProviderService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get application",
 			zap.String("ApplicationID", appId),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}
 	if ipc.ApplicationID.Hex() != appId {
-		zap.L().Error(
+		m.logger.Error(
 			"Wrong application id for the identity provider",
 			zap.String("ApplicationID", appId),
 			zap.Object("IdentityProvider", ipc),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("wrong application id for the identity provider")
 	}
@@ -478,22 +452,20 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
 	app, err := m.appService.Get(bson.ObjectIdHex(appId))
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get app",
 			zap.String("ApplicationID", appId),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, errors.New("application not exists")
 	}
 
 	ipc, err := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 	if err != nil {
-		zap.L().Error(
+		m.logger.Error(
 			"Unable to get application",
 			zap.String("ApplicationID", appId),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return nil, err
 	}

@@ -24,7 +24,6 @@ func passwordLessStart(ctx echo.Context) error {
 		zap.L().Error(
 			"PasswordLessStart bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -40,7 +39,6 @@ func passwordLessStart(ctx echo.Context) error {
 			"PasswordLessStart validate form failed",
 			zap.Object("PasswordLessStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -67,7 +65,6 @@ func passwordLessVerify(ctx echo.Context) error {
 		zap.L().Error(
 			"PasswordLessVerify bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -83,7 +80,6 @@ func passwordLessVerify(ctx echo.Context) error {
 			"PasswordLessVerify validate form failed",
 			zap.Object("PasswordLessVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(

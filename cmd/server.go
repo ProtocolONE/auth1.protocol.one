@@ -73,7 +73,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		SessionConfig:  &cfg.Session,
 		MfaService:     ms,
 		Hydra:          h,
-		ConnectionPool: db,
+		MgoSession:     db,
 		SessionStore:   store,
 		RedisClient:    redisClient,
 	}
@@ -88,7 +88,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 }
 
-func createDatabase(cfg *config.Database) *database.ConnectionPool {
+func createDatabase(cfg *config.Database) *mgo.Session {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))
@@ -98,7 +98,7 @@ func createDatabase(cfg *config.Database) *database.ConnectionPool {
 		zap.L().Fatal("Error in db migration", zap.Error(err))
 	}
 
-	return database.NewConnectionPool(db, cfg.MaxConnections)
+	return db
 }
 
 func migrateDb(s *mgo.Session, dbName string) error {
