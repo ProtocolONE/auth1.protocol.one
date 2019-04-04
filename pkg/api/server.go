@@ -3,11 +3,11 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
+	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -33,7 +33,7 @@ type ServerConfig struct {
 	HydraConfig    *config.Hydra
 	SessionConfig  *config.Session
 	MfaService     proto.MfaService
-	ConnectionPool *database.ConnectionPool
+	MgoSession     *mgo.Session
 	Hydra          *hydra.CodeGenSDK
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
@@ -85,10 +85,10 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.RequestID())
 	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			s := c.ConnectionPool.Session()
-			defer s.Close()
+			db := c.MgoSession.Copy()
+			defer db.Close()
 
-			ctx.Set("database", s)
+			ctx.Set("database", db)
 
 			logger := zap.L().With(
 				zap.String(
