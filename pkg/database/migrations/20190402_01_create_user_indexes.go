@@ -27,7 +27,7 @@ func init() {
 			return nil
 		},
 		func(db *mgo.Database) error {
-			if err := db.C(database.TableUserIdentity).DropIndex("Idx-AppId-ExternalId-Connection"); err != nil {
+			if err := db.C(database.TableUserIdentity).DropIndexName("Idx-AppId-ExternalId-Connection"); err != nil {
 				return errors.Wrapf(err, "Drop user identity collection `Idx-AppId-ExternalId-Connection` index failed with message: %s", err)
 			}
 
