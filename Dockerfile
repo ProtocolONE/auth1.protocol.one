@@ -18,4 +18,4 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 WORKDIR /application
 COPY --from=builder /application /application
 
-ENTRYPOINT /application/bin/auth1_auth server -c etc/config.yaml
+ENTRYPOINT /application/bin/auth1_auth server

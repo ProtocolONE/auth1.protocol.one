@@ -186,7 +186,7 @@ func (us UserService) GetByEmail(app *Application, email string) (*User, error) 
 	/*b, _ := us.GetUserIdentityByEmail(app, email, "password")
 	r := mgo.DBRef{
 		ID:         b.ID,
-		Database:   us.db.Name,
+		Name:   us.db.Name,
 		Collection: database.TableUser,
 	}
 

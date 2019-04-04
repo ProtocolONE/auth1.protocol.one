@@ -54,6 +54,9 @@ func MigrateDb(s *mgo.Session, dbName string) error {
 	}}
 
 	m := migrate.New(s, dbName, migrate.DefaultOptions, migrations)
+	m.InitSchema(func(s *mgo.Session) error {
+		return nil
+	})
 	if err := m.Migrate(); err != nil {
 		if err = m.RollbackLast(); err != nil {
 			return errors.Wrap(err, "Failed to rollback database migration")

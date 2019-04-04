@@ -101,18 +101,15 @@ services:
     networks:
       - subnet
     environment:
-      - API_PORT=8080
-      - DATABASE_HOST=auth1-mongo
-      - DATABASE_DATABASE=auth-one
-      - DATABASE_USER=
-      - DATABASE_PASSWORD=
-      - REDIS_ADDR="auth1-redis:6379"
-      - REDIS_PASSWORD=""
-      - LOGGER_LEVEL="debug"
-      - HYDRA_PUBLICURL=http://hydra:4444
-      - HYDRA_ADMINURL=http://hydra:4445
-      - SESSION_NETWORK=tcp
-      - SESSION_ADDRESS=auth1-redis:6379
+      - AUTHONE_SERVER_PORT=8080
+      - AUTHONE_DATABASE_HOST=auth1-mongo
+      - AUTHONE_DATABASE_NAME=auth-one
+      - AUTHONE_REDIS_ADDR="auth1-redis:6379"
+      - AUTHONE_REDIS_PASSWORD=""
+      - AUTHONE_HYDRA_PUBLIC_URL=http://hydra:4444
+      - AUTHONE_HYDRA_ADMIN_URL=http://hydra:4445
+      - AUTHONE_SESSION_NETWORK=tcp
+      - AUTHONE_SESSION_ADDRESS=auth1-redis:6379
 
 volumes:
   auth1-mongo:

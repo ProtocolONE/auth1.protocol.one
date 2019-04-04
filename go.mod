@@ -24,6 +24,7 @@ require (
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
+	github.com/juju/mgosession v1.0.0 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
 	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
@@ -50,6 +51,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
+	github.com/stretchr/testify v1.3.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.uber.org/zap v1.9.1
