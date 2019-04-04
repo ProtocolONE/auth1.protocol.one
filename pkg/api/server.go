@@ -89,6 +89,15 @@ func NewServer(c *ServerConfig) (*Server, error) {
 			defer s.Close()
 
 			ctx.Set("database", s)
+
+			logger := zap.L().With(
+				zap.String(
+					echo.HeaderXRequestID,
+					ctx.Response().Header().Get(echo.HeaderXRequestID),
+				),
+			)
+			ctx.Set("logger", logger)
+
 			return next(ctx)
 		}
 	})

@@ -17,7 +17,8 @@ func InitLogin(cfg Config) error {
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("login_manager", manager.NewLoginManager(db, cfg.Redis))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("login_manager", manager.NewLoginManager(db, logger, cfg.Redis))
 
 			return next(c)
 		}
@@ -37,7 +38,6 @@ func authorize(ctx echo.Context) error {
 		zap.L().Error(
 			"Authorize bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -53,7 +53,6 @@ func authorize(ctx echo.Context) error {
 			"Authorize validate form failed",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -80,7 +79,6 @@ func authorizeResult(ctx echo.Context) error {
 		zap.L().Error(
 			"AuthorizeResult bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
@@ -94,7 +92,6 @@ func authorizeResult(ctx echo.Context) error {
 			"AuthorizeResult validate form failed",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
@@ -127,7 +124,6 @@ func authorizeLink(ctx echo.Context) error {
 		zap.L().Error(
 			"AuthorizeLink bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -143,7 +139,6 @@ func authorizeLink(ctx echo.Context) error {
 			"AuthorizeLink validate form failed",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -172,7 +167,6 @@ func loginPage(ctx echo.Context) (err error) {
 		zap.L().Error(
 			"Login page bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}

@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -12,13 +11,15 @@ import (
 
 type ChangePasswordManager struct {
 	redis               *redis.Client
+	logger              *zap.Logger
 	appService          *models.ApplicationService
 	userIdentityService *models.UserIdentityService
 }
 
-func NewChangePasswordManager(db *mgo.Session, r *redis.Client) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *ChangePasswordManager {
 	m := &ChangePasswordManager{
 		redis:               r,
+		logger:              l,
 		appService:          models.NewApplicationService(db),
 		userIdentityService: models.NewUserIdentityService(db),
 	}
@@ -30,11 +31,10 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to receive client id",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -43,11 +43,10 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, form.Email)
 
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to get user identity by email",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -58,11 +57,10 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 
 	ps, err := m.appService.LoadPasswordSettings()
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to load password settings an application",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
@@ -70,11 +68,10 @@ func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *mode
 
 	err = m.createOneTimeTokenSettings(form.Email, ps)
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to create one time token settings",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableCreateOttSettings}
@@ -102,11 +99,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *mod
 
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to get application",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -114,11 +110,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *mod
 
 	ps, err := m.appService.LoadPasswordSettings()
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to get app password settings",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -137,11 +132,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *mod
 	ts := &models.ChangePasswordTokenSource{}
 
 	if err := os.Use(form.Token, ts); err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to use token of application",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
@@ -150,12 +144,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *mod
 	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, ts.Email)
 
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to get user identity for the application",
 			zap.String("Email", ts.Email),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 	}
 
@@ -167,23 +160,21 @@ func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *mod
 	ui.Credential, err = be.Digest(form.Password)
 
 	if err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to crypt password in application",
 			zap.String("Password", form.Password),
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
 	if err = m.userIdentityService.Update(ui); err != nil {
-		zap.L().Warn(
+		m.logger.Warn(
 			"Unable to update user identity password",
 			zap.Object("UserIdentity", ui),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return &models.CommonError{Code: `password`, Message: models.ErrorUnableChangePassword}

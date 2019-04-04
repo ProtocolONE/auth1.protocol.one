@@ -15,7 +15,8 @@ func InitManage(cfg Config) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("manage_manager", manager.NewManageManager(db, cfg.Hydra))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Hydra))
 
 			return next(c)
 		}
@@ -39,7 +40,6 @@ func createSpace(ctx echo.Context) error {
 		zap.L().Error(
 			"CreateSpace bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -55,7 +55,6 @@ func createSpace(ctx echo.Context) error {
 			"CreateSpace validate form failed",
 			zap.Object("SpaceForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -97,7 +96,6 @@ func updateSpace(ctx echo.Context) error {
 		zap.L().Error(
 			"UpdateSpace bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -113,7 +111,6 @@ func updateSpace(ctx echo.Context) error {
 			"UpdateSpace validate form failed",
 			zap.Object("SpaceForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -141,7 +138,6 @@ func createApplication(ctx echo.Context) error {
 		zap.L().Error(
 			"CreateApplication bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -157,7 +153,6 @@ func createApplication(ctx echo.Context) error {
 			"CreateApplication validate form failed",
 			zap.Object("ApplicationForm", applicationForm),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -198,7 +193,6 @@ func updateApplication(ctx echo.Context) error {
 		zap.L().Error(
 			"UpdateApplication bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -214,7 +208,6 @@ func updateApplication(ctx echo.Context) error {
 			"UpdateApplication validate form failed",
 			zap.Object("ApplicationForm", applicationForm),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -241,7 +234,6 @@ func addMFA(ctx echo.Context) error {
 		zap.L().Error(
 			"AddMFA bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -257,7 +249,6 @@ func addMFA(ctx echo.Context) error {
 			"AddMFA validate form failed",
 			zap.Object("MfaApplicationForm", mfaApplicationForm),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(

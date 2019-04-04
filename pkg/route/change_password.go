@@ -15,7 +15,8 @@ func InitChangePassword(cfg Config) error {
 	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Redis))
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("password_manager", manager.NewChangePasswordManager(db, logger, cfg.Redis))
 
 			return next(c)
 		}
@@ -34,7 +35,6 @@ func changePasswordStart(ctx echo.Context) error {
 		zap.L().Error(
 			"ChangePasswordStart bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -50,7 +50,6 @@ func changePasswordStart(ctx echo.Context) error {
 			"ChangePasswordStart validate form failed",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -76,7 +75,6 @@ func changePasswordVerify(ctx echo.Context) error {
 		zap.L().Error(
 			"ChangePasswordVerify bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -92,7 +90,6 @@ func changePasswordVerify(ctx echo.Context) error {
 			"ChangePasswordVerify validate form failed",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
