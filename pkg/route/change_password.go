@@ -24,7 +24,7 @@ func InitChangePassword(cfg Config) error {
 
 	g.POST("/change_password", changePasswordStart)
 	g.POST("/change_password/verify", changePasswordVerify)
-	g.GET("/dbconnections/change_password/form", changePasswordForm)
+	g.GET("/change_password/form", changePasswordForm)
 
 	return nil
 }
