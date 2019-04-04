@@ -5,7 +5,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
-	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +26,7 @@ func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *
 	return m
 }
 
-func (m *ChangePasswordManager) ChangePasswordStart(ctx echo.Context, form *models.ChangePasswordStartForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.CommonError {
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
@@ -92,7 +91,7 @@ func (m *ChangePasswordManager) createOneTimeTokenSettings(email string, ps *mod
 	return err
 }
 
-func (m *ChangePasswordManager) ChangePasswordVerify(ctx echo.Context, form *models.ChangePasswordVerifyForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) *models.CommonError {
 	if form.PasswordRepeat != form.Password {
 		return &models.CommonError{Code: `password_repeat`, Message: models.ErrorPasswordRepeat}
 	}

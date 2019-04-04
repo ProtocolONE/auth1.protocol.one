@@ -61,7 +61,7 @@ func changePasswordStart(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
-	if err := m.ChangePasswordStart(ctx, form); err != nil {
+	if err := m.ChangePasswordStart(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
@@ -101,7 +101,7 @@ func changePasswordVerify(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
-	if err := m.ChangePasswordVerify(ctx, form); err != nil {
+	if err := m.ChangePasswordVerify(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
