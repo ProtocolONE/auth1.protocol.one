@@ -42,9 +42,10 @@ func InitManage(cfg Config) error {
 
 func createSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"CreateSpace bind form failed",
 			zap.Error(err),
 		)
@@ -58,7 +59,7 @@ func createSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"CreateSpace validate form failed",
 			zap.Object("SpaceForm", form),
 			zap.Error(err),
@@ -72,8 +73,6 @@ func createSpace(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
 	s, err := m.CreateSpace(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the space")
@@ -84,7 +83,6 @@ func createSpace(ctx echo.Context) error {
 
 func getSpace(ctx echo.Context) error {
 	id := ctx.Param("id")
-
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	space, err := m.GetSpace(ctx, id)
@@ -98,9 +96,10 @@ func getSpace(ctx echo.Context) error {
 func updateSpace(ctx echo.Context) error {
 	id := ctx.Param("id")
 	form := &models.SpaceForm{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"UpdateSpace bind form failed",
 			zap.Error(err),
 		)
@@ -114,7 +113,7 @@ func updateSpace(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"UpdateSpace validate form failed",
 			zap.Object("SpaceForm", form),
 			zap.Error(err),
@@ -128,8 +127,6 @@ func updateSpace(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
 	space, err := m.UpdateSpace(ctx, id, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the space")
@@ -140,9 +137,10 @@ func updateSpace(ctx echo.Context) error {
 
 func createApplication(ctx echo.Context) error {
 	applicationForm := &models.ApplicationForm{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"CreateApplication bind form failed",
 			zap.Error(err),
 		)
@@ -156,7 +154,7 @@ func createApplication(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"CreateApplication validate form failed",
 			zap.Object("ApplicationForm", applicationForm),
 			zap.Error(err),
@@ -170,7 +168,6 @@ func createApplication(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	app, err := m.CreateApplication(ctx, applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
@@ -195,9 +192,10 @@ func getApplication(ctx echo.Context) error {
 func updateApplication(ctx echo.Context) error {
 	id := ctx.Param("id")
 	applicationForm := &models.ApplicationForm{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"UpdateApplication bind form failed",
 			zap.Error(err),
 		)
@@ -211,7 +209,7 @@ func updateApplication(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"UpdateApplication validate form failed",
 			zap.Object("ApplicationForm", applicationForm),
 			zap.Error(err),
@@ -225,7 +223,6 @@ func updateApplication(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	app, err := m.UpdateApplication(ctx, id, applicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
@@ -236,9 +233,10 @@ func updateApplication(ctx echo.Context) error {
 
 func addMFA(ctx echo.Context) error {
 	mfaApplicationForm := &models.MfaApplicationForm{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(mfaApplicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AddMFA bind form failed",
 			zap.Error(err),
 		)
@@ -252,7 +250,7 @@ func addMFA(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(mfaApplicationForm); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AddMFA validate form failed",
 			zap.Object("MfaApplicationForm", mfaApplicationForm),
 			zap.Error(err),
@@ -266,7 +264,6 @@ func addMFA(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	app, err := m.AddMFA(ctx, mfaApplicationForm)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
@@ -277,12 +274,12 @@ func addMFA(ctx echo.Context) error {
 
 func setPasswordSettings(ctx echo.Context) error {
 	form := &models.PasswordSettings{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordSettings bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -294,11 +291,10 @@ func setPasswordSettings(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordSettings validate form failed",
 			zap.Object("PasswordSettings", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -309,7 +305,6 @@ func setPasswordSettings(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	if err := m.SetPasswordSettings(ctx, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
 	}
@@ -331,11 +326,12 @@ func getPasswordSettings(ctx echo.Context) error {
 
 func addIdentityProvider(ctx echo.Context) error {
 	form := &models.AppIdentityProvider{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AppIdentityProvider bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -347,11 +343,10 @@ func addIdentityProvider(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AppIdentityProvider validate form failed",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -362,7 +357,6 @@ func addIdentityProvider(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
 	}
@@ -403,11 +397,12 @@ func getIdentityProviderTemplates(ctx echo.Context) error {
 func updateIdentityProvider(ctx echo.Context) error {
 	id := ctx.Param("id")
 	form := &models.AppIdentityProvider{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AppIdentityProvider bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -419,11 +414,10 @@ func updateIdentityProvider(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AppIdentityProvider validate form failed",
 			zap.Object("AppIdentityProvider", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -434,7 +428,6 @@ func updateIdentityProvider(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
 	}

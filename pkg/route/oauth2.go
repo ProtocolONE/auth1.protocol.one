@@ -36,21 +36,20 @@ func InitOauth2(cfg Config) error {
 
 func oauthLogin(ctx echo.Context) error {
 	form := new(models.Oauth2LoginForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Login page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
 	previousLogin := ""
 	appID, user, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Error checking login request",
 			zap.Error(err),
 		)
@@ -73,8 +72,10 @@ func oauthLogin(ctx echo.Context) error {
 
 func oauthLoginSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2LoginSubmitForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Login bind form failed",
 			zap.Error(err),
 		)
@@ -87,7 +88,7 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		)
 	}
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Login validate form failed",
 			zap.Object("LoginForm", form),
 			zap.Error(err),
@@ -100,8 +101,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			models.ErrorRequiredField,
 		)
 	}
-
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
@@ -130,19 +129,19 @@ func oauthLoginSubmit(ctx echo.Context) error {
 
 func oauthConsent(ctx echo.Context) error {
 	form := new(models.Oauth2ConsentForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Consent page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
 	url, err := m.Consent(ctx, form)
 	if err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Unable to load scopes",
 			zap.Error(err),
 		)
@@ -154,21 +153,21 @@ func oauthConsent(ctx echo.Context) error {
 
 func oauthConsentSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2ConsentSubmitForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Consent page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
 	url, err := m.ConsentSubmit(ctx, form)
 	if err != nil {
 		scopes, err := m.GetScopes()
 		if err != nil {
-			zap.L().Error(
+			m.Logger.Error(
 				"Unable to load scopes",
 				zap.Error(err),
 			)
@@ -188,15 +187,15 @@ func oauthConsentSubmit(ctx echo.Context) error {
 
 func oauthIntrospect(ctx echo.Context) error {
 	form := new(models.Oauth2IntrospectForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Introspect page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
-
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	token, err := m.Introspect(ctx, form)
 	if err != nil {
@@ -208,15 +207,15 @@ func oauthIntrospect(ctx echo.Context) error {
 
 func oauthSignUp(ctx echo.Context) error {
 	form := new(models.Oauth2SignUpForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"SignUp bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
-
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	url, err := m.SignUp(ctx, form)
 	if err != nil {
@@ -245,15 +244,15 @@ func oauthSignUp(ctx echo.Context) error {
 
 func oauthCallback(ctx echo.Context) error {
 	form := new(models.Oauth2CallBackForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Callback page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
-
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	response := m.CallBack(ctx, form)
 	return ctx.Render(http.StatusOK, "oauth_callback.html", map[string]interface{}{
@@ -267,15 +266,15 @@ func oauthCallback(ctx echo.Context) error {
 
 func oauthLogout(ctx echo.Context) error {
 	form := new(models.Oauth2LogoutForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Callback page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
-
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	url, err := m.Logout(ctx, form)
 	if err != nil {

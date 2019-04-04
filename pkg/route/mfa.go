@@ -31,9 +31,10 @@ func InitMFA(cfg Config) error {
 
 func mfaChallenge(ctx echo.Context) error {
 	form := new(models.MfaChallengeForm)
+	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAChallenge bind form failed",
 			zap.Error(err),
 		)
@@ -47,7 +48,7 @@ func mfaChallenge(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAChallenge validate form failed",
 			zap.Object("MfaChallengeForm", form),
 			zap.Error(err),
@@ -61,7 +62,6 @@ func mfaChallenge(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 	e := m.MFAChallenge(form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
@@ -72,9 +72,10 @@ func mfaChallenge(ctx echo.Context) error {
 
 func mfaVerify(ctx echo.Context) error {
 	form := new(models.MfaVerifyForm)
+	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAVerify bind form failed",
 			zap.Error(err),
 		)
@@ -88,7 +89,7 @@ func mfaVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAVerify validate form failed",
 			zap.Object("MfaVerifyForm", form),
 			zap.Error(err),
@@ -102,7 +103,6 @@ func mfaVerify(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 	token, e := m.MFAVerify(ctx, form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
@@ -113,9 +113,10 @@ func mfaVerify(ctx echo.Context) error {
 
 func mfaAdd(ctx echo.Context) error {
 	form := new(models.MfaAddForm)
+	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAAdd bind form failed",
 			zap.Error(err),
 		)
@@ -129,7 +130,7 @@ func mfaAdd(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"MFAAdd validate form failed",
 			zap.Object("MfaAddForm", form),
 			zap.Error(err),
@@ -143,7 +144,6 @@ func mfaAdd(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 	authenticator, e := m.MFAAdd(ctx, form)
 	if e != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())

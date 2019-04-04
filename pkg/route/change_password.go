@@ -31,9 +31,10 @@ func InitChangePassword(cfg Config) error {
 
 func changePasswordStart(ctx echo.Context) error {
 	form := new(models.ChangePasswordStartForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordStart bind form failed",
 			zap.Error(err),
 		)
@@ -47,7 +48,7 @@ func changePasswordStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordStart validate form failed",
 			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
@@ -61,7 +62,6 @@ func changePasswordStart(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	if err := m.ChangePasswordStart(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
@@ -71,9 +71,10 @@ func changePasswordStart(ctx echo.Context) error {
 
 func changePasswordVerify(ctx echo.Context) error {
 	form := new(models.ChangePasswordVerifyForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordVerify bind form failed",
 			zap.Error(err),
 		)
@@ -87,7 +88,7 @@ func changePasswordVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordVerify validate form failed",
 			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
@@ -101,7 +102,6 @@ func changePasswordVerify(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	if err := m.ChangePasswordVerify(form); err != nil {
 		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
@@ -111,12 +111,12 @@ func changePasswordVerify(ctx echo.Context) error {
 
 func changePasswordForm(ctx echo.Context) error {
 	form := new(models.ChangePasswordForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordForm bind form failed",
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(
@@ -128,11 +128,10 @@ func changePasswordForm(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"ChangePasswordForm validate form failed",
 			zap.Object("ChangePasswordForm", form),
 			zap.Error(err),
-			zap.String(echo.HeaderXRequestID, helper.GetRequestIdFromHeader(ctx)),
 		)
 
 		return helper.NewErrorResponse(

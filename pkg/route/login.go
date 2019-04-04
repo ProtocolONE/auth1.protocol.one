@@ -33,9 +33,10 @@ func InitLogin(cfg Config) error {
 
 func authorize(ctx echo.Context) error {
 	form := new(models.AuthorizeForm)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Authorize bind form failed",
 			zap.Error(err),
 		)
@@ -49,7 +50,7 @@ func authorize(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Authorize validate form failed",
 			zap.Object("AuthorizeForm", form),
 			zap.Error(err),
@@ -63,7 +64,6 @@ func authorize(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("login_manager").(*manager.LoginManager)
 	str, err := m.Authorize(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
@@ -74,9 +74,10 @@ func authorize(ctx echo.Context) error {
 
 func authorizeResult(ctx echo.Context) error {
 	form := new(models.AuthorizeResultForm)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AuthorizeResult bind form failed",
 			zap.Error(err),
 		)
@@ -88,7 +89,7 @@ func authorizeResult(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AuthorizeResult validate form failed",
 			zap.Object("AuthorizeResultForm", form),
 			zap.Error(err),
@@ -100,7 +101,6 @@ func authorizeResult(ctx echo.Context) error {
 		})
 	}
 
-	m := ctx.Get("login_manager").(*manager.LoginManager)
 	t, err := m.AuthorizeResult(ctx, form)
 	if err != nil {
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
@@ -117,9 +117,10 @@ func authorizeResult(ctx echo.Context) error {
 
 func authorizeLink(ctx echo.Context) error {
 	form := new(models.AuthorizeLinkForm)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AuthorizeLink bind form failed",
 			zap.Error(err),
 		)
@@ -133,7 +134,7 @@ func authorizeLink(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"AuthorizeLink validate form failed",
 			zap.Object("AuthorizeLinkForm", form),
 			zap.Error(err),
@@ -147,7 +148,6 @@ func authorizeLink(ctx echo.Context) error {
 		)
 	}
 
-	m := ctx.Get("login_manager").(*manager.LoginManager)
 	url, err := m.AuthorizeLink(ctx, form)
 	if err != nil {
 		return helper.NewErrorResponse(
@@ -163,16 +163,16 @@ func authorizeLink(ctx echo.Context) error {
 
 func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
+	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"Login page bind form failed",
 			zap.Error(err),
 		)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	m := ctx.Get("login_manager").(*manager.LoginManager)
 	url, err := m.CreateAuthUrl(ctx, form)
 	if err != nil {
 		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")

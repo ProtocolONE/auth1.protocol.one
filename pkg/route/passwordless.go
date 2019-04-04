@@ -11,17 +11,27 @@ import (
 )
 
 func InitPasswordLess(cfg Config) error {
-	cfg.Echo.POST("/passwordless/start", passwordLessStart)
-	cfg.Echo.POST("/passwordless/verify", passwordLessVerify)
+	g := cfg.Echo.Group("/passwordless", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			logger := c.Get("logger").(*zap.Logger)
+			c.Set("passwordless_manager", manager.NewPasswordLessManager(logger))
+
+			return next(c)
+		}
+	})
+
+	g.POST("/start", passwordLessStart)
+	g.POST("/verify", passwordLessVerify)
 
 	return nil
 }
 
 func passwordLessStart(ctx echo.Context) error {
 	form := new(models.PasswordLessStartForm)
+	m := ctx.Get("passwordless_manager").(*manager.PasswordLessManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordLessStart bind form failed",
 			zap.Error(err),
 		)
@@ -35,7 +45,7 @@ func passwordLessStart(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordLessStart validate form failed",
 			zap.Object("PasswordLessStartForm", form),
 			zap.Error(err),
@@ -48,7 +58,6 @@ func passwordLessStart(ctx echo.Context) error {
 			models.ErrorRequiredField,
 		)
 	}
-	m := manager.NewPasswordLessManager()
 
 	token, e := m.PasswordLessStart(form)
 	if e != nil {
@@ -60,9 +69,10 @@ func passwordLessStart(ctx echo.Context) error {
 
 func passwordLessVerify(ctx echo.Context) error {
 	form := new(models.PasswordLessVerifyForm)
+	m := ctx.Get("passwordless_manager").(*manager.PasswordLessManager)
 
 	if err := ctx.Bind(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordLessVerify bind form failed",
 			zap.Error(err),
 		)
@@ -76,7 +86,7 @@ func passwordLessVerify(ctx echo.Context) error {
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		zap.L().Error(
+		m.Logger.Error(
 			"PasswordLessVerify validate form failed",
 			zap.Object("PasswordLessVerifyForm", form),
 			zap.Error(err),
@@ -89,8 +99,6 @@ func passwordLessVerify(ctx echo.Context) error {
 			models.ErrorRequiredField,
 		)
 	}
-
-	m := manager.NewPasswordLessManager()
 
 	token, e := m.PasswordLessVerify(form)
 	if e != nil {
