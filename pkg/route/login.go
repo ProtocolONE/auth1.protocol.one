@@ -28,7 +28,7 @@ func InitLogin(cfg Config) error {
 
 	g.GET("/link", authorizeLink)
 	g.GET("/result", authorizeResult)
-	g.GET("/", authorize)
+	g.GET("", authorize)
 
 	return nil
 }
