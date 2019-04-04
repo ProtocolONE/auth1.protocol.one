@@ -368,12 +368,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	case "link":
 		ps, err := m.appService.GetPasswordSettings(app)
 		if err != nil {
-			m.Logger.Error(
-				"Unable to load password settings for application",
-				zap.Object("AuthorizeLinkForm", form),
-				zap.Error(err),
-			)
-
+			m.Logger.Warn("Unable to load password settings", zap.Error(err))
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 		}
 		if false == ps.IsValid(form.Password) {

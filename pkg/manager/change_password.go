@@ -62,11 +62,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 
 	ps, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to load password settings an application",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
 	}
 
@@ -107,11 +103,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	ps, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get app password settings",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 

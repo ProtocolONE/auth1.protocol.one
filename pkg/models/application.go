@@ -90,10 +90,13 @@ func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSe
 
 func (s ApplicationService) GetPasswordSettings(app *Application) (*PasswordSettings, error) {
 	ps := &PasswordSettings{}
-	if err := s.db.C(database.TableAppPasswordSettings).
+
+	err := s.db.C(database.TableAppPasswordSettings).
 		Find(bson.M{"app_id": app.ID}).
-		One(&ps); err != nil {
-		return nil, err
+		One(&ps)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to load password settings for app %s", app.ID)
 	}
 
 	return ps, nil

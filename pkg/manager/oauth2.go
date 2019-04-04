@@ -199,11 +199,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			passwordSettings, err := m.appService.GetPasswordSettings(app)
 			if err != nil {
-				m.Logger.Error(
-					"Unable to load password settings for application",
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
-				)
+				m.Logger.Warn("Unable to load password settings", zap.Error(err))
 				return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 			}
 
@@ -450,12 +446,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	passwordSettings, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to load password settings for application",
-			zap.Object("SignUpForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 	if false == passwordSettings.IsValid(form.Password) {

@@ -299,11 +299,7 @@ func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings
 	}
 	ps, err := m.appService.GetPasswordSettings(a)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return nil, err
 	}
 
