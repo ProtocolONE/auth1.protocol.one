@@ -3,11 +3,11 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
+	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -33,7 +33,7 @@ type ServerConfig struct {
 	HydraConfig    *config.Hydra
 	SessionConfig  *config.Session
 	MfaService     proto.MfaService
-	ConnectionPool *database.ConnectionPool
+	MgoSession     *mgo.Session
 	Hydra          *hydra.CodeGenSDK
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
@@ -47,6 +47,7 @@ type Server struct {
 	MfaService    proto.MfaService
 	Hydra         *hydra.CodeGenSDK
 	SessionConfig *config.Session
+	MgoSession    *mgo.Session
 }
 
 type Template struct {
@@ -61,6 +62,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		ServerConfig:  c.ApiConfig,
 		Hydra:         c.Hydra,
 		SessionConfig: c.SessionConfig,
+		MgoSession:    c.MgoSession,
 	}
 
 	t := &Template{
@@ -85,10 +87,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.RequestID())
 	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			s := c.ConnectionPool.Session()
-			defer s.Close()
-
-			ctx.Set("database", s)
+			ctx.Set("database", c.MgoSession)
 			return next(ctx)
 		}
 	})
@@ -148,6 +147,7 @@ func (s *Server) setupRoutes() error {
 		MfaService:    s.MfaService,
 		Hydra:         s.Hydra,
 		SessionConfig: s.SessionConfig,
+		MgoSession:    s.MgoSession,
 	}
 
 	routes := []func(c route.Config) error{

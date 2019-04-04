@@ -5,17 +5,17 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 func InitOauth2(cfg Config) error {
+	m := manager.NewOauthManager(cfg.MgoSession, cfg.Redis, cfg.Hydra, cfg.SessionConfig)
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(*mgo.Session)
-			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
+			//db := c.Get("database").(*mgo.Session)
+			c.Set("oauth_manager", m)
 
 			return next(c)
 		}
