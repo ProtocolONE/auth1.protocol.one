@@ -32,12 +32,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to receive client id",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -67,11 +62,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 
 	ps, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to load password settings an application",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
 	}
 
@@ -106,21 +97,13 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get application",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
 	ps, err := m.appService.GetPasswordSettings(app)
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get app password settings",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 

@@ -192,11 +192,6 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
 		return nil, errors.New("application not exists")
 	}
 
@@ -272,11 +267,6 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, error) {
 	s, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
 		return nil, err
 	}
 
@@ -286,12 +276,7 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.PasswordSettings) error {
 	app, err := m.appService.Get(form.ApplicationID)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.String("ApplicationId", form.ApplicationID.Hex()),
-			zap.Error(err),
-		)
-		return errors.New("application not exists")
+		return err
 	}
 
 	if err := m.appService.SetPasswordSettings(app, form); err != nil {
@@ -310,20 +295,11 @@ func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.Passw
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, error) {
 	a, err := m.appService.Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
 		return nil, err
 	}
 	ps, err := m.appService.GetPasswordSettings(a)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return nil, err
 	}
 
@@ -353,12 +329,7 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 
 func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) error {
 	if _, err := m.appService.Get(form.ApplicationID); err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.Object("AppIdentityProvider", form),
-			zap.Error(err),
-		)
-		return errors.New("application not exists")
+		return err
 	}
 
 	form.ID = bson.NewObjectId()
@@ -452,12 +423,7 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
 	app, err := m.appService.Get(bson.ObjectIdHex(appId))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get app",
-			zap.String("ApplicationID", appId),
-			zap.Error(err),
-		)
-		return nil, errors.New("application not exists")
+		return nil, err
 	}
 
 	ipc, err := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)

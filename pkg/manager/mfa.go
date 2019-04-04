@@ -78,12 +78,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 
 	app, err := m.appService.Get(mp.UserIdentity.ApplicationID)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("UserIdentity", mp.UserIdentity),
-			zap.Error(err),
-		)
-
+		m.Logger.Error("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -151,12 +146,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 
 	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientId))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to receive client id",
-			zap.Object("MfaAddForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Error("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 

@@ -56,12 +56,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("AuthorizeForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -117,12 +112,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	app, err := m.appService.Get(bson.ObjectIdHex(authForm.ClientID))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application service for client",
-			zap.Object("AuthorizeForm", authForm),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -344,12 +334,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, models.ErrorInterface) {
 	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get application",
-			zap.Object("AuthorizeLinkForm", form),
-			zap.Error(err),
-		)
-
+		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
@@ -383,12 +368,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	case "link":
 		ps, err := m.appService.GetPasswordSettings(app)
 		if err != nil {
-			m.Logger.Error(
-				"Unable to load password settings for application",
-				zap.Object("AuthorizeLinkForm", form),
-				zap.Error(err),
-			)
-
+			m.Logger.Warn("Unable to load password settings", zap.Error(err))
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 		}
 		if false == ps.IsValid(form.Password) {

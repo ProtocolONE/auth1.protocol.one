@@ -5,6 +5,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
@@ -62,10 +63,12 @@ func (s ApplicationService) Update(app *Application) error {
 
 func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
 	a := &Application{}
-	if err := s.db.C(database.TableApplication).
+	err := s.db.C(database.TableApplication).
 		FindId(id).
-		One(&a); err != nil {
-		return nil, err
+		One(&a)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to load application with id %s", id.String())
 	}
 
 	return a, nil
@@ -87,10 +90,13 @@ func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSe
 
 func (s ApplicationService) GetPasswordSettings(app *Application) (*PasswordSettings, error) {
 	ps := &PasswordSettings{}
-	if err := s.db.C(database.TableAppPasswordSettings).
+
+	err := s.db.C(database.TableAppPasswordSettings).
 		Find(bson.M{"app_id": app.ID}).
-		One(&ps); err != nil {
-		return nil, err
+		One(&ps)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to load password settings for app %s", app.ID)
 	}
 
 	return ps, nil
