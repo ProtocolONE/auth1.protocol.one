@@ -21,14 +21,14 @@ func init() {
 				Sparse:     false,
 			})
 			if err != nil {
-				return errors.Wrapf(err, "Ensure user identity collection `Idx-AppId-ExternalId-Connection` index failed with message: ", err)
+				return errors.Wrapf(err, "Ensure user identity collection `Idx-AppId-ExternalId-Connection` index failed")
 			}
 
 			return nil
 		},
 		func(db *mgo.Database) error {
 			if err := db.C(database.TableUserIdentity).DropIndexName("Idx-AppId-ExternalId-Connection"); err != nil {
-				return errors.Wrapf(err, "Drop user identity collection `Idx-AppId-ExternalId-Connection` index failed with message: %s", err)
+				return errors.Wrapf(err, "Drop user identity collection `Idx-AppId-ExternalId-Connection` index failed")
 			}
 
 			return nil

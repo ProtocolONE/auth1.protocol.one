@@ -24,15 +24,15 @@ func init() {
 				Sparse:     false,
 			})
 			if err != nil {
-				return errors.Wrapf(err, "Ensure application identity provider collection index `Idx-AppId-Type-Name` failed with message: ", err)
+				return errors.Wrapf(err, "Ensure application identity provider collection index `Idx-AppId-Type-Name` failed")
 			}
 
 			if _, err := db.C(database.TableAppIdentityProvider).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove application identity providers with message: ", err)
+				return errors.Wrapf(err, "Unable to remove application identity providers")
 			}
 
 			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
-				return errors.Wrapf(err, "Unable to get applications with message: ", err)
+				return errors.Wrapf(err, "Unable to get applications")
 			}
 
 			ipc := &models.AppIdentityProvider{
@@ -45,7 +45,7 @@ func init() {
 			for _, app := range apps {
 				ipc.ApplicationID = app.ID
 				if err = db.C(database.TableAppIdentityProvider).Insert(ipc); err != nil {
-					return errors.Wrapf(err, "Unable to add default application identity provider with message: %s", err)
+					return errors.Wrapf(err, "Unable to add default application identity provider")
 				}
 			}
 
@@ -53,11 +53,11 @@ func init() {
 		},
 		func(db *mgo.Database) error {
 			if err := db.C(database.TableAppIdentityProvider).DropIndexName("Idx-AppId-Type-Name"); err != nil {
-				return errors.Wrapf(err, "Drop application identity provider collection `Idx-AppId-Type-Name` index failed with message: %s", err)
+				return errors.Wrapf(err, "Drop application identity provider collection `Idx-AppId-Type-Name` index failed")
 			}
 
 			if _, err := db.C(database.TableAppIdentityProvider).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove application identity providers with message: ", err)
+				return errors.Wrapf(err, "Unable to remove application identity providers")
 			}
 
 			return nil

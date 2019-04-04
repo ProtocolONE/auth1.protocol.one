@@ -20,14 +20,14 @@ func init() {
 				"name": models.AppIdentityProviderNameDefault,
 			}).All(&providers)
 			if err != nil {
-				return errors.Wrapf(err, "Unable to get providers with message: ", err)
+				return errors.Wrapf(err, "Unable to get providers")
 			}
 
 			for _, provider := range providers {
 				selector := bson.M{"app_id": provider.ApplicationID}
 				update := bson.M{"$set": bson.M{"identity_provider_id": provider.ID}}
 				if _, err := db.C(database.TableUserIdentity).UpdateAll(selector, update); err != nil {
-					return errors.Wrapf(err, "Unable to update users with message: ", err)
+					return errors.Wrapf(err, "Unable to update users")
 				}
 			}
 

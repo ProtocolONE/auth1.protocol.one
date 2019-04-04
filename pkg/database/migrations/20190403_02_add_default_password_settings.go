@@ -23,11 +23,11 @@ func init() {
 				Sparse:     false,
 			})
 			if err != nil {
-				return errors.Wrapf(err, "Ensure password settings collection index `Idx-AppId` failed with message: ", err)
+				return errors.Wrapf(err, "Ensure password settings collection index `Idx-AppId` failed")
 			}
 
 			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
-				return errors.Wrapf(err, "Unable to get applications with message: ", err)
+				return errors.Wrapf(err, "Unable to get applications")
 			}
 
 			ps := &models.PasswordSettings{
@@ -44,7 +44,7 @@ func init() {
 			for _, app := range apps {
 				ps.ApplicationID = app.ID
 				if err = db.C(database.TableAppPasswordSettings).Insert(ps); err != nil {
-					return errors.Wrapf(err, "Unable to add default password settings with message: %s", err)
+					return errors.Wrapf(err, "Unable to add default password settings")
 				}
 			}
 
@@ -52,11 +52,11 @@ func init() {
 		},
 		func(db *mgo.Database) error {
 			if err := db.C(database.TableAppPasswordSettings).DropIndexName("Idx-AppId"); err != nil {
-				return errors.Wrapf(err, "Drop password settings collection `Idx-AppId` index failed with message: %s", err)
+				return errors.Wrapf(err, "Drop password settings collection `Idx-AppId` index failed")
 			}
 
 			if _, err := db.C(database.TableAppPasswordSettings).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove password settings with message: ", err)
+				return errors.Wrapf(err, "Unable to remove password settings")
 			}
 
 			return nil
