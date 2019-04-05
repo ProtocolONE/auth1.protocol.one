@@ -576,6 +576,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 	jwtv := jwtverifier.NewJwtVerifier(settings)
 	tokens, err := jwtv.Exchange(ctx.Request().Context(), form.Code)
 	if err != nil {
+		m.Logger.Error("Unable exchange token", zap.Error(err))
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
 			ErrorMessage: `unable_exchange_code`,
