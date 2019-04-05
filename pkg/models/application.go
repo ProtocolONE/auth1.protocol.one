@@ -75,7 +75,7 @@ func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
 }
 
 func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSettings) error {
-	if _, err := s.GetPasswordSettings(app); err == mgo.ErrNotFound {
+	if err := s.db.C(database.TableAppPasswordSettings).Find(bson.M{"app_id": app.ID}).One(&PasswordSettings{}); err == mgo.ErrNotFound {
 		if err := s.db.C(database.TableAppPasswordSettings).Insert(ps); err != nil {
 			return err
 		}
@@ -90,7 +90,6 @@ func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSe
 
 func (s ApplicationService) GetPasswordSettings(app *Application) (*PasswordSettings, error) {
 	ps := &PasswordSettings{}
-
 	err := s.db.C(database.TableAppPasswordSettings).
 		Find(bson.M{"app_id": app.ID}).
 		One(&ps)
