@@ -10,6 +10,7 @@ type Config struct {
 	Redis    Redis
 	Hydra    Hydra
 	Session  Session
+	Mailer   Mailer
 
 	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
 }
@@ -48,6 +49,17 @@ type Session struct {
 	Name     string `envconfig:"NAME" required:"false" default:"sessid"`
 	Address  string `envconfig:"ADDRESS" required:"false" default:"127.0.0.1:6379"`
 	Password string `envconfig:"PASSWORD" required:"false" default:""`
+}
+
+// Mailer specifies all the parameters needed for dump mail sender
+type Mailer struct {
+	Host               string `envconfig:"HOST" required:"false" default:"localhost"`
+	Port               int    `envconfig:"PORT" required:"false" default:"25"`
+	Username           string `envconfig:"USERNAME" required:"false" default:""`
+	Password           string `envconfig:"PASSWORD" required:"false" default:""`
+	ReplyTo            string `envconfig:"REPLY_TO" required:"false" default:""`
+	From               string `envconfig:"FROM" required:"false" default:""`
+	InsecureSkipVerify bool   `envconfig:"SKIP_VERIFY" required:"false" default:"true"`
 }
 
 func Load() (*Config, error) {

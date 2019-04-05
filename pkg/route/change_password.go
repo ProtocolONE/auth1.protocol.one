@@ -16,7 +16,8 @@ func InitChangePassword(cfg Config) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, logger, cfg.Redis))
+			mailer := c.Get("mailer").(manager.Mailer)
+			c.Set("password_manager", manager.NewChangePasswordManager(db, logger, cfg.Redis, mailer))
 
 			return next(c)
 		}

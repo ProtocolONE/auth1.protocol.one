@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -11,15 +12,17 @@ import (
 type ChangePasswordManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
+	mailer                  Mailer
 	appService              *models.ApplicationService
 	userIdentityService     *models.UserIdentityService
 	identityProviderService *models.AppIdentityProviderService
 }
 
-func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, mailer Mailer) *ChangePasswordManager {
 	m := &ChangePasswordManager{
 		Logger:                  l,
 		redis:                   r,
+		mailer:                  mailer,
 		appService:              models.NewApplicationService(db),
 		userIdentityService:     models.NewUserIdentityService(db),
 		identityProviderService: models.NewAppIdentityProviderService(db),
@@ -81,11 +84,12 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableCreateOttSettings}
 	}
 
-	zap.L().Info(
-		"Change password token",
-		zap.String("Token", token.Token),
-		zap.Error(err),
-	)
+	if err := m.mailer.Send(form.Email, "Change password token", fmt.Sprintf("Token: %s", token.Token)); err != nil {
+		m.Logger.Warn("Unable to send mail with change password token",
+			zap.Error(err),
+		)
+		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+	}
 
 	return nil
 }

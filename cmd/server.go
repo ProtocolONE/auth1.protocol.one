@@ -5,6 +5,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
@@ -76,6 +77,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		MgoSession:     db,
 		SessionStore:   store,
 		RedisClient:    redisClient,
+		Mailer:         manager.NewMailer(cfg.Mailer),
 	}
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
@@ -37,6 +38,7 @@ type ServerConfig struct {
 	Hydra          *hydra.CodeGenSDK
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
+	Mailer         manager.Mailer
 	MongoPoolSize  int
 }
 
@@ -97,6 +99,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 				),
 			)
 			ctx.Set("logger", logger)
+			ctx.Set("mailer", c.Mailer)
 
 			return next(ctx)
 		}
