@@ -55,6 +55,9 @@ func NewApplicationService(r InternalRegistry) *ApplicationService {
 	}
 
 	a.watcher.SetUpdateCallback(ApplicationWatcherChannel, func(id string) {
+		a.mx.Lock()
+		defer a.mx.Unlock()
+
 		_, _ = a.loadToCache(bson.ObjectIdHex(id))
 	})
 
