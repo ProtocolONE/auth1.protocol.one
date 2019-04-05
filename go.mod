@@ -4,6 +4,7 @@ require (
 	cloud.google.com/go v0.34.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
 	github.com/ProtocolONE/mfa-service v0.1.0
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -17,6 +18,7 @@ require (
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.2.0
 	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.3
