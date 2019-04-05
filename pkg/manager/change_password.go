@@ -11,16 +11,16 @@ import (
 type ChangePasswordManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
-	appService              *models.ApplicationService
+	r                       models.InternalRegistry
 	userIdentityService     *models.UserIdentityService
 	identityProviderService *models.AppIdentityProviderService
 }
 
-func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, ir models.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
 		Logger:                  l,
 		redis:                   r,
-		appService:              models.NewApplicationService(db),
+		r:                       ir,
 		userIdentityService:     models.NewUserIdentityService(db),
 		identityProviderService: models.NewAppIdentityProviderService(db),
 	}
@@ -29,7 +29,7 @@ func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *
 }
 
 func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.CommonError {
-	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
@@ -60,7 +60,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return nil
 	}
 
-	ps, err := m.appService.GetPasswordSettings(app)
+	ps, err := m.r.ApplicationService().GetPasswordSettings(app)
 	if err != nil {
 		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
@@ -70,8 +70,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		Length: ps.TokenLength,
 		TTL:    ps.TokenTTL,
 	}
-	ott := models.NewOneTimeTokenService(m.redis, ottSettings)
-	token, err := ott.Create(&models.ChangePasswordTokenSource{Email: form.Email})
+	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email}, ottSettings)
 	if err != nil {
 		m.Logger.Warn(
 			"Unable to create one time token settings",
@@ -95,13 +94,13 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `password_repeat`, Message: models.ErrorPasswordRepeat}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ps, err := m.appService.GetPasswordSettings(app)
+	ps, err := m.r.ApplicationService().GetPasswordSettings(app)
 	if err != nil {
 		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -111,15 +110,8 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.TokenLength,
-		TTL:    ps.TokenTTL,
-	}
-
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
 	ts := &models.ChangePasswordTokenSource{}
-
-	if err := os.Use(form.Token, ts); err != nil {
+	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
 		m.Logger.Warn(
 			"Unable to use token of application",
 			zap.Object("ChangePasswordVerifyForm", form),

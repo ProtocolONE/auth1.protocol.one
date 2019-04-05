@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
 	"time"
@@ -27,26 +26,22 @@ var (
 type OauthManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
-	hydra                   *hydra.CodeGenSDK
 	sessionConfig           *config.Session
-	appService              *models.ApplicationService
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
-	mfaService              *models.MfaService
 	authLogService          *models.AuthLogService
 	identityProviderService *models.AppIdentityProviderService
+	r                       models.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, h *hydra.CodeGenSDK, s *config.Session) *OauthManager {
+func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, s *config.Session, r models.InternalRegistry) *OauthManager {
 	m := &OauthManager{
 		redis:                   redis,
-		hydra:                   h,
 		sessionConfig:           s,
 		Logger:                  l,
-		appService:              models.NewApplicationService(db),
+		r:                       r,
 		userService:             models.NewUserService(db),
 		userIdentityService:     models.NewUserIdentityService(db),
-		mfaService:              models.NewMfaService(db),
 		authLogService:          models.NewAuthLogService(db),
 		identityProviderService: models.NewAppIdentityProviderService(db),
 	}
@@ -55,7 +50,7 @@ func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, h *hyd
 }
 
 func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, string, models.ErrorInterface) {
-	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get client from login request",
@@ -87,7 +82,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 	}
 
 	if req.Skip == true {
-		reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
+		reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
 		if err != nil {
 			m.Logger.Error(
 				"Unable to accept login challenge",
@@ -100,7 +95,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return req.Client.ClientId, nil, reqACL.RedirectTo, nil
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return req.Client.ClientId, nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -129,7 +124,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get client from login request",
@@ -143,23 +138,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	userIdentity := &models.UserIdentity{}
 	if req.Subject == "" || req.Subject != form.PreviousLogin {
 		if form.Token != "" {
-			ss, err := m.appService.LoadSocialSettings()
-			if err != nil {
-				m.Logger.Error(
-					"Unable to load social settings for application",
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
-				)
-
-				return "", &models.CommonError{Code: `common`, Message: models.ErrorGetSocialSettings}
-			}
-
-			ottSettings := &models.OneTimeTokenSettings{
-				Length: ss.LinkedTokenLength,
-				TTL:    ss.LinkedTTL,
-			}
-			os := models.NewOneTimeTokenService(m.redis, ottSettings)
-			if err := os.Use(form.Token, userIdentity); err != nil {
+			if err := m.r.OneTimeTokenService().Use(form.Token, userIdentity); err != nil {
 				m.Logger.Error(
 					"Unable to use one time token",
 					zap.Object("Oauth2LoginSubmitForm", form),
@@ -168,7 +147,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 			}
 		} else {
-			app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
+			app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
 			if err != nil {
 				m.Logger.Warn("Unable to load application", zap.Error(err))
 				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -197,7 +176,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 			}
 
-			passwordSettings, err := m.appService.GetPasswordSettings(app)
+			passwordSettings, err := m.r.ApplicationService().GetPasswordSettings(app)
 			if err != nil {
 				m.Logger.Warn("Unable to load password settings", zap.Error(err))
 				return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -260,7 +239,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 	// TODO: Add MFA cases
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(
+	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(
 		form.Challenge,
 		swagger.AcceptLoginRequest{
 			Subject:     userId,
@@ -285,7 +264,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 	// TODO: What scope should be requested to send a person to accept them?
 	// For now, we automatically agree with those that the user came with.
 
-	reqGCR, _, err := m.hydra.GetConsentRequest(form.Challenge)
+	reqGCR, _, err := m.r.HydraSDK().GetConsentRequest(form.Challenge)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get consent challenge",
@@ -336,7 +315,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		}
 	}
 
-	reqACR, _, err := m.hydra.AcceptConsentRequest(form.Challenge, req)
+	reqACR, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, req)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to accept consent challenge",
@@ -364,7 +343,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 		return "", err
 	}
 
-	req, _, err := m.hydra.AcceptConsentRequest(form.Challenge, swagger.AcceptConsentRequest{GrantScope: form.Scope})
+	req, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, swagger.AcceptConsentRequest{GrantScope: form.Scope})
 	if err != nil {
 		return "", err
 	}
@@ -373,7 +352,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 }
 
 func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, error) {
-	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -388,7 +367,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 		return nil, &models.CommonError{Code: `secret`, Message: models.ErrorUnknownError}
 	}
 
-	client, _, err := m.hydra.AdminApi.IntrospectOAuth2Token(form.Token, "")
+	client, _, err := m.r.HydraSDK().AdminApi.IntrospectOAuth2Token(form.Token, "")
 	if err != nil {
 		m.Logger.Error(
 			"Unable to introspect token",
@@ -428,7 +407,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		)
 	}
 
-	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get client from login request",
@@ -438,13 +417,13 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	passwordSettings, err := m.appService.GetPasswordSettings(app)
+	passwordSettings, err := m.r.ApplicationService().GetPasswordSettings(app)
 	if err != nil {
 		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -542,7 +521,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
+	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
 	if err != nil {
 		m.Logger.Error(
 			"Unable to accept login challenge",
@@ -579,7 +558,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 		}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(clientId))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return &models.Oauth2CallBackResponse{

@@ -10,25 +10,22 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 type MFAManager struct {
 	Redis          *redis.Client
 	Logger         *zap.Logger
-	mfaMicro       proto.MfaService
-	appService     *models.ApplicationService
+	r              models.InternalRegistry
 	authLogService *models.AuthLogService
-	mfaService     *models.MfaService
 	userService    *models.UserService
+	mfaService     *models.MfaService
 }
 
-func NewMFAManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, ms proto.MfaService) *MFAManager {
+func NewMFAManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry) *MFAManager {
 	m := &MFAManager{
 		Redis:          redis,
 		Logger:         l,
-		mfaMicro:       ms,
-		appService:     models.NewApplicationService(h),
+		r:              r,
 		authLogService: models.NewAuthLogService(h),
 		mfaService:     models.NewMfaService(h),
 		userService:    models.NewUserService(h),
@@ -45,11 +42,7 @@ func (m *MFAManager) MFAChallenge(form *models.MfaChallengeForm) (error *models.
 
 func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (token *models.AuthToken, error *models.CommonError) {
 	mp := &models.UserMfaToken{}
-	ottSettings := &models.OneTimeTokenSettings{}
-
-	os := models.NewOneTimeTokenService(m.Redis, ottSettings)
-
-	if err := os.Get(form.Token, mp); err != nil {
+	if err := m.r.OneTimeTokenService().Get(form.Token, mp); err != nil {
 		m.Logger.Error(
 			"Unable to use token an application",
 			zap.Object("MfaVerifyForm", form),
@@ -59,7 +52,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.CommonError{Code: `mfa_token`, Message: models.ErrorCannotUseToken}
 	}
 
-	rsp, err := m.mfaMicro.Check(context.TODO(), &proto.MfaCheckDataRequest{
+	rsp, err := m.r.MfaService().Check(context.TODO(), &proto.MfaCheckDataRequest{
 		ProviderID: mp.MfaProvider.ID.String(),
 		UserID:     mp.UserIdentity.UserID.String(),
 		Code:       form.Code,
@@ -76,7 +69,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorMfaCodeInvalid}
 	}
 
-	app, err := m.appService.Get(mp.UserIdentity.ApplicationID)
+	app, err := m.r.ApplicationService().Get(mp.UserIdentity.ApplicationID)
 	if err != nil {
 		m.Logger.Error("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -93,19 +86,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 	}
 
-	t, err := helper.CreateAuthToken(ctx, m.appService, user)
-	if err != nil {
-		m.Logger.Error(
-			"Unable to create user auth token for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: err.Error()}
-	}
-
-	if err := m.authLogService.Add(ctx, user, t.RefreshToken); err != nil {
+	if err := m.authLogService.Add(ctx, user, ""); err != nil {
 		m.Logger.Error(
 			"Unable to add user auth log for application",
 			zap.Object("User", user),
@@ -116,35 +97,12 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	cs, err := m.appService.LoadSessionSettings()
-	if err != nil {
-		m.Logger.Error(
-			"Unable to load session settings for application",
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	c, err := models.NewCookie(app, user).Crypt(cs)
-	if err != nil {
-		m.Logger.Error(
-			"Unable to create user cookie for application",
-			zap.Object("User", user),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-
-		return nil, &models.CommonError{Code: `common`, Message: models.ErrorCreateCookie}
-	}
-	http.SetCookie(ctx.Response(), c)
-
-	return t, nil
+	return nil, nil
 }
 
 func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *models.MfaAuthenticator, error *models.CommonError) {
 
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientId))
+	a, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientId))
 	if err != nil {
 		m.Logger.Error("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -161,7 +119,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
 
-	c, err := helper.GetTokenFromAuthHeader(m.appService, ctx.Request().Header)
+	c, err := helper.GetTokenFromAuthHeader(m.r.ApplicationService(), ctx.Request().Header)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to validate bearer token",
@@ -171,7 +129,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	rsp, err := m.mfaMicro.Create(context.TODO(), &proto.MfaCreateDataRequest{
+	rsp, err := m.r.MfaService().Create(context.TODO(), &proto.MfaCreateDataRequest{
 		ProviderID: p.ID.String(),
 		AppName:    a.Name,
 		UserID:     c.UserId.String(),

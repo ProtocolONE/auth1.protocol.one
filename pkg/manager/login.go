@@ -8,7 +8,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
 	"net/http"
@@ -24,21 +23,19 @@ var (
 type LoginManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
-	appService              *models.ApplicationService
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
 	mfaService              *models.MfaService
 	authLogService          *models.AuthLogService
 	identityProviderService *models.AppIdentityProviderService
-	hydra                   *hydra.CodeGenSDK
+	r                       models.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, hydra *hydra.CodeGenSDK) *LoginManager {
+func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry) *LoginManager {
 	m := &LoginManager{
 		Logger:                  l,
 		redis:                   redis,
-		hydra:                   hydra,
-		appService:              models.NewApplicationService(h),
+		r:                       r,
 		userService:             models.NewUserService(h),
 		userIdentityService:     models.NewUserIdentityService(h),
 		mfaService:              models.NewMfaService(h),
@@ -54,7 +51,7 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.CommonError{Message: models.ErrorConnectionIncorrect}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -110,7 +107,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	app, err := m.appService.Get(bson.ObjectIdHex(authForm.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(authForm.ClientID))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
@@ -166,8 +163,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			Length: 64,
 			TTL:    3600,
 		}
-		os := models.NewOneTimeTokenService(m.redis, ottSettings)
-		ott, err := os.Create(userIdentity)
+		ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
 		if err != nil {
 			m.Logger.Error(
 				"Unable to create one-time token for application",
@@ -208,7 +204,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		}
 
 		if userIdentity != nil {
-			ss, err := m.appService.LoadSocialSettings()
+			ss, err := m.r.ApplicationService().LoadSocialSettings()
 			if err != nil {
 				m.Logger.Error(
 					"Unable to load social settings for application",
@@ -225,11 +221,10 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 				Length: ss.LinkedTokenLength,
 				TTL:    ss.LinkedTTL,
 			}
-			os := models.NewOneTimeTokenService(m.redis, ottSettings)
 			userIdentity.IdentityProviderID = ip.ID
 			userIdentity.ExternalID = cp.ID
 			userIdentity.Email = cp.Email
-			ott, err := os.Create(userIdentity)
+			ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
 
 			if err != nil {
 				m.Logger.Error(
@@ -311,8 +306,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		Length: 64,
 		TTL:    3600,
 	}
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-	ott, err := os.Create(&userIdentity)
+	ott, err := m.r.OneTimeTokenService().Create(&userIdentity, ottSettings)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to create one-time token for application",
@@ -332,16 +326,14 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 }
 
 func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, models.ErrorInterface) {
-	app, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ottSettings := &models.OneTimeTokenSettings{}
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
 	storedUserIdentity := &models.UserIdentity{}
-	if err := os.Use(form.Code, storedUserIdentity); err != nil {
+	if err := m.r.OneTimeTokenService().Use(form.Code, storedUserIdentity); err != nil {
 		m.Logger.Error(
 			"Unable to use token for application",
 			zap.Object("AuthorizeLinkForm", form),
@@ -366,7 +358,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 	switch form.Action {
 	case "link":
-		ps, err := m.appService.GetPasswordSettings(app)
+		ps, err := m.r.ApplicationService().GetPasswordSettings(app)
 		if err != nil {
 			m.Logger.Warn("Unable to load password settings", zap.Error(err))
 			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
@@ -416,11 +408,10 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				Length: 64,
 				TTL:    3600,
 			}
-			os := models.NewOneTimeTokenService(m.redis, ottSettings)
-			ott, err := os.Create(&models.UserMfaToken{
+			ott, err := m.r.OneTimeTokenService().Create(&models.UserMfaToken{
 				UserIdentity: userIdentity,
 				MfaProvider:  mfa[0],
-			})
+			}, ottSettings)
 			if err != nil {
 				m.Logger.Error(
 					"Unable to create one-time token for application",
@@ -488,7 +479,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
 	}
 
-	reqACL, _, err := m.hydra.AcceptLoginRequest(
+	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(
 		form.Challenge,
 		swagger.AcceptLoginRequest{
 			Subject:     user.ID.Hex(),

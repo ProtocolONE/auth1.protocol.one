@@ -7,7 +7,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap"
 	"net/http"
@@ -17,19 +16,17 @@ import (
 type ManageManager struct {
 	Logger                  *zap.Logger
 	spaceService            *models.SpaceService
-	appService              *models.ApplicationService
 	mfaService              *models.MfaService
-	hydraSDK                *hydra.CodeGenSDK
 	identityProviderService *models.AppIdentityProviderService
+	r                       models.InternalRegistry
 }
 
-func NewManageManager(db *mgo.Session, l *zap.Logger, h *hydra.CodeGenSDK) *ManageManager {
+func NewManageManager(db *mgo.Session, l *zap.Logger, r models.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		spaceService:            models.NewSpaceService(db),
-		appService:              models.NewApplicationService(db),
 		mfaService:              models.NewMfaService(db),
 		identityProviderService: models.NewAppIdentityProviderService(db),
-		hydraSDK:                h,
+		r:                       r,
 		Logger:                  l,
 	}
 
@@ -121,7 +118,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		HasSharedUsers:   form.Application.HasSharedUsers,
 	}
 
-	if err := m.appService.Create(app); err != nil {
+	if err := m.r.ApplicationService().Create(app); err != nil {
 		m.Logger.Error(
 			"Unable to create application",
 			zap.Object("Application", app),
@@ -130,7 +127,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		return nil, err
 	}
 
-	_, response, err := m.hydraSDK.AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
+	_, response, err := m.r.HydraSDK().AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
 		ClientId:      app.ID.Hex(),
 		ClientName:    app.Name,
 		ClientSecret:  app.AuthSecret,
@@ -159,7 +156,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		TokenLength:    models.PasswordTokenLengthDefault,
 		TokenTTL:       models.PasswordTokenTTLDefault,
 	}
-	if err := m.appService.SetPasswordSettings(app, ps); err != nil {
+	if err := m.r.ApplicationService().SetPasswordSettings(app, ps); err != nil {
 		m.Logger.Error(
 			"Unable to set default password settings",
 			zap.Object("Application", app),
@@ -190,7 +187,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 }
 
 func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
-	a, err := m.appService.Get(bson.ObjectIdHex(id))
+	a, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, errors.New("application not exists")
 	}
@@ -224,7 +221,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 	a.HasSharedUsers = form.Application.HasSharedUsers
 
-	if err := m.appService.Update(a); err != nil {
+	if err := m.r.ApplicationService().Update(a); err != nil {
 		m.Logger.Error(
 			"Unable to update application",
 			zap.Object("Application", a),
@@ -233,7 +230,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 		return nil, err
 	}
 
-	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
+	client, response, err := m.r.HydraSDK().AdminApi.GetOAuth2Client(id)
 	m.Logger.Error(
 		"GET HYDRA CLIENT",
 		zap.Any("Client", client),
@@ -251,7 +248,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 
 	client.RedirectUris = form.Application.AuthRedirectUrls
 
-	_, _, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
+	_, _, err = m.r.HydraSDK().AdminApi.UpdateOAuth2Client(id, *client)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to update hydra client",
@@ -265,7 +262,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 }
 
 func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, error) {
-	s, err := m.appService.Get(bson.ObjectIdHex(id))
+	s, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
 	}
@@ -274,12 +271,12 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 }
 
 func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.PasswordSettings) error {
-	app, err := m.appService.Get(form.ApplicationID)
+	app, err := m.r.ApplicationService().Get(form.ApplicationID)
 	if err != nil {
 		return err
 	}
 
-	if err := m.appService.SetPasswordSettings(app, form); err != nil {
+	if err := m.r.ApplicationService().SetPasswordSettings(app, form); err != nil {
 		m.Logger.Error(
 			"Unable to set password settings",
 			zap.Object("Application", app),
@@ -293,11 +290,11 @@ func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.Passw
 }
 
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, error) {
-	a, err := m.appService.Get(bson.ObjectIdHex(id))
+	a, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
 		return nil, err
 	}
-	ps, err := m.appService.GetPasswordSettings(a)
+	ps, err := m.r.ApplicationService().GetPasswordSettings(a)
 	if err != nil {
 		m.Logger.Warn("Unable to load password settings", zap.Error(err))
 		return nil, err
@@ -328,7 +325,7 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 }
 
 func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) error {
-	if _, err := m.appService.Get(form.ApplicationID); err != nil {
+	if _, err := m.r.ApplicationService().Get(form.ApplicationID); err != nil {
 		return err
 	}
 
@@ -421,7 +418,7 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 }
 
 func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
-	app, err := m.appService.Get(bson.ObjectIdHex(appId))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
 	if err != nil {
 		return nil, err
 	}
