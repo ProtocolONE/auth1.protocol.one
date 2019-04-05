@@ -91,7 +91,7 @@ services:
       - auth1-redis:/data/redis
 
   auth1:
-    build: .
+    image: golang:1.11.5-stretch
     container_name: auth1
     restart: unless-stopped
     depends_on:
@@ -100,6 +100,11 @@ services:
       - hydra
     networks:
       - subnet
+    volumes:
+      - .:/go/src/auth-one
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    working_dir: /go/src/auth-one
+    command: go run main.go server
     environment:
       - AUTHONE_SERVER_PORT=8080
       - AUTHONE_DATABASE_HOST=auth1-mongo
