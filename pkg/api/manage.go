@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 	"net/http"
 )
 
-func InitManage(cfg Config) error {
+func InitManage(cfg *Server) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Hydra))
+			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Registry))
 
 			return next(c)
 		}

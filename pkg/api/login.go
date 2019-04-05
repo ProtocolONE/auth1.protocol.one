@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -13,14 +13,14 @@ import (
 	"strings"
 )
 
-func InitLogin(cfg Config) error {
+func InitLogin(cfg *Server) error {
 	cfg.Echo.GET("/login/form", loginPage)
 
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("login_manager", manager.NewLoginManager(db, logger, cfg.Redis, cfg.Hydra))
+			c.Set("login_manager", manager.NewLoginManager(db, logger, cfg.RedisHandler, cfg.Registry))
 
 			return next(c)
 		}

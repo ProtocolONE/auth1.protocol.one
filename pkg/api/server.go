@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
 	"github.com/globalsign/mgo"
@@ -34,19 +33,19 @@ type ServerConfig struct {
 	SessionConfig  *config.Session
 	MfaService     proto.MfaService
 	MgoSession     *mgo.Session
-	Hydra          *hydra.CodeGenSDK
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
-	MongoPoolSize  int
 }
 
 type Server struct {
-	Echo          *echo.Echo
-	ServerConfig  *config.Server
-	RedisHandler  *redis.Client
-	MfaService    proto.MfaService
-	Hydra         *hydra.CodeGenSDK
-	SessionConfig *config.Session
+	Echo               *echo.Echo
+	ServerConfig       *config.Server
+	RedisHandler       *redis.Client
+	MfaService         proto.MfaService
+	Hydra              *hydra.CodeGenSDK
+	SessionConfig      *config.Session
+	ApplicationService *models.ApplicationService
+	Registry           models.InternalRegistry
 }
 
 type Template struct {
@@ -54,13 +53,18 @@ type Template struct {
 }
 
 func NewServer(c *ServerConfig) (*Server, error) {
+	registryConfig := &models.RegistryConfig{
+		MgoSession:  c.MgoSession,
+		HydraConfig: c.HydraConfig,
+		MfaService:  c.MfaService,
+		RedisClient: c.RedisClient,
+	}
 	server := &Server{
 		Echo:          echo.New(),
 		RedisHandler:  c.RedisClient,
-		MfaService:    c.MfaService,
 		ServerConfig:  c.ApiConfig,
-		Hydra:         c.Hydra,
 		SessionConfig: c.SessionConfig,
+		Registry:      models.NewRegistryBase(registryConfig),
 	}
 
 	t := &Template{
@@ -151,25 +155,17 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) setupRoutes() error {
-	routeConfig := route.Config{
-		Echo:          s.Echo,
-		Redis:         s.RedisHandler,
-		MfaService:    s.MfaService,
-		Hydra:         s.Hydra,
-		SessionConfig: s.SessionConfig,
-	}
-
-	routes := []func(c route.Config) error{
-		route.InitLogin,
-		route.InitPasswordLess,
-		route.InitChangePassword,
-		route.InitMFA,
-		route.InitManage,
-		route.InitOauth2,
+	routes := []func(c *Server) error{
+		InitLogin,
+		InitPasswordLess,
+		InitChangePassword,
+		InitMFA,
+		InitManage,
+		InitOauth2,
 	}
 
 	for _, r := range routes {
-		if err := r(routeConfig); err != nil {
+		if err := r(s); err != nil {
 			return err
 		}
 	}

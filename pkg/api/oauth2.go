@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 	"net/http"
 )
 
-func InitOauth2(cfg Config) error {
+func InitOauth2(cfg *Server) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
+			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.RedisHandler, cfg.SessionConfig, cfg.Registry))
 
 			return next(c)
 		}

@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -11,31 +11,31 @@ import (
 	"net/http"
 )
 
-func InitMFA(cfg Config) error {
-	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
+func InitChangePassword(cfg *Server) error {
+	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("mfa_manager", manager.NewMFAManager(db, logger, cfg.Redis, cfg.MfaService))
+			c.Set("password_manager", manager.NewChangePasswordManager(db, logger, cfg.RedisHandler, cfg.Registry))
 
 			return next(c)
 		}
 	})
 
-	g.POST("/challenge", mfaChallenge)
-	g.POST("/verify", mfaVerify)
-	g.POST("/add", mfaAdd)
+	g.POST("/change_password", changePasswordStart)
+	g.POST("/change_password/verify", changePasswordVerify)
+	g.GET("/change_password/form", changePasswordForm)
 
 	return nil
 }
 
-func mfaChallenge(ctx echo.Context) error {
-	form := new(models.MfaChallengeForm)
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
+func changePasswordStart(ctx echo.Context) error {
+	form := new(models.ChangePasswordStartForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
 		m.Logger.Error(
-			"MFAChallenge bind form failed",
+			"ChangePasswordStart bind form failed",
 			zap.Error(err),
 		)
 
@@ -49,8 +49,8 @@ func mfaChallenge(ctx echo.Context) error {
 
 	if err := ctx.Validate(form); err != nil {
 		m.Logger.Error(
-			"MFAChallenge validate form failed",
-			zap.Object("MfaChallengeForm", form),
+			"ChangePasswordStart validate form failed",
+			zap.Object("ChangePasswordStartForm", form),
 			zap.Error(err),
 		)
 
@@ -62,21 +62,20 @@ func mfaChallenge(ctx echo.Context) error {
 		)
 	}
 
-	e := m.MFAChallenge(form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	if err := m.ChangePasswordStart(form); err != nil {
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
-	return ctx.HTML(http.StatusNoContent, ``)
+	return ctx.NoContent(http.StatusOK)
 }
 
-func mfaVerify(ctx echo.Context) error {
-	form := new(models.MfaVerifyForm)
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
+func changePasswordVerify(ctx echo.Context) error {
+	form := new(models.ChangePasswordVerifyForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
 		m.Logger.Error(
-			"MFAVerify bind form failed",
+			"ChangePasswordVerify bind form failed",
 			zap.Error(err),
 		)
 
@@ -90,8 +89,8 @@ func mfaVerify(ctx echo.Context) error {
 
 	if err := ctx.Validate(form); err != nil {
 		m.Logger.Error(
-			"MFAVerify validate form failed",
-			zap.Object("MfaVerifyForm", form),
+			"ChangePasswordVerify validate form failed",
+			zap.Object("ChangePasswordVerifyForm", form),
 			zap.Error(err),
 		)
 
@@ -103,21 +102,20 @@ func mfaVerify(ctx echo.Context) error {
 		)
 	}
 
-	token, e := m.MFAVerify(ctx, form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	if err := m.ChangePasswordVerify(form); err != nil {
+		return helper.NewErrorResponse(ctx, http.StatusBadRequest, err.GetCode(), err.GetMessage())
 	}
 
-	return ctx.JSON(http.StatusOK, token)
+	return ctx.NoContent(http.StatusOK)
 }
 
-func mfaAdd(ctx echo.Context) error {
-	form := new(models.MfaAddForm)
-	m := ctx.Get("mfa_manager").(*manager.MFAManager)
+func changePasswordForm(ctx echo.Context) error {
+	form := new(models.ChangePasswordForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
 		m.Logger.Error(
-			"MFAAdd bind form failed",
+			"ChangePasswordForm bind form failed",
 			zap.Error(err),
 		)
 
@@ -131,8 +129,8 @@ func mfaAdd(ctx echo.Context) error {
 
 	if err := ctx.Validate(form); err != nil {
 		m.Logger.Error(
-			"MFAAdd validate form failed",
-			zap.Object("MfaAddForm", form),
+			"ChangePasswordForm validate form failed",
+			zap.Object("ChangePasswordForm", form),
 			zap.Error(err),
 		)
 
@@ -144,10 +142,7 @@ func mfaAdd(ctx echo.Context) error {
 		)
 	}
 
-	authenticator, e := m.MFAAdd(ctx, form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
-	}
-
-	return ctx.JSON(http.StatusOK, authenticator)
+	return ctx.Render(http.StatusOK, "change_password.html", map[string]interface{}{
+		"ClientID": form.ClientID,
+	})
 }

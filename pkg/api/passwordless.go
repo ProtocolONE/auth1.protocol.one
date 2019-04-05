@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func InitPasswordLess(cfg Config) error {
+func InitPasswordLess(cfg *Server) error {
 	g := cfg.Echo.Group("/passwordless", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			logger := c.Get("logger").(*zap.Logger)
