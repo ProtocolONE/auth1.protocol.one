@@ -19,7 +19,7 @@
         challenge: {{index . "Challenge"}},
         clientId: {{index . "ClientID"}},
         previousLogin: {{index . "PreviousLogin"}},
-        providers: [{{ range $value := index . "SocProviders" }}
+        socialProviders: [{{ range $value := index . "SocProviders" }}
             {"key": "{{$value.Name}}", "name": "{{$value.DisplayName}}"},
         {{ end }}]
     };
