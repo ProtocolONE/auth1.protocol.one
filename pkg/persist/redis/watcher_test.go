@@ -72,8 +72,6 @@ func TestSubscribeWithRaiseOnlyNotOwn(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})
-	defer client.Close()
-
 	w := NewWatcher(client, RaiseOwn(true))
 
 	ch := make(chan string)
@@ -98,6 +96,7 @@ func TestClose(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	assert.NoError(t, w.Update("test", "data1"))
 	assert.NoError(t, w.Close())
+	assert.NoError(t, client.Close())
 	assert.Error(t, w.Update("test", "data2"))
 
 	wg.Wait()
