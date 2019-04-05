@@ -54,7 +54,7 @@ func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, h *hyd
 	return m
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, string, models.ErrorInterface) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []models.AppIdentityProvider, string, models.ErrorInterface) {
 	req, _, err := m.hydra.GetLoginRequest(form.Challenge)
 	if err != nil {
 		m.Logger.Error(
@@ -62,11 +62,17 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			zap.Object("Oauth2LoginForm", form),
 			zap.Error(err),
 		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+		return "", nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+	}
+
+	ipc, err := m.identityProviderService.FindByType(bson.ObjectIdHex(req.Client.ClientId), models.AppIdentityProviderTypeSocial)
+	if err != nil && err != mgo.ErrNotFound {
+		m.Logger.Warn("Unable to get identity providers", zap.Error(err))
+		return req.Client.ClientId, nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	if req.Subject == "" {
-		return req.Client.ClientId, nil, "", nil
+		return req.Client.ClientId, nil, ipc, "", nil
 	}
 
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
@@ -75,7 +81,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			"Unable to get session",
 			zap.Error(err),
 		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 	sess.Values[loginRememberKey] = req.Skip == true
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
@@ -83,7 +89,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			"Error saving session",
 			zap.Error(err),
 		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
 	if req.Skip == true {
@@ -94,29 +100,19 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 				zap.Object("Oauth2LoginForm", form),
 				zap.Error(err),
 			)
-			return req.Client.ClientId, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+			return req.Client.ClientId, nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
 		}
 
-		return req.Client.ClientId, nil, reqACL.RedirectTo, nil
-	}
-
-	app, err := m.appService.Get(bson.ObjectIdHex(req.Client.ClientId))
-	if err != nil {
-		m.Logger.Warn("Unable to load application", zap.Error(err))
-		return req.Client.ClientId, nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return req.Client.ClientId, nil, nil, reqACL.RedirectTo, nil
 	}
 
 	user, err := m.userService.Get(bson.ObjectIdHex(req.Subject))
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get user identity",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
+		m.Logger.Warn("Unable to get user", zap.Error(err))
+		return req.Client.ClientId, nil, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	return req.Client.ClientId, user, "", nil
+	return req.Client.ClientId, user, ipc, "", nil
 }
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {

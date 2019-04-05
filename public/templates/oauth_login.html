@@ -18,7 +18,10 @@
     window.AUTH_FORM_DATA = {
         challenge: {{index . "Challenge"}},
         clientId: {{index . "ClientID"}},
-        previousLogin: {{index . "PreviousLogin"}}
+        previousLogin: {{index . "PreviousLogin"}},
+        providers: [{{ range $value := index . "SocProviders" }}
+            {"key": "{{$value.Name}}", "name": "{{$value.DisplayName}}"},
+        {{ end }}]
     };
 </script>
 <script src="https://static.protocol.one/auth/form/dev/auth-web-form.js"></script>

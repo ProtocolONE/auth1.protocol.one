@@ -33,6 +33,12 @@ var (
 	AppIdentityProviderNameTwitch   = "twitch"
 	AppIdentityProviderNameGoogle   = "google"
 	AppIdentityProviderNameVk       = "vk"
+
+	AppIdentityProviderDisplayNameDefault  = "Initial connection"
+	AppIdentityProviderDisplayNameFacebook = "Facebook"
+	AppIdentityProviderDisplayNameTwitch   = "Twitch"
+	AppIdentityProviderDisplayNameGoogle   = "Google"
+	AppIdentityProviderDisplayNameVk       = "VKontakte"
 )
 
 type AppIdentityProviderService struct {
@@ -98,10 +104,10 @@ func (ipcs AppIdentityProviderService) Get(id bson.ObjectId) (*AppIdentityProvid
 	return ipc, nil
 }
 
-func (ipcs AppIdentityProviderService) FindByType(app *Application, connType string) ([]AppIdentityProvider, error) {
+func (ipcs AppIdentityProviderService) FindByType(appID bson.ObjectId, connType string) ([]AppIdentityProvider, error) {
 	var ipc []AppIdentityProvider
 	err := ipcs.db.C(database.TableAppIdentityProvider).
-		Find(bson.M{"app_id": app.ID, "type": connType}).
+		Find(bson.M{"app_id": appID, "type": connType}).
 		All(&ipc)
 
 	if err != nil {
@@ -189,6 +195,7 @@ func (ipcs *AppIdentityProviderService) getFacebookTemplate() *AppIdentityProvid
 		EndpointTokenURL:    facebook.Endpoint.TokenURL,
 		EndpointUserInfoURL: "https://graph.facebook.com/me?fields=id,name,first_name,last_name,email,birthday,picture&access_token=%s",
 		Name:                AppIdentityProviderNameFacebook,
+		DisplayName:         AppIdentityProviderDisplayNameFacebook,
 	}
 }
 
@@ -200,6 +207,7 @@ func (ipcs *AppIdentityProviderService) getTwitchTemplate() *AppIdentityProvider
 		EndpointTokenURL:    twitch.Endpoint.TokenURL,
 		EndpointUserInfoURL: "https://api.twitch.tv/kraken/user?client_id=r0elllpn5whuyf3et3pm6apqifn9yg&oauth_token=%s",
 		Name:                AppIdentityProviderNameTwitch,
+		DisplayName:         AppIdentityProviderDisplayNameTwitch,
 	}
 }
 
@@ -211,6 +219,7 @@ func (ipcs *AppIdentityProviderService) getGoogleTemplate() *AppIdentityProvider
 		EndpointTokenURL:    google.Endpoint.TokenURL,
 		EndpointUserInfoURL: "https://www.googleapis.com/oauth2/v1/userinfo?access_token=%s",
 		Name:                AppIdentityProviderNameGoogle,
+		DisplayName:         AppIdentityProviderDisplayNameGoogle,
 	}
 }
 
@@ -222,6 +231,7 @@ func (ipcs *AppIdentityProviderService) getVkTemplate() *AppIdentityProvider {
 		EndpointTokenURL:    vk.Endpoint.TokenURL,
 		EndpointUserInfoURL: "https://api.vk.com/method/users.get?fields=bdate,photo_50&v=5.92&access_token=%s",
 		Name:                AppIdentityProviderNameVk,
+		DisplayName:         AppIdentityProviderDisplayNameVk,
 	}
 }
 

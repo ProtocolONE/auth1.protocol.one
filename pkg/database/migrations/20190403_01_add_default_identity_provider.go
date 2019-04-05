@@ -38,7 +38,7 @@ func init() {
 			ipc := &models.AppIdentityProvider{
 				Type:        models.AppIdentityProviderTypePassword,
 				Name:        models.AppIdentityProviderNameDefault,
-				DisplayName: "Initial connection",
+				DisplayName: models.AppIdentityProviderDisplayNameDefault,
 			}
 
 			for _, app := range apps {

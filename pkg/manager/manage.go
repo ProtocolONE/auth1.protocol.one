@@ -174,7 +174,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		ApplicationID: app.ID,
 		Type:          models.AppIdentityProviderTypePassword,
 		Name:          models.AppIdentityProviderNameDefault,
-		DisplayName:   "Initial connection",
+		DisplayName:   models.AppIdentityProviderDisplayNameDefault,
 	}
 	if err := m.identityProviderService.Create(ipc); err != nil {
 		m.Logger.Error(
@@ -421,12 +421,7 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 }
 
 func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
-	app, err := m.appService.Get(bson.ObjectIdHex(appId))
-	if err != nil {
-		return nil, err
-	}
-
-	ipc, err := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	ipc, err := m.identityProviderService.FindByType(bson.ObjectIdHex(appId), models.AppIdentityProviderTypeSocial)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get application",
