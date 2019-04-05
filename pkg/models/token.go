@@ -109,10 +109,6 @@ func (a *OneTimeToken) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewJwtTokenService(authTokenSettings *AuthTokenSettings) *JwtTokenService {
-	return &JwtTokenService{authTokenSettings}
-}
-
 func (ts JwtTokenService) Create(user *User) (string, error) {
 	claims := &JwtClaim{
 		UserId:         user.ID,
@@ -142,10 +138,6 @@ func (ts JwtTokenService) Decode(tokenString string) (*JwtClaim, error) {
 	return nil, err
 }
 
-func NewRefreshTokenService(authTokenSettings *AuthTokenSettings) *RefreshTokenService {
-	return &RefreshTokenService{authTokenSettings}
-}
-
 func (rts RefreshTokenService) Create(userAgent string, ip string) *RefreshToken {
 	return &RefreshToken{
 		Value:     GetRandString(rts.RefreshLength),
@@ -155,13 +147,13 @@ func (rts RefreshTokenService) Create(userAgent string, ip string) *RefreshToken
 	}
 }
 
-func NewOneTimeTokenService(redis *redis.Client, oneTimeTokenSettings *OneTimeTokenSettings) *OneTimeTokenService {
-	return &OneTimeTokenService{Redis: redis, Settings: oneTimeTokenSettings}
+func NewOneTimeTokenService(redis *redis.Client) *OneTimeTokenService {
+	return &OneTimeTokenService{Redis: redis}
 }
 
-func (os *OneTimeTokenService) Create(s interface{}) (*OneTimeToken, error) {
+func (os *OneTimeTokenService) Create(s interface{}, settings *OneTimeTokenSettings) (*OneTimeToken, error) {
 	t := &OneTimeToken{
-		Token: GetRandString(os.Settings.Length),
+		Token: GetRandString(settings.Length),
 	}
 
 	data, err := json.Marshal(s)
@@ -173,7 +165,7 @@ func (os *OneTimeTokenService) Create(s interface{}) (*OneTimeToken, error) {
 	if resSet.Err() != nil {
 		return nil, resSet.Err()
 	}
-	resExp := os.Redis.Expire(fmt.Sprintf(OneTimeTokenStoragePattern, t.Token), time.Duration(os.Settings.TTL)*time.Second)
+	resExp := os.Redis.Expire(fmt.Sprintf(OneTimeTokenStoragePattern, t.Token), time.Duration(settings.TTL)*time.Second)
 	return t, resExp.Err()
 }
 

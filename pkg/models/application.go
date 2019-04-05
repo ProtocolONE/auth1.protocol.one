@@ -2,16 +2,23 @@ package models
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
+	"sync"
 	"time"
 )
 
+const ApplicationWatcherChannel = "application"
+
 type ApplicationService struct {
 	db *mgo.Database
+	mx sync.Mutex
+
+	pool    map[bson.ObjectId]*Application
+	watcher persist.Watcher
 }
 
 type Application struct {
@@ -40,38 +47,72 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-func NewApplicationService(dbHandler *mgo.Session) *ApplicationService {
-	return &ApplicationService{db: dbHandler.DB("")}
+func NewApplicationService(r InternalRegistry) *ApplicationService {
+	a := &ApplicationService{
+		db:   r.MgoSession().DB(""),
+		pool: make(map[bson.ObjectId]*Application),
+	}
 
+	r.Watcher().SetUpdateCallback(ApplicationWatcherChannel, func(id string) {
+		_, _ = a.loadToCache(bson.ObjectIdHex(id))
+	})
+
+	return a
 }
 
 func (s ApplicationService) Create(app *Application) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
 	if err := s.db.C(database.TableApplication).Insert(app); err != nil {
 		return err
 	}
 
-	return nil
+	s.pool[app.ID] = app
+	return s.watcher.Update(ApplicationWatcherChannel, app.ID.String())
 }
 
 func (s ApplicationService) Update(app *Application) error {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
 	if err := s.db.C(database.TableApplication).UpdateId(app.ID, app); err != nil {
 		return err
 	}
 
-	return nil
+	s.pool[app.ID] = app
+	return s.watcher.Update(ApplicationWatcherChannel, app.ID.String())
 }
 
 func (s ApplicationService) Get(id bson.ObjectId) (*Application, error) {
-	a := &Application{}
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	app, ok := s.pool[id]
+	if !ok {
+		var err error
+
+		app, err = s.loadToCache(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return app, nil
+}
+
+func (s ApplicationService) loadToCache(id bson.ObjectId) (*Application, error) {
+	app := &Application{}
 	err := s.db.C(database.TableApplication).
 		FindId(id).
-		One(&a)
+		One(&app)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to load application with id %s", id.String())
 	}
 
-	return a, nil
+	s.pool[id] = app
+	return app, nil
 }
 
 func (s ApplicationService) SetPasswordSettings(app *Application, ps *PasswordSettings) error {
@@ -100,23 +141,6 @@ func (s ApplicationService) GetPasswordSettings(app *Application) (*PasswordSett
 	}
 
 	return ps, nil
-}
-
-func (s ApplicationService) LoadAuthTokenSettings() (*AuthTokenSettings, error) {
-	return &AuthTokenSettings{
-		JwtKey:        []byte("k33)%(7cltD:q.N4AyuXfjAuK{zO,nzP"),
-		JwtMethod:     jwt.SigningMethodHS256,
-		JwtTTL:        3600,
-		RefreshLength: 512,
-		RefreshTTL:    86400,
-	}, nil
-}
-
-func (s ApplicationService) LoadSessionSettings() (*CookieSettings, error) {
-	return &CookieSettings{
-		Name: "X-AUTH-ONE-TOKEN",
-		TTL:  3600,
-	}, nil
 }
 
 func (s ApplicationService) LoadSocialSettings() (*SocialSettings, error) {
