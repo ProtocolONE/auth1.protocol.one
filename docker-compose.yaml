@@ -106,6 +106,7 @@ services:
     working_dir: /go/src/auth-one
     command: go run main.go server
     environment:
+      - GO111MODULE=on
       - AUTHONE_SERVER_PORT=8080
       - AUTHONE_DATABASE_HOST=auth1-mongo
       - AUTHONE_DATABASE_NAME=auth-one
