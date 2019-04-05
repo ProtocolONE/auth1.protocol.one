@@ -49,11 +49,12 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func NewApplicationService(r InternalRegistry) *ApplicationService {
 	a := &ApplicationService{
-		db:   r.MgoSession().DB(""),
-		pool: make(map[bson.ObjectId]*Application),
+		db:      r.MgoSession().DB(""),
+		pool:    make(map[bson.ObjectId]*Application),
+		watcher: r.Watcher(),
 	}
 
-	r.Watcher().SetUpdateCallback(ApplicationWatcherChannel, func(id string) {
+	a.watcher.SetUpdateCallback(ApplicationWatcherChannel, func(id string) {
 		_, _ = a.loadToCache(bson.ObjectIdHex(id))
 	})
 
