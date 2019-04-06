@@ -4,7 +4,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
@@ -13,8 +12,9 @@ import (
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
 	"github.com/spf13/cobra"
-	"github.com/xakep666/mongo-migrate"
 	"go.uber.org/zap"
+	"log"
+	"net/http"
 )
 
 var serverCmd = &cobra.Command{
@@ -28,6 +28,13 @@ func init() {
 }
 
 func runServer(cmd *cobra.Command, args []string) {
+	db := createDatabase(&cfg.Database)
+	defer db.Close()
+
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
 	store, err := redistore.NewRediStore(
 		cfg.Session.Size,
 		cfg.Session.Network,
@@ -39,9 +46,6 @@ func runServer(cmd *cobra.Command, args []string) {
 		zap.L().Fatal("Unable to start redis session store", zap.Error(err))
 	}
 	defer store.Close()
-
-	db := createDatabase(&cfg.Database)
-	defer db.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
@@ -88,22 +92,5 @@ func createDatabase(cfg *config.Database) *mgo.Session {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))
 	}
 
-	if err := migrateDb(db, cfg.Name); err != nil {
-		zap.L().Fatal("Error in db migration", zap.Error(err))
-	}
-
 	return db
-}
-
-func migrateDb(s *mgo.Session, dbName string) error {
-	db := s.DB(dbName)
-	migrate.SetDatabase(db)
-
-	if err := migrate.Up(migrate.AllAvailable); err != nil {
-		if err := migrate.Down(migrate.AllAvailable); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

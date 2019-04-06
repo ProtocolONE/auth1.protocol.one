@@ -104,7 +104,7 @@ services:
       - .:/go/src/auth-one
       - $GOPATH/pkg/mod:/go/pkg/mod
     working_dir: /go/src/auth-one
-    command: go run main.go server
+    command: bash -c "go run main.go migration && go run main.go server"
     environment:
       - GO111MODULE=on
       - AUTHONE_SERVER_PORT=8080
@@ -115,6 +115,7 @@ services:
       - AUTHONE_HYDRA_ADMIN_URL=http://hydra:4445
       - AUTHONE_SESSION_NETWORK=tcp
       - AUTHONE_SESSION_ADDRESS=auth1-redis:6379
+      - AUTHONE_MIGRATION_DIRECT=up
 
 volumes:
   auth1-mongo:
