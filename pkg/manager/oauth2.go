@@ -27,6 +27,7 @@ type OauthManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
 	sessionConfig           *config.Session
+	hydraConfig             *config.Hydra
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
 	authLogService          *models.AuthLogService
@@ -34,10 +35,11 @@ type OauthManager struct {
 	r                       models.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, s *config.Session, r models.InternalRegistry) *OauthManager {
+func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
 	m := &OauthManager{
 		redis:                   redis,
 		sessionConfig:           s,
+		hydraConfig:             h,
 		Logger:                  l,
 		r:                       r,
 		userService:             models.NewUserService(db),
@@ -571,7 +573,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 		ClientID:     clientId,
 		ClientSecret: app.AuthSecret,
 		RedirectURL:  fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host),
-		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
+		Issuer:       m.hydraConfig.PublicURL,
 	}
 	jwtv := jwtverifier.NewJwtVerifier(settings)
 	tokens, err := jwtv.Exchange(ctx.Request().Context(), form.Code)

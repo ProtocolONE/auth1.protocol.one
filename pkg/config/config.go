@@ -11,7 +11,8 @@ type Config struct {
 	Hydra    Hydra
 	Session  Session
 
-	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+	KubernetesHost  string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
 
 type Server struct {

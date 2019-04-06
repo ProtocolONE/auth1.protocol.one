@@ -16,7 +16,7 @@ func InitOauth2(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
 			logger := c.Get("logger").(*zap.Logger)
-			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.RedisHandler, cfg.SessionConfig, cfg.Registry))
+			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.RedisHandler, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig))
 
 			return next(c)
 		}

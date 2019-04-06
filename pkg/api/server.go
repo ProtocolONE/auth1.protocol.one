@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/ory/hydra/sdk/go/hydra"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
@@ -38,14 +37,12 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	Echo               *echo.Echo
-	ServerConfig       *config.Server
-	RedisHandler       *redis.Client
-	MfaService         proto.MfaService
-	Hydra              *hydra.CodeGenSDK
-	SessionConfig      *config.Session
-	ApplicationService *models.ApplicationService
-	Registry           models.InternalRegistry
+	Echo          *echo.Echo
+	ServerConfig  *config.Server
+	RedisHandler  *redis.Client
+	HydraConfig   *config.Hydra
+	SessionConfig *config.Session
+	Registry      models.InternalRegistry
 }
 
 type Template struct {
@@ -64,6 +61,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		RedisHandler:  c.RedisClient,
 		ServerConfig:  c.ApiConfig,
 		SessionConfig: c.SessionConfig,
+		HydraConfig:   c.HydraConfig,
 		Registry:      models.NewRegistryBase(registryConfig),
 	}
 
