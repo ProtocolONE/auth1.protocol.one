@@ -27,16 +27,11 @@ func init() {
 				return errors.Wrapf(err, "Ensure application identity provider collection index `Idx-AppId-Type-Name` failed")
 			}
 
-			if _, err := db.C(database.TableAppIdentityProvider).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove application identity providers")
-			}
-
 			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
 				return errors.Wrapf(err, "Unable to get applications")
 			}
 
 			ipc := &models.AppIdentityProvider{
-				ID:          bson.NewObjectId(),
 				Type:        models.AppIdentityProviderTypePassword,
 				Name:        models.AppIdentityProviderNameDefault,
 				DisplayName: "Initial connection",
@@ -44,6 +39,7 @@ func init() {
 
 			for _, app := range apps {
 				ipc.ApplicationID = app.ID
+				ipc.ID = bson.NewObjectId()
 				if err = db.C(database.TableAppIdentityProvider).Insert(ipc); err != nil {
 					return errors.Wrapf(err, "Unable to add default application identity provider")
 				}
