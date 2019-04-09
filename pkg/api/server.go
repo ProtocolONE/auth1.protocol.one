@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
 	"github.com/globalsign/mgo"
@@ -42,7 +43,7 @@ type Server struct {
 	RedisHandler  *redis.Client
 	HydraConfig   *config.Hydra
 	SessionConfig *config.Session
-	Registry      models.InternalRegistry
+	Registry      service.InternalRegistry
 }
 
 type Template struct {
@@ -50,7 +51,7 @@ type Template struct {
 }
 
 func NewServer(c *ServerConfig) (*Server, error) {
-	registryConfig := &models.RegistryConfig{
+	registryConfig := &service.RegistryConfig{
 		MgoSession:  c.MgoSession,
 		HydraConfig: c.HydraConfig,
 		MfaService:  c.MfaService,
@@ -62,7 +63,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		ServerConfig:  c.ApiConfig,
 		SessionConfig: c.SessionConfig,
 		HydraConfig:   c.HydraConfig,
-		Registry:      models.NewRegistryBase(registryConfig),
+		Registry:      service.NewRegistryBase(registryConfig),
 	}
 
 	t := &Template{

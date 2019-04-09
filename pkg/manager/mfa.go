@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -15,13 +16,13 @@ import (
 type MFAManager struct {
 	Redis          *redis.Client
 	Logger         *zap.Logger
-	r              models.InternalRegistry
+	r              service.InternalRegistry
 	authLogService *models.AuthLogService
 	userService    *models.UserService
 	mfaService     *models.MfaService
 }
 
-func NewMFAManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry) *MFAManager {
+func NewMFAManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry) *MFAManager {
 	m := &MFAManager{
 		Redis:          redis,
 		Logger:         l,
@@ -119,7 +120,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
 	}
 
-	c, err := helper.GetTokenFromAuthHeader(m.r.ApplicationService(), ctx.Request().Header)
+	c, err := helper.GetTokenFromAuthHeader(ctx.Request().Header)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to validate bearer token",

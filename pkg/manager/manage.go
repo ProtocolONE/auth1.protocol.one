@@ -1,13 +1,15 @@
 package manager
 
 import (
-	"errors"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -17,15 +19,15 @@ type ManageManager struct {
 	Logger                  *zap.Logger
 	spaceService            *models.SpaceService
 	mfaService              *models.MfaService
-	identityProviderService *models.AppIdentityProviderService
-	r                       models.InternalRegistry
+	identityProviderService *service.AppIdentityProviderService
+	r                       service.InternalRegistry
 }
 
-func NewManageManager(db *mgo.Session, l *zap.Logger, r models.InternalRegistry) *ManageManager {
+func NewManageManager(db *mgo.Session, l *zap.Logger, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		spaceService:            models.NewSpaceService(db),
 		mfaService:              models.NewMfaService(db),
-		identityProviderService: models.NewAppIdentityProviderService(db),
+		identityProviderService: service.NewAppIdentityProviderService(),
 		r:                       r,
 		Logger:                  l,
 	}
@@ -105,17 +107,35 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	defaultRedirectUri := fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
 	form.Application.AuthRedirectUrls = append(form.Application.AuthRedirectUrls, defaultRedirectUri)
 
+	appID := bson.NewObjectId()
 	app := &models.Application{
-		ID:               bson.NewObjectId(),
+		ID:               appID,
 		SpaceId:          s.Id,
 		Name:             form.Application.Name,
 		Description:      form.Application.Description,
 		IsActive:         form.Application.IsActive,
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
-		AuthSecret:       models.GetRandString(64),
+		AuthSecret:       helper.GetRandString(64),
 		AuthRedirectUrls: form.Application.AuthRedirectUrls,
 		HasSharedUsers:   form.Application.HasSharedUsers,
+		PasswordSettings: &models.PasswordSettings{
+			BcryptCost:     models.PasswordBcryptCostDefault,
+			Min:            models.PasswordMinDefault,
+			Max:            models.PasswordMaxDefault,
+			RequireNumber:  models.PasswordRequireNumberDefault,
+			RequireUpper:   models.PasswordRequireUpperDefault,
+			RequireSpecial: models.PasswordRequireSpecialDefault,
+			TokenLength:    models.PasswordTokenLengthDefault,
+			TokenTTL:       models.PasswordTokenTTLDefault,
+		},
+		IdentityProviders: []*models.AppIdentityProvider{{
+			ID:            bson.NewObjectId(),
+			ApplicationID: appID,
+			Type:          models.AppIdentityProviderTypePassword,
+			Name:          models.AppIdentityProviderNameDefault,
+			DisplayName:   "Initial connection",
+		}},
 	}
 
 	if err := m.r.ApplicationService().Create(app); err != nil {
@@ -145,42 +165,8 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		return nil, err
 	}
 
-	ps := &models.PasswordSettings{
-		ApplicationID:  app.ID,
-		BcryptCost:     models.PasswordBcryptCostDefault,
-		Min:            models.PasswordMinDefault,
-		Max:            models.PasswordMaxDefault,
-		RequireNumber:  models.PasswordRequireNumberDefault,
-		RequireUpper:   models.PasswordRequireUpperDefault,
-		RequireSpecial: models.PasswordRequireSpecialDefault,
-		TokenLength:    models.PasswordTokenLengthDefault,
-		TokenTTL:       models.PasswordTokenTTLDefault,
-	}
-	if err := m.r.ApplicationService().SetPasswordSettings(app, ps); err != nil {
-		m.Logger.Error(
-			"Unable to set default password settings",
-			zap.Object("Application", app),
-			zap.Object("PasswordSettings", ps),
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	ipc := &models.AppIdentityProvider{
-		ID:            bson.NewObjectId(),
-		ApplicationID: app.ID,
-		Type:          models.AppIdentityProviderTypePassword,
-		Name:          models.AppIdentityProviderNameDefault,
-		DisplayName:   "Initial connection",
-	}
-	if err := m.identityProviderService.Create(ipc); err != nil {
-		m.Logger.Error(
-			"Unable to add default identity provider",
-			zap.Object("Application", app),
-			zap.Object("AppIdentityProvider", ipc),
-			zap.Error(err),
-		)
-		return nil, err
+	if err := m.r.ApplicationService().Update(app); err != nil {
+		return nil, errors.Wrap(err, "Unable to save application password")
 	}
 
 	return app, nil
@@ -270,37 +256,36 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 	return s, nil
 }
 
-func (m *ManageManager) SetPasswordSettings(ctx echo.Context, form *models.PasswordSettings) error {
-	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+func (m *ManageManager) SetPasswordSettings(ctx echo.Context, appID string, form *models.PasswordSettings) error {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
 	if err != nil {
 		return err
 	}
 
-	if err := m.r.ApplicationService().SetPasswordSettings(app, form); err != nil {
-		m.Logger.Error(
-			"Unable to set password settings",
-			zap.Object("Application", app),
-			zap.Object("PasswordSettings", form),
-			zap.Error(err),
-		)
-		return err
+	app.PasswordSettings = &models.PasswordSettings{
+		BcryptCost:     form.BcryptCost,
+		Min:            form.Min,
+		Max:            form.Max,
+		RequireNumber:  form.RequireNumber,
+		RequireUpper:   form.RequireUpper,
+		RequireSpecial: form.RequireSpecial,
+		TokenLength:    form.TokenLength,
+		TokenTTL:       form.TokenTTL,
+	}
+	if err := m.r.ApplicationService().Update(app); err != nil {
+		return errors.Wrap(err, "Unable to save application password")
 	}
 
 	return nil
 }
 
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, error) {
-	a, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
-		return nil, err
-	}
-	ps, err := m.r.ApplicationService().GetPasswordSettings(a)
-	if err != nil {
-		m.Logger.Warn("Unable to load password settings", zap.Error(err))
-		return nil, err
+		return nil, errors.Wrap(err, "Unable to get application")
 	}
 
-	return ps, nil
+	return app.PasswordSettings, nil
 }
 
 func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, error) {
@@ -325,7 +310,8 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 }
 
 func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) error {
-	if _, err := m.r.ApplicationService().Get(form.ApplicationID); err != nil {
+	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+	if err != nil {
 		return err
 	}
 
@@ -340,7 +326,16 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 			return err
 		}
 	}
-	if err := m.identityProviderService.Create(form); err != nil {
+
+	if ip := m.identityProviderService.FindByTypeAndName(app, form.Type, form.Name); ip != nil {
+		m.Logger.Error(
+			"Identity provider already exists",
+			zap.Object("AppIdentityProvider", form),
+		)
+		return errors.New("Identity provider already exists")
+	}
+
+	if err := m.r.ApplicationService().AddIdentityProvider(app, form); err != nil {
 		m.Logger.Error(
 			"Unable to create identity provider",
 			zap.Object("AppIdentityProvider", form),
@@ -353,12 +348,16 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 }
 
 func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, form *models.AppIdentityProvider) error {
-	ip, err := m.identityProviderService.Get(bson.ObjectIdHex(id))
+	app, err := m.r.ApplicationService().Get(form.ApplicationID)
 	if err != nil {
+		return err
+	}
+
+	ip := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	if ip != nil {
 		m.Logger.Error(
 			"Unable to get identity provider",
 			zap.Object("AppIdentityProvider", form),
-			zap.Error(err),
 		)
 		return errors.New("identity provider not exists")
 	}
@@ -383,7 +382,7 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 		}
 	}
 
-	if err := m.identityProviderService.Update(form); err != nil {
+	if err := m.r.ApplicationService().UpdateIdentityProvider(app, form); err != nil {
 		m.Logger.Error(
 			"Unable to update identity provider",
 			zap.Object("AppIdentityProvider", form),
@@ -396,12 +395,16 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 }
 
 func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id string) (*models.AppIdentityProvider, error) {
-	ipc, err := m.identityProviderService.Get(bson.ObjectIdHex(id))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
 	if err != nil {
+		return nil, err
+	}
+
+	ipc := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	if ipc != nil {
 		m.Logger.Error(
 			"Unable to get application",
 			zap.String("ApplicationID", appId),
-			zap.Error(err),
 		)
 		return nil, err
 	}
@@ -417,18 +420,17 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 	return ipc, nil
 }
 
-func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]models.AppIdentityProvider, error) {
+func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]*models.AppIdentityProvider, error) {
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
 	if err != nil {
 		return nil, err
 	}
 
-	ipc, err := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
-	if err != nil {
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	if ipc != nil && len(ipc) > 0 {
 		m.Logger.Error(
 			"Unable to get application",
 			zap.String("ApplicationID", appId),
-			zap.Error(err),
 		)
 		return nil, err
 	}

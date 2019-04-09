@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func GetTokenFromAuthHeader(as *models.ApplicationService, headers http.Header) (token *models.JwtClaim, err error) {
+func GetTokenFromAuthHeader(headers http.Header) (token *models.JwtClaim, err error) {
 	authHeader := headers.Get(`Authorization`)
 	i := strings.Index(authHeader, ` `)
 	if -1 == i {

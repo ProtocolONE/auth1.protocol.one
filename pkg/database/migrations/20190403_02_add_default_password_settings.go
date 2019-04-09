@@ -14,51 +14,29 @@ func init() {
 			var err error
 			var apps []*models.Application
 
-			err = db.C(database.TableAppPasswordSettings).EnsureIndex(mgo.Index{
-				Name:       "Idx-AppId",
-				Key:        []string{"app_id"},
-				Unique:     true,
-				DropDups:   true,
-				Background: true,
-				Sparse:     false,
-			})
-			if err != nil {
-				return errors.Wrapf(err, "Ensure password settings collection index `Idx-AppId` failed")
-			}
-
 			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
 				return errors.Wrapf(err, "Unable to get applications")
 			}
 
-			ps := &models.PasswordSettings{
-				BcryptCost:     models.PasswordBcryptCostDefault,
-				Min:            models.PasswordMinDefault,
-				Max:            models.PasswordMaxDefault,
-				RequireNumber:  models.PasswordRequireNumberDefault,
-				RequireUpper:   models.PasswordRequireUpperDefault,
-				RequireSpecial: models.PasswordRequireSpecialDefault,
-				TokenLength:    models.PasswordTokenLengthDefault,
-				TokenTTL:       models.PasswordTokenTTLDefault,
-			}
-
 			for _, app := range apps {
-				ps.ApplicationID = app.ID
-				if err = db.C(database.TableAppPasswordSettings).Insert(ps); err != nil {
-					return errors.Wrapf(err, "Unable to add default password settings")
+				app.PasswordSettings = &models.PasswordSettings{
+					BcryptCost:     models.PasswordBcryptCostDefault,
+					Min:            models.PasswordMinDefault,
+					Max:            models.PasswordMaxDefault,
+					RequireNumber:  models.PasswordRequireNumberDefault,
+					RequireUpper:   models.PasswordRequireUpperDefault,
+					RequireSpecial: models.PasswordRequireSpecialDefault,
+					TokenLength:    models.PasswordTokenLengthDefault,
+					TokenTTL:       models.PasswordTokenTTLDefault,
+				}
+				if err := db.C(database.TableApplication).UpdateId(app.ID, app); err != nil {
+					return errors.Wrap(err, "Unable to update application")
 				}
 			}
 
 			return nil
 		},
 		func(db *mgo.Database) error {
-			if err := db.C(database.TableAppPasswordSettings).DropIndexName("Idx-AppId"); err != nil {
-				return errors.Wrapf(err, "Drop password settings collection `Idx-AppId` index failed")
-			}
-
-			if _, err := db.C(database.TableAppPasswordSettings).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove password settings")
-			}
-
 			return nil
 		},
 	)

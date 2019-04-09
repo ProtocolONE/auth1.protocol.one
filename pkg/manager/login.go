@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
@@ -27,11 +29,11 @@ type LoginManager struct {
 	userIdentityService     *models.UserIdentityService
 	mfaService              *models.MfaService
 	authLogService          *models.AuthLogService
-	identityProviderService *models.AppIdentityProviderService
-	r                       models.InternalRegistry
+	identityProviderService *service.AppIdentityProviderService
+	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry) *LoginManager {
+func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry) *LoginManager {
 	m := &LoginManager{
 		Logger:                  l,
 		redis:                   redis,
@@ -40,7 +42,7 @@ func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r model
 		userIdentityService:     models.NewUserIdentityService(h),
 		mfaService:              models.NewMfaService(h),
 		authLogService:          models.NewAuthLogService(h),
-		identityProviderService: models.NewAppIdentityProviderService(h),
+		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 
 	return m
@@ -57,19 +59,18 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ip, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, form.Connection)
-	if err != nil {
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, form.Connection)
+	if ip != nil {
 		m.Logger.Error(
 			"Unable to load user identity settings for application",
 			zap.Object("AuthorizeForm", form),
 			zap.String("Provider", models.AppIdentityProviderTypeSocial),
-			zap.Error(err),
 		)
 
 		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
 	}
 
-	u, err := ip.GetAuthUrl(ctx, form)
+	u, err := m.identityProviderService.GetAuthUrl(ctx, ip, form)
 	if err != nil {
 		m.Logger.Error(
 			"Unable to get auth url from authorize form",
@@ -113,12 +114,11 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ip, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
-	if err != nil {
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
+	if ip != nil {
 		m.Logger.Error(
 			"Unable to load user identity settings for application",
 			zap.Object("AuthorizeForm", authForm),
-			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorConnectionIncorrect}
@@ -129,7 +129,6 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		m.Logger.Error(
 			"Unable to load identity profile for application",
 			zap.Object("AuthorizeForm", authForm),
-			zap.Error(err),
 		)
 
 		return nil, &models.CommonError{Code: `common`, Message: models.ErrorGetSocialData}
@@ -183,12 +182,11 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	}
 
 	if cp.Email != "" {
-		ipPass, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-		if err != nil {
+		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+		if ipPass != nil {
 			m.Logger.Error(
 				"Unable to load user identity settings for application",
 				zap.Object("AuthorizeForm", authForm),
-				zap.Error(err),
 			)
 
 			return nil, &models.CommonError{Code: `common`, Message: models.ErrorConnectionIncorrect}
@@ -358,27 +356,21 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 	switch form.Action {
 	case "link":
-		ps, err := m.r.ApplicationService().GetPasswordSettings(app)
-		if err != nil {
-			m.Logger.Warn("Unable to load password settings", zap.Error(err))
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
-		}
-		if false == ps.IsValid(form.Password) {
+		if false == validator.IsPasswordValid(app, form.Password) {
 			return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 		}
 
-		ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-		if err != nil {
+		ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+		if ipc != nil {
 			m.Logger.Warn(
 				"Unable to get identity provider",
 				zap.Object("AuthorizeLinkForm", form),
-				zap.Error(err),
 			)
 		}
 
 		userIdentity, err := m.userIdentityService.Get(app, ipc, user.Email)
 
-		be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: ps.BcryptCost})
+		be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 
 		err = be.Compare(userIdentity.Credential, form.Password)
 		if err != nil {

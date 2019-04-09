@@ -273,6 +273,7 @@ func addMFA(ctx echo.Context) error {
 }
 
 func setPasswordSettings(ctx echo.Context) error {
+	id := ctx.Param("id")
 	form := &models.PasswordSettings{}
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
@@ -305,7 +306,7 @@ func setPasswordSettings(ctx echo.Context) error {
 		)
 	}
 
-	if err := m.SetPasswordSettings(ctx, form); err != nil {
+	if err := m.SetPasswordSettings(ctx, id, form); err != nil {
 		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
 	}
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -31,11 +33,11 @@ type OauthManager struct {
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
 	authLogService          *models.AuthLogService
-	identityProviderService *models.AppIdentityProviderService
-	r                       models.InternalRegistry
+	identityProviderService *service.AppIdentityProviderService
+	r                       service.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r models.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
+func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
 	m := &OauthManager{
 		redis:                   redis,
 		sessionConfig:           s,
@@ -45,7 +47,7 @@ func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r mode
 		userService:             models.NewUserService(db),
 		userIdentityService:     models.NewUserIdentityService(db),
 		authLogService:          models.NewAuthLogService(db),
-		identityProviderService: models.NewAppIdentityProviderService(db),
+		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 
 	return m
@@ -155,12 +157,11 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 			}
 
-			ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-			if err != nil {
+			ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+			if ipc != nil {
 				m.Logger.Warn(
 					"Unable to get identity provider",
 					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
 				)
 			}
 
@@ -178,13 +179,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
 			}
 
-			passwordSettings, err := m.r.ApplicationService().GetPasswordSettings(app)
-			if err != nil {
-				m.Logger.Warn("Unable to load password settings", zap.Error(err))
-				return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
-			}
-
-			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passwordSettings.BcryptCost})
+			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 			err = encryptor.Compare(userIdentity.Credential, form.Password)
 			if err != nil {
 				m.Logger.Error(
@@ -424,17 +419,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		m.Logger.Warn("Unable to load application", zap.Error(err))
 		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
-
-	passwordSettings, err := m.r.ApplicationService().GetPasswordSettings(app)
-	if err != nil {
-		m.Logger.Warn("Unable to load password settings", zap.Error(err))
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
-	}
-	if false == passwordSettings.IsValid(form.Password) {
+	if false == validator.IsPasswordValid(app, form.Password) {
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 	}
 
-	encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passwordSettings.BcryptCost})
+	encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 
 	ep, err := encryptor.Digest(form.Password)
 	if err != nil {
@@ -448,12 +437,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
 	}
 
-	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if err != nil {
+	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if ipc != nil {
 		m.Logger.Warn(
 			"Unable to get identity provider",
 			zap.Object("SignUpForm", form),
-			zap.Error(err),
 		)
 	}
 

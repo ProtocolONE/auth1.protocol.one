@@ -1,4 +1,4 @@
-package models
+package service
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"

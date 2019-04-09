@@ -11,10 +11,8 @@ func init() {
 		func(db *mgo.Database) error {
 			db.C(database.TableUserIdentity).DropIndexName("Idx-AppId-ExternalId-Connection")
 			db.C(database.TableAppIdentityProvider).DropIndexName("Idx-AppId-Type-Name")
-			db.C(database.TableAppPasswordSettings).DropIndexName("Idx-AppId")
 
 			db.C(database.TableAppIdentityProvider).RemoveAll(nil)
-			db.C(database.TableAppPasswordSettings).RemoveAll(nil)
 
 			return nil
 		},

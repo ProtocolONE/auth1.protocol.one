@@ -2,6 +2,8 @@ package manager
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
@@ -11,18 +13,18 @@ import (
 type ChangePasswordManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
-	r                       models.InternalRegistry
+	r                       service.InternalRegistry
 	userIdentityService     *models.UserIdentityService
-	identityProviderService *models.AppIdentityProviderService
+	identityProviderService *service.AppIdentityProviderService
 }
 
-func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, ir models.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, ir service.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
 		Logger:                  l,
 		redis:                   r,
 		r:                       ir,
 		userIdentityService:     models.NewUserIdentityService(db),
-		identityProviderService: models.NewAppIdentityProviderService(db),
+		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 
 	return m
@@ -36,12 +38,11 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if err != nil {
+	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if ipc != nil {
 		m.Logger.Warn(
 			"Unable to get identity provider",
 			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
 		)
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
@@ -60,15 +61,9 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return nil
 	}
 
-	ps, err := m.r.ApplicationService().GetPasswordSettings(app)
-	if err != nil {
-		m.Logger.Warn("Unable to load password settings", zap.Error(err))
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
-	}
-
 	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.TokenLength,
-		TTL:    ps.TokenTTL,
+		Length: app.PasswordSettings.TokenLength,
+		TTL:    app.PasswordSettings.TokenTTL,
 	}
 	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email}, ottSettings)
 	if err != nil {
@@ -100,13 +95,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
 	}
 
-	ps, err := m.r.ApplicationService().GetPasswordSettings(app)
-	if err != nil {
-		m.Logger.Warn("Unable to load password settings", zap.Error(err))
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
-	}
-
-	if false == ps.IsValid(form.Password) {
+	if false == validator.IsPasswordValid(app, form.Password) {
 		return &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
 	}
 
@@ -120,12 +109,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
 	}
 
-	ipc, err := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if err != nil {
+	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if ipc != nil {
 		m.Logger.Warn(
 			"Unable to get identity provider",
 			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
 		)
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
@@ -141,11 +129,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
 	}
 
-	if ui == nil || err != nil {
+	if ui == nil || ui.ID == "" {
 		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
 	}
 
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: ps.BcryptCost})
+	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 	ui.Credential, err = be.Digest(form.Password)
 
 	if err != nil {
