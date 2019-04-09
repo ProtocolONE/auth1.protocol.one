@@ -166,6 +166,7 @@ func (s *Server) setupRoutes() error {
 		route.InitMFA,
 		route.InitManage,
 		route.InitOauth2,
+		route.InitHealth,
 	}
 
 	for _, r := range routes {
