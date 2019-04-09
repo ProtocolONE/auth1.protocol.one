@@ -60,7 +60,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: {{$deployment.port}}
+            port: {{ $deployment.port }}
           initialDelaySeconds: 2
           periodSeconds: 2
           successThreshold: 1
@@ -68,7 +68,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: {{$deployment.port}}
+            port: {{ $deployment.port }}
           initialDelaySeconds: 5
           timeoutSeconds: 1
           failureThreshold: 2
