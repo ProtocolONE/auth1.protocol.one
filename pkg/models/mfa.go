@@ -11,8 +11,6 @@ type MfaService struct {
 	db *mgo.Database
 }
 
-type MFARequiredError CommonError
-
 type MfaAuthenticator struct {
 	ID            bson.ObjectId `json:"id"`
 	Secret        string        `json:"secret"`
@@ -125,22 +123,6 @@ func (m *MfaChallengeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Token", m.Token)
 
 	return nil
-}
-
-func (m MFARequiredError) Error() string {
-	return m.Message
-}
-
-func (m *MFARequiredError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *MFARequiredError) GetCode() string {
-	return m.Code
-}
-
-func (m *MFARequiredError) GetMessage() string {
-	return m.Message
 }
 
 func NewMfaService(dbHandler *mgo.Session) *MfaService {

@@ -3,6 +3,7 @@ package helper
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -11,13 +12,20 @@ func GetSingleError(err error) validator.FieldError {
 	return validationErrors[0]
 }
 
-func NewErrorResponse(ctx echo.Context, httpCode int, errCode string, errMessage string) error {
-	return ctx.JSON(httpCode, CreateError(errCode, errMessage))
-}
+func SaveErrorLog(ctx echo.Context, logger *zap.Logger, err *models.GeneralError) {
+	post, _ := ctx.FormParams()
+	logger.Error(
+		err.Error.Error(),
+		zap.Any("GET", ctx.QueryParams()),
+		zap.Any("POST", post),
+		zap.Error(err.Error),
+	)
 
-func CreateError(errCode string, errMessage string) *models.CommonError {
-	return &models.CommonError{
-		Code:    errCode,
-		Message: errMessage,
+	if err.Code != "" {
+		err.Code = "common"
+	}
+
+	if err.Message != "" {
+		err.Message = models.ErrorUnknownError
 	}
 }

@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-type CaptchaRequiredError CommonError
-
 type UserService struct {
 	db *mgo.Database
 }
@@ -133,22 +131,6 @@ func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Password", "[HIDDEN]")
 
 	return nil
-}
-
-func (m CaptchaRequiredError) Error() string {
-	return m.Message
-}
-
-func (m *CaptchaRequiredError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *CaptchaRequiredError) GetCode() string {
-	return m.Code
-}
-
-func (m *CaptchaRequiredError) GetMessage() string {
-	return m.Message
 }
 
 func NewUserService(dbHandler *mgo.Session) *UserService {

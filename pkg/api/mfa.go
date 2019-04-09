@@ -7,6 +7,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -34,40 +35,32 @@ func mfaChallenge(ctx echo.Context) error {
 	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"MFAChallenge bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Error:   errors.Wrap(err, "MFAChallenge bind form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"MFAChallenge validate form failed",
-			zap.Object("MfaChallengeForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+			Error:   errors.Wrap(err, "MFAChallenge validate form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
-	e := m.MFAChallenge(form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	err := m.MFAChallenge(form)
+	if err != nil {
+		helper.SaveErrorLog(ctx, m.Logger, err)
+		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
-	return ctx.HTML(http.StatusNoContent, ``)
+	return ctx.HTML(http.StatusNoContent, "")
 }
 
 func mfaVerify(ctx echo.Context) error {
@@ -75,37 +68,29 @@ func mfaVerify(ctx echo.Context) error {
 	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"MFAVerify bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Error:   errors.Wrap(err, "MFAVerify bind form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"MFAVerify validate form failed",
-			zap.Object("MfaVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+			Error:   errors.Wrap(err, "MFAVerify validate form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	token, e := m.MFAVerify(ctx, form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	token, err := m.MFAVerify(ctx, form)
+	if err != nil {
+		helper.SaveErrorLog(ctx, m.Logger, err)
+		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -116,37 +101,29 @@ func mfaAdd(ctx echo.Context) error {
 	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"MFAAdd bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Error:   errors.Wrap(err, "MFAAdd bind form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"MFAAdd validate form failed",
-			zap.Object("MfaAddForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+			Error:   errors.Wrap(err, "MFAAdd validate form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	authenticator, e := m.MFAAdd(ctx, form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	authenticator, err := m.MFAAdd(ctx, form)
+	if err != nil {
+		helper.SaveErrorLog(ctx, m.Logger, err)
+		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
 	return ctx.JSON(http.StatusOK, authenticator)

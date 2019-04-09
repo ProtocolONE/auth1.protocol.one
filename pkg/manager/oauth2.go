@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"time"
 )
@@ -53,15 +54,10 @@ func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r serv
 	return m
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, string, models.ErrorInterface) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, string, *models.GeneralError) {
 	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get client from login request",
-			zap.Object("Oauth2LoginForm", form),
-			zap.Error(err),
-		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+		return "", nil, "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Error: errors.Wrap(err, "Unable to get client from login request")}
 	}
 
 	if req.Subject == "" {
@@ -70,72 +66,39 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get session")}
 	}
 	sess.Values[loginRememberKey] = req.Skip == true
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.Logger.Error(
-			"Error saving session",
-			zap.Error(err),
-		)
-		return "", nil, "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 	}
 
 	if req.Skip == true {
 		reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
 		if err != nil {
-			m.Logger.Error(
-				"Unable to accept login challenge",
-				zap.Object("Oauth2LoginForm", form),
-				zap.Error(err),
-			)
-			return req.Client.ClientId, nil, "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+			return req.Client.ClientId, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Unable to accept login challenge")}
 		}
 
 		return req.Client.ClientId, nil, reqACL.RedirectTo, nil
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
-	if err != nil {
-		m.Logger.Warn("Unable to load application", zap.Error(err))
-		return req.Client.ClientId, nil, "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
-	}
-
 	user, err := m.userService.Get(bson.ObjectIdHex(req.Subject))
 	if err != nil {
-		m.Logger.Warn(
-			"Unable to get user identity",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
+		return req.Client.ClientId, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get user")}
 	}
 
 	return req.Client.ClientId, user, "", nil
 }
 
-func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, models.ErrorInterface) {
+func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, *models.GeneralError) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get session")}
 	}
 
 	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get client from login request",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Error: errors.Wrap(err, "Unable to get client from login request")}
 	}
 
 	userId := req.Subject
@@ -143,82 +106,43 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	if req.Subject == "" || req.Subject != form.PreviousLogin {
 		if form.Token != "" {
 			if err := m.r.OneTimeTokenService().Use(form.Token, userIdentity); err != nil {
-				m.Logger.Error(
-					"Unable to use one time token",
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
-				)
-				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+				return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Error: errors.Wrap(err, "Unable to use OneTimeToken")}
 			}
 		} else {
 			app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
 			if err != nil {
-				m.Logger.Warn("Unable to load application", zap.Error(err))
-				return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+				return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
 			}
 
 			ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-			if ipc != nil {
-				m.Logger.Warn(
-					"Unable to get identity provider",
-					zap.Object("Oauth2LoginSubmitForm", form),
-				)
+			if ipc == nil {
+				return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.New("Unable to get identity provider")}
 			}
 
 			userIdentity, err = m.userIdentityService.Get(app, ipc, form.Email)
 			if err != nil {
-				m.Logger.Warn(
-					"Unable to get user identity",
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Object("Application", app),
-					zap.Error(err),
-				)
-			}
-
-			if userIdentity == nil || err != nil {
-				return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+				return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user identity")}
 			}
 
 			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 			err = encryptor.Compare(userIdentity.Credential, form.Password)
 			if err != nil {
-				m.Logger.Error(
-					"Unable to crypt password for application",
-					zap.String("Password", form.Password),
-					zap.Object("Oauth2LoginSubmitForm", form),
-					zap.Error(err),
-				)
-				return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+				return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Unable to crypt password")}
 			}
 		}
 
 		user, err := m.userService.Get(userIdentity.UserID)
 		if err != nil {
-			m.Logger.Error(
-				"Unable to get user",
-				zap.Object("UserIdentity", userIdentity),
-				zap.Error(err),
-			)
-			return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+			return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user")}
 		}
 
 		user.LoginsCount = user.LoginsCount + 1
 		if err := m.userService.Update(user); err != nil {
-			m.Logger.Error(
-				"Unable to update user",
-				zap.Object("User", user),
-				zap.Error(err),
-			)
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorUpdateUser}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUpdateUser, Error: errors.Wrap(err, "Unable to update user")}
 		}
 
 		if err := m.authLogService.Add(ctx, user, ""); err != nil {
-			m.Logger.Error(
-				"Unable to add auth log for user",
-				zap.Object("User", user),
-				zap.Error(err),
-			)
-			return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Error: errors.Wrap(err, "Unable to add auth log")}
 		}
 		userId = user.ID.Hex()
 	} else {
@@ -227,11 +151,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 	sess.Values[loginRememberKey] = form.Remember
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.Logger.Error(
-			"Error saving session",
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 	}
 
 	// TODO: Add MFA cases
@@ -245,50 +165,30 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		},
 	)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to accept login challenge",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Unable to accept login challenge")}
 	}
 
 	return reqACL.RedirectTo, nil
 }
 
-func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (string, error) {
+func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (string, *models.GeneralError) {
 	scopes, err := m.GetScopes()
 	// TODO: What scope should be requested to send a person to accept them?
 	// For now, we automatically agree with those that the user came with.
 
 	reqGCR, _, err := m.r.HydraSDK().GetConsentRequest(form.Challenge)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get consent challenge",
-			zap.Object("Oauth2ConsentForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get consent challenge")}
 	}
 
 	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Subject))
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get user",
-			zap.String("Subject", reqGCR.Subject),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user")}
 	}
 
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get session")}
 	}
 
 	req := swagger.AcceptConsentRequest{GrantScope: scopes}
@@ -314,64 +214,30 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 
 	reqACR, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, req)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to accept consent challenge",
-			zap.Object("Oauth2ConsentForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to accept consent challenge")}
 	}
 
 	sess.Values[clientIdSessionKey] = reqGCR.Client.ClientId
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.Logger.Error(
-			"Error saving session",
-			zap.Error(err),
-		)
-		return "", err
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 	}
 
 	return reqACR.RedirectTo, nil
 }
 
-func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2ConsentSubmitForm) (url string, err error) {
-	_, err = m.GetScopes()
-	if err != nil {
-		return "", err
-	}
-
-	req, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, swagger.AcceptConsentRequest{GrantScope: form.Scope})
-	if err != nil {
-		return "", err
-	}
-
-	return req.RedirectTo, nil
-}
-
-func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, error) {
+func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, *models.GeneralError) {
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.Logger.Warn("Unable to load application", zap.Error(err))
-		return nil, &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return nil, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
 	}
 
 	if app.AuthSecret != form.Secret {
-		m.Logger.Error(
-			"Invalid secret key",
-			zap.Object("Oauth2IntrospectForm", form),
-			zap.Error(err),
-		)
-		return nil, &models.CommonError{Code: `secret`, Message: models.ErrorUnknownError}
+		return nil, &models.GeneralError{Code: "secret", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Invalid secret key")}
 	}
 
 	client, _, err := m.r.HydraSDK().AdminApi.IntrospectOAuth2Token(form.Token, "")
 	if err != nil {
-		m.Logger.Error(
-			"Unable to introspect token",
-			zap.Object("Oauth2IntrospectForm", form),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to introspect token")}
 	}
 
 	return &models.Oauth2TokenIntrospection{client}, nil
@@ -386,75 +252,45 @@ func (m *OauthManager) GetScopes() (scopes []string, err error) {
 	return scopes, nil
 }
 
-func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, models.ErrorInterface) {
+func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, *models.GeneralError) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get session")}
 	}
 
 	sess.Values[loginRememberKey] = form.Remember
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.Logger.Error(
-			"Error saving session",
-			zap.Error(err),
-		)
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 	}
 
 	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get client from login request",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorLoginChallenge}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Error: errors.Wrap(err, "Unable to get client from login request")}
 	}
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
 	if err != nil {
-		m.Logger.Warn("Unable to load application", zap.Error(err))
-		return "", &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
 	}
 	if false == validator.IsPasswordValid(app, form.Password) {
-		return "", &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
+		return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.New(models.ErrorPasswordIncorrect)}
 	}
 
 	encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 
 	ep, err := encryptor.Digest(form.Password)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to crypt password",
-			zap.String("Password", form.Password),
-			zap.Object("SignUpForm", form),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
+		return "", &models.GeneralError{Code: "password", Message: models.ErrorCryptPassword, Error: errors.Wrap(err, "Unable to crypt password")}
 	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if ipc != nil {
-		m.Logger.Warn(
-			"Unable to get identity provider",
-			zap.Object("SignUpForm", form),
-		)
+	if ipc == nil {
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorProviderIdIncorrect, Error: errors.Wrap(err, "Unable to get identity provider")}
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
 	if err != nil && err != mgo.ErrNotFound {
-		m.Logger.Error(
-			"Unable to get user with identity for application",
-			zap.Object("SignUpForm", form),
-			zap.Error(err),
-		)
-	}
-	if err != nil && err != mgo.ErrNotFound {
-		return "", &models.CommonError{Code: `email`, Message: models.ErrorLoginIncorrect}
+		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user with identity for application")}
 	}
 
 	user := &models.User{
@@ -471,13 +307,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	if err := m.userService.Create(user); err != nil {
-		m.Logger.Error(
-			"Unable to create user with identity for application",
-			zap.Object("SignUpForm", form),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUser}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Error: errors.Wrap(err, "Unable to create user")}
 	}
 
 	userIdentity = &models.UserIdentity{
@@ -492,33 +322,16 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		UpdatedAt:          time.Now(),
 	}
 	if err := m.userIdentityService.Create(userIdentity); err != nil {
-		m.Logger.Error(
-			"Unable to create user identity for application",
-			zap.Object("SignUpForm", form),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorCreateUserIdentity}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Error: errors.Wrap(err, "Unable to create user identity")}
 	}
 
 	if err := m.authLogService.Add(ctx, user, ""); err != nil {
-		m.Logger.Error(
-			"Unable to add auth log for user",
-			zap.Object("User", user),
-			zap.Error(err),
-		)
-
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorAddAuthLog}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Error: errors.Wrap(err, "Unable to add auth log")}
 	}
 
 	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
 	if err != nil {
-		m.Logger.Error(
-			"Unable to accept login challenge",
-			zap.Object("Oauth2LoginSubmitForm", form),
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorPasswordIncorrect}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to accept login challenge")}
 	}
 
 	return reqACL.RedirectTo, nil
@@ -586,14 +399,10 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 	}
 }
 
-func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, error) {
+func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, *models.GeneralError) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
-		return "", &models.CommonError{Code: `common`, Message: models.ErrorUnknownError}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get session")}
 	}
 
 	logoutRedirectUri := sess.Values[logoutSessionKey]
@@ -603,22 +412,14 @@ func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (
 	if logoutRedirectUri == "" || logoutRedirectUri == nil {
 		sess.Values[logoutSessionKey] = form.RedirectUri
 		if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-			m.Logger.Error(
-				"Error saving session",
-				zap.Error(err),
-			)
-			return "", err
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 		}
 		return logoutHydraUrl, nil
 	}
 
 	sess.Values[logoutSessionKey] = ""
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		m.Logger.Error(
-			"Error saving sessionConfig",
-			zap.Error(err),
-		)
-		return "", err
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Error saving session")}
 	}
 
 	if logoutRedirectUri != "auth1" {

@@ -6,6 +6,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -31,37 +32,29 @@ func passwordLessStart(ctx echo.Context) error {
 	m := ctx.Get("passwordless_manager").(*manager.PasswordLessManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"PasswordLessStart bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Error:   errors.Wrap(err, "PasswordLessStart bind form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"PasswordLessStart validate form failed",
-			zap.Object("PasswordLessStartForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+			Error:   errors.Wrap(err, "PasswordLessStart validate form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	token, e := m.PasswordLessStart(form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	token, err := m.PasswordLessStart(form)
+	if err != nil {
+		helper.SaveErrorLog(ctx, m.Logger, err)
+		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -72,37 +65,29 @@ func passwordLessVerify(ctx echo.Context) error {
 	m := ctx.Get("passwordless_manager").(*manager.PasswordLessManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"PasswordLessVerify bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Error:   errors.Wrap(err, "PasswordLessVerify bind form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"PasswordLessVerify validate form failed",
-			zap.Object("PasswordLessVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+			Error:   errors.Wrap(err, "PasswordLessVerify validate form failed"),
+		}
+		helper.SaveErrorLog(ctx, m.Logger, e)
+		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	token, e := m.PasswordLessVerify(form)
-	if e != nil {
-		return helper.NewErrorResponse(ctx, http.StatusBadRequest, e.GetCode(), e.GetMessage())
+	token, err := m.PasswordLessVerify(form)
+	if err != nil {
+		helper.SaveErrorLog(ctx, m.Logger, err)
+		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
 	return ctx.JSON(http.StatusOK, token)
