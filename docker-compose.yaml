@@ -62,7 +62,7 @@ services:
     container_name: auth1-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27018:27017"
     networks:
       - subnet
     volumes:
@@ -75,7 +75,7 @@ services:
     networks:
       - subnet
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
       - POSTGRES_USER=hydra
       - POSTGRES_PASSWORD=secret
