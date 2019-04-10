@@ -35,7 +35,7 @@ type ServerConfig struct {
 	MgoSession     *mgo.Session
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
-	Mailer         manager.Mailer
+	Mailer         *config.Mailer
 }
 
 type Server struct {
@@ -57,6 +57,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		HydraConfig: c.HydraConfig,
 		MfaService:  c.MfaService,
 		RedisClient: c.RedisClient,
+		Mailer:      service.NewMailer(c.Mailer),
 	}
 	server := &Server{
 		Echo:          echo.New(),
@@ -101,7 +102,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 				),
 			)
 			ctx.Set("logger", logger)
-			ctx.Set("mailer", c.Mailer)
 
 			return next(ctx)
 		}

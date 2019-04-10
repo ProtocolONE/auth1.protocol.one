@@ -24,6 +24,12 @@ var (
 	AppIdentityProviderNameTwitch   = "twitch"
 	AppIdentityProviderNameGoogle   = "google"
 	AppIdentityProviderNameVk       = "vk"
+
+	AppIdentityProviderDisplayNameDefault  = "Initial connection"
+	AppIdentityProviderDisplayNameFacebook = "Facebook"
+	AppIdentityProviderDisplayNameTwitch   = "Twitch"
+	AppIdentityProviderDisplayNameGoogle   = "Google"
+	AppIdentityProviderDisplayNameVk       = "VKontakte"
 )
 
 type Application struct {

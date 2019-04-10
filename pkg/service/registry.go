@@ -14,4 +14,5 @@ type InternalRegistry interface {
 	MfaService() proto.MfaService
 	ApplicationService() *ApplicationService
 	OneTimeTokenService() *OneTimeTokenService
+	Mailer() Mailer
 }

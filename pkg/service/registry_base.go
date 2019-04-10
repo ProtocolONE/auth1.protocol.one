@@ -19,6 +19,7 @@ type RegistryBase struct {
 	watcher persist.Watcher
 	hydra   *hydra.CodeGenSDK
 	mfa     proto.MfaService
+	mailer  Mailer
 }
 
 type RegistryConfig struct {
@@ -26,6 +27,7 @@ type RegistryConfig struct {
 	RedisClient *redis.Client
 	MfaService  proto.MfaService
 	HydraConfig *config.Hydra
+	Mailer      Mailer
 }
 
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
@@ -39,6 +41,7 @@ func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 		redis:   config.RedisClient,
 		hydra:   h,
 		mfa:     config.MfaService,
+		mailer:  config.Mailer,
 	}
 }
 
@@ -60,6 +63,10 @@ func (r *RegistryBase) HydraSDK() *hydra.CodeGenSDK {
 
 func (r *RegistryBase) MfaService() proto.MfaService {
 	return r.mfa
+}
+
+func (r *RegistryBase) Mailer() Mailer {
+	return r.mailer
 }
 
 func (r *RegistryBase) ApplicationService() *ApplicationService {

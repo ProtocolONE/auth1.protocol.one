@@ -54,14 +54,19 @@ func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r serv
 	return m
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []models.AppIdentityProvider, string, *models.GeneralError) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError) {
 	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
 		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Error: errors.Wrap(err, "Unable to get client from login request")}
 	}
 
-	ipc, err := m.identityProviderService.FindByType(bson.ObjectIdHex(req.Client.ClientId), models.AppIdentityProviderTypeSocial)
-	if err != nil && err != mgo.ErrNotFound {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
+	if err != nil {
+		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
+	}
+
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	if ipc == nil {
 		return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get identity providers")}
 	}
 
@@ -384,7 +389,6 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 	jwtv := jwtverifier.NewJwtVerifier(settings)
 	tokens, err := jwtv.Exchange(ctx.Request().Context(), form.Code)
 	if err != nil {
-		m.Logger.Error("Unable exchange token", zap.Error(err))
 		return &models.Oauth2CallBackResponse{
 			Success:      false,
 			ErrorMessage: `unable_exchange_code`,

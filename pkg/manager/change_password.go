@@ -14,7 +14,6 @@ import (
 type ChangePasswordManager struct {
 	Logger                  *zap.Logger
 	redis                   *redis.Client
-	mailer                  Mailer
 	r                       service.InternalRegistry
 	userIdentityService     *models.UserIdentityService
 	identityProviderService *service.AppIdentityProviderService
@@ -25,7 +24,6 @@ func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, i
 		Logger:                  l,
 		redis:                   r,
 		r:                       ir,
-		mailer:                  mailer,
 		userIdentityService:     models.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 	}
@@ -63,7 +61,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Error: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
-	if err := m.mailer.Send(form.Email, "Change password token", fmt.Sprintf("Token: %s", token.Token)); err != nil {
+	if err := m.r.Mailer().Send(form.Email, "Change password token", fmt.Sprintf("Token: %s", token.Token)); err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to send mail with change password token")}
 	}
 
