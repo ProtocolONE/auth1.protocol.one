@@ -15,18 +15,6 @@ func init() {
 			var err error
 			var apps []*models.Application
 
-			err = db.C(database.TableAppIdentityProvider).EnsureIndex(mgo.Index{
-				Name:       "Idx-AppId-Type-Name",
-				Key:        []string{"app_id", "type", "name"},
-				Unique:     true,
-				DropDups:   true,
-				Background: true,
-				Sparse:     false,
-			})
-			if err != nil {
-				return errors.Wrapf(err, "Ensure application identity provider collection index `Idx-AppId-Type-Name` failed")
-			}
-
 			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
 				return errors.Wrapf(err, "Unable to get applications")
 			}
@@ -38,22 +26,44 @@ func init() {
 			}
 
 			for _, app := range apps {
-				ipc.ApplicationID = app.ID
-				ipc.ID = bson.NewObjectId()
-				if err = db.C(database.TableAppIdentityProvider).Insert(ipc); err != nil {
-					return errors.Wrapf(err, "Unable to add default application identity provider")
+				hasDefaultProvider := false
+				for _, ip := range app.IdentityProviders {
+					if ip.Name == models.AppIdentityProviderNameDefault && ip.Type == models.AppIdentityProviderTypePassword {
+						hasDefaultProvider = true
+					}
+				}
+
+				if hasDefaultProvider == false {
+					ipc.ApplicationID = app.ID
+					ipc.ID = bson.NewObjectId()
+					app.IdentityProviders = append(app.IdentityProviders, ipc)
+
+					if err = db.C(database.TableApplication).UpdateId(app.ID, app); err != nil {
+						return errors.Wrapf(err, "Unable to update app with identity provider")
+					}
 				}
 			}
 
 			return nil
 		},
 		func(db *mgo.Database) error {
-			if err := db.C(database.TableAppIdentityProvider).DropIndexName("Idx-AppId-Type-Name"); err != nil {
-				return errors.Wrapf(err, "Drop application identity provider collection `Idx-AppId-Type-Name` index failed")
+			var err error
+			var apps []*models.Application
+
+			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
+				return errors.Wrapf(err, "Unable to get applications")
 			}
 
-			if _, err := db.C(database.TableAppIdentityProvider).RemoveAll(nil); err != nil {
-				return errors.Wrapf(err, "Unable to remove application identity providers")
+			for _, app := range apps {
+				for i, ip := range app.IdentityProviders {
+					if ip.Name == models.AppIdentityProviderNameDefault && ip.Type == models.AppIdentityProviderTypePassword {
+						app.IdentityProviders = append(app.IdentityProviders[:i], app.IdentityProviders[i+1:]...)
+
+						if err = db.C(database.TableApplication).UpdateId(app.ID, app); err != nil {
+							return errors.Wrapf(err, "Unable to remove from app the identity provider")
+						}
+					}
+				}
 			}
 
 			return nil

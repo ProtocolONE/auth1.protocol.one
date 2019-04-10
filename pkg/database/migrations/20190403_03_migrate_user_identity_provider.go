@@ -13,21 +13,21 @@ func init() {
 	err := migrate.Register(
 		func(db *mgo.Database) error {
 			var err error
-			var providers []*models.AppIdentityProvider
+			var apps []*models.Application
 
-			err = db.C(database.TableAppIdentityProvider).Find(bson.M{
-				"type": models.AppIdentityProviderTypePassword,
-				"name": models.AppIdentityProviderNameDefault,
-			}).All(&providers)
-			if err != nil {
-				return errors.Wrapf(err, "Unable to get providers")
+			if err = db.C(database.TableApplication).Find(nil).All(&apps); err != nil {
+				return errors.Wrapf(err, "Unable to get applications")
 			}
 
-			for _, provider := range providers {
-				selector := bson.M{"app_id": provider.ApplicationID}
-				update := bson.M{"$set": bson.M{"identity_provider_id": provider.ID}}
-				if _, err := db.C(database.TableUserIdentity).UpdateAll(selector, update); err != nil {
-					return errors.Wrapf(err, "Unable to update users")
+			for _, app := range apps {
+				for _, ip := range app.IdentityProviders {
+					if ip.Name == models.AppIdentityProviderNameDefault && ip.Type == models.AppIdentityProviderTypePassword {
+						selector := bson.M{"app_id": ip.ApplicationID}
+						update := bson.M{"$set": bson.M{"identity_provider_id": ip.ID}}
+						if _, err := db.C(database.TableUserIdentity).UpdateAll(selector, update); err != nil {
+							return errors.Wrapf(err, "Unable to update users")
+						}
+					}
 				}
 			}
 
