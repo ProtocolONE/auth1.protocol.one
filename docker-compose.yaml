@@ -61,6 +61,8 @@ services:
     image: mongo:4.1.3
     container_name: auth1-mongo
     restart: unless-stopped
+    ports:
+      - "27017:27017"
     networks:
       - subnet
     volumes:

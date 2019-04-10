@@ -73,6 +73,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		MgoSession:     db,
 		SessionStore:   store,
 		RedisClient:    redisClient,
+		Mailer:         manager.NewMailer(cfg.Mailer),
 	}
 
 	server, err := api.NewServer(&serverConfig)

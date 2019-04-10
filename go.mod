@@ -62,6 +62,7 @@ require (
 	google.golang.org/appengine v1.3.0 // indirect
 	google.golang.org/genproto v0.0.0-20181202183823-bd91e49a0898 // indirect
 	gopkg.in/go-playground/validator.v9 v9.26.0
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/yaml.v2 v2.2.2
 	honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3 // indirect

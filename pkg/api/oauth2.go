@@ -49,7 +49,7 @@ func oauthLogin(ctx echo.Context) error {
 	}
 
 	previousLogin := ""
-	appID, user, url, err := m.CheckAuth(ctx, form)
+	appID, user, providers, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
@@ -61,11 +61,22 @@ func oauthLogin(ctx echo.Context) error {
 		previousLogin = user.Email
 	}
 
+	socProviders := map[int]interface{}{}
+	if len(providers) > 0 {
+		for i, provider := range providers {
+			socProviders[i] = map[string]interface{}{
+				"Name":        provider.Name,
+				"DisplayName": provider.DisplayName,
+			}
+		}
+	}
+
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
 		"Challenge":     form.Challenge,
 		"ClientID":      appID,
 		"PreviousLogin": previousLogin,
+		"SocProviders":  socProviders,
 	})
 }
 

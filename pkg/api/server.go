@@ -35,6 +35,7 @@ type ServerConfig struct {
 	MgoSession     *mgo.Session
 	SessionStore   *redistore.RediStore
 	RedisClient    *redis.Client
+	Mailer         manager.Mailer
 }
 
 type Server struct {
@@ -100,6 +101,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 				),
 			)
 			ctx.Set("logger", logger)
+			ctx.Set("mailer", c.Mailer)
 
 			return next(ctx)
 		}
