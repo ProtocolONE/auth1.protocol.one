@@ -80,7 +80,7 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Oauth submit bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
 		e := &models.GeneralError{
@@ -89,13 +89,13 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Oauth submit validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
-		return ctx.JSON(err.HttpCode, err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -135,13 +135,13 @@ func oauthIntrospect(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Introspect bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	token, err := m.Introspect(ctx, form)
 	if err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
-		return ctx.JSON(http.StatusBadRequest, err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -158,7 +158,7 @@ func oauthSignUp(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "SignUp bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.SignUp(ctx, form)

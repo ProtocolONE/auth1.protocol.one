@@ -127,7 +127,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 			err = encryptor.Compare(userIdentity.Credential, form.Password)
 			if err != nil {
-				return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Unable to crypt password")}
+				return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Bad user password")}
 			}
 		}
 

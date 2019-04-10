@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
+	"net/http"
 )
 
 func GetSingleError(err error) validator.FieldError {
@@ -28,4 +29,17 @@ func SaveErrorLog(ctx echo.Context, logger *zap.Logger, err *models.GeneralError
 	if err.Message != "" {
 		err.Message = models.ErrorUnknownError
 	}
+}
+
+func JsonError(ctx echo.Context, err *models.GeneralError) error {
+	if err.HttpCode == 0 {
+		err.HttpCode = http.StatusBadRequest
+	}
+	if err.Message == "" {
+		err.Message = models.ErrorUnknownError
+	}
+	if err.Code == "" {
+		err.Code = "common"
+	}
+	return ctx.JSON(err.HttpCode, err)
 }

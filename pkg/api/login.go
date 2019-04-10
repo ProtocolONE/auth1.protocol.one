@@ -122,7 +122,7 @@ func authorizeLink(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "AuthorizeLink bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -132,13 +132,13 @@ func authorizeLink(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "AuthorizeLink validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.AuthorizeLink(ctx, form)
 	if err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
-		return ctx.JSON(http.StatusBadRequest, err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]string{"url": url})

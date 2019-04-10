@@ -52,7 +52,7 @@ func createSpace(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "CreateSpace bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -62,7 +62,7 @@ func createSpace(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "CreateSpace validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	s, err := m.CreateSpace(ctx, form)
@@ -97,7 +97,7 @@ func updateSpace(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "UpdateSpace bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -107,7 +107,7 @@ func updateSpace(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "UpdateSpace validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	space, err := m.UpdateSpace(ctx, id, form)
@@ -129,7 +129,7 @@ func createApplication(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "CreateApplication bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
@@ -139,7 +139,7 @@ func createApplication(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "CreateApplication validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.CreateApplication(ctx, applicationForm)
@@ -175,7 +175,7 @@ func updateApplication(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "UpdateApplication bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
@@ -185,7 +185,7 @@ func updateApplication(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "UpdateApplication validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.UpdateApplication(ctx, id, applicationForm)
@@ -207,7 +207,7 @@ func addMFA(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "AddMFA bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(mfaApplicationForm); err != nil {
@@ -217,7 +217,7 @@ func addMFA(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "AddMFA validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.AddMFA(ctx, mfaApplicationForm)
@@ -240,7 +240,7 @@ func setPasswordSettings(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "PasswordSettings bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -250,7 +250,7 @@ func setPasswordSettings(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "PasswordSettings validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.SetPasswordSettings(ctx, id, form); err != nil {
@@ -283,7 +283,7 @@ func addIdentityProvider(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "AppIdentityProvider bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -293,7 +293,7 @@ func addIdentityProvider(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Add AppIdentityProvider validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
@@ -345,7 +345,7 @@ func updateIdentityProvider(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Update AppIdentityProvider bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -355,7 +355,7 @@ func updateIdentityProvider(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "Update AppIdentityProvider validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {

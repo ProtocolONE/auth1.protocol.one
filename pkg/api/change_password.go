@@ -41,7 +41,7 @@ func changePasswordStart(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "ChangePasswordStart bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -51,12 +51,12 @@ func changePasswordStart(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "ChangePasswordStart validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.ChangePasswordStart(form); err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
-		return ctx.JSON(http.StatusBadRequest, err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.NoContent(http.StatusOK)
@@ -73,7 +73,7 @@ func changePasswordVerify(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "ChangePasswordVerify bind form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
@@ -83,12 +83,12 @@ func changePasswordVerify(ctx echo.Context) error {
 			Error:   errors.Wrap(err, "ChangePasswordVerify validate form failed"),
 		}
 		helper.SaveErrorLog(ctx, m.Logger, e)
-		return ctx.JSON(http.StatusBadRequest, e)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.ChangePasswordVerify(form); err != nil {
 		helper.SaveErrorLog(ctx, m.Logger, err)
-		return ctx.JSON(http.StatusBadRequest, err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.NoContent(http.StatusOK)
