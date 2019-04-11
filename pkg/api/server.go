@@ -146,6 +146,7 @@ func (s *Server) Start() error {
 	select {
 	// wait on kill signal
 	case <-shutdown:
+		zap.L().Fatal("Server is shutting down")
 	}
 
 	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
