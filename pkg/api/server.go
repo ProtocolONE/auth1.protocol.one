@@ -72,7 +72,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
 	server.Echo.Renderer = t
-	server.Echo.Use(ZapLogger(zap.L()))
 	server.Echo.Use(middleware.Recover())
 	// TODO: Validate origins for each application by settings
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -106,6 +105,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 			return next(ctx)
 		}
 	})
+	server.Echo.Use(ZapLogger(zap.L()))
 
 	registerCustomValidator(server.Echo)
 

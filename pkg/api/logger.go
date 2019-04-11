@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"io/ioutil"
 	"strconv"
 	"time"
 )
@@ -13,10 +15,11 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 
-			logger := c.Get("logger").(*zap.Logger)
-			if logger != nil {
-				log = logger
+			reqBody := []byte{}
+			if c.Request().Body != nil { // Read
+				reqBody, _ = ioutil.ReadAll(c.Request().Body)
 			}
+			c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
 
 			err := next(c)
 			if err != nil {
@@ -24,7 +27,6 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 			}
 
 			stop := time.Now()
-
 			req := c.Request()
 			res := c.Response()
 
@@ -43,15 +45,10 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 				cl = "0"
 			}
 
+			status := res.Status
 			fields := []zapcore.Field{
-				zap.String("time_unix", strconv.FormatInt(time.Now().Unix(), 10)),
-				zap.String("time_unix_nano", strconv.FormatInt(time.Now().UnixNano(), 10)),
-				zap.String("time_rfc3339", time.Now().Format(time.RFC3339)),
-				zap.String("time_rfc3339_nano", time.Now().Format(time.RFC3339Nano)),
-				zap.String("latency", strconv.FormatInt(int64(stop.Sub(start)), 10)),
-				zap.String("latency_human", stop.Sub(start).String()),
-				zap.String("id", id),
-				zap.Int("status", res.Status),
+				zap.Int("status", status),
+				zap.String("request-id", id),
 				zap.String("method", req.Method),
 				zap.String("uri", req.RequestURI),
 				zap.String("host", req.Host),
@@ -59,17 +56,29 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 				zap.String("remote_ip", c.RealIP()),
 				zap.String("referer", req.Referer()),
 				zap.String("user_agent", req.UserAgent()),
+				zap.String("time_unix", strconv.FormatInt(time.Now().Unix(), 10)),
+				zap.String("time_unix_nano", strconv.FormatInt(time.Now().UnixNano(), 10)),
+				zap.String("time_rfc3339", time.Now().Format(time.RFC3339)),
+				zap.String("time_rfc3339_nano", time.Now().Format(time.RFC3339Nano)),
+				zap.String("latency", strconv.FormatInt(int64(stop.Sub(start)), 10)),
+				zap.String("latency_human", stop.Sub(start).String()),
 				zap.String("bytes_in", cl),
 				zap.String("bytes_out", strconv.FormatInt(res.Size, 10)),
 			}
 
-			n := res.Status
+			logger := c.Get("logger")
+			if logger != nil {
+				log = logger.(*zap.Logger)
+			}
+
 			switch {
-			case n >= 500:
+			case status >= 500:
+				fields = append(fields, zap.Any("request", reqBody))
 				log.Error("Server error", fields...)
-			case n >= 400:
+			case status >= 400:
+				fields = append(fields, zap.Any("request", reqBody))
 				log.Warn("Client error", fields...)
-			case n >= 300:
+			case status >= 300:
 				log.Info("Redirection", fields...)
 			default:
 				log.Info("Success", fields...)
