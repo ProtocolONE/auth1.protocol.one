@@ -36,7 +36,7 @@ func changePasswordStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "ChangePasswordStart bind form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordStart bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -45,7 +45,7 @@ func changePasswordStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "ChangePasswordStart validate form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordStart validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -65,7 +65,7 @@ func changePasswordVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "ChangePasswordVerify bind form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordVerify bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -74,7 +74,7 @@ func changePasswordVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "ChangePasswordVerify validate form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordVerify validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -93,7 +93,7 @@ func changePasswordForm(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "ChangePasswordForm bind form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordForm bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -102,7 +102,7 @@ func changePasswordForm(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "ChangePasswordForm validate form failed"),
+			Err:     errors.Wrap(err, "ChangePasswordForm validate form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}

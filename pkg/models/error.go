@@ -44,5 +44,9 @@ type GeneralError struct {
 	Code     string `json:"error,omitempty"`
 	HttpCode int    `json:"-"`
 	Message  string `json:"error_message,omitempty"`
-	Error    error  `json:"-"`
+	Err      error  `json:"-"`
+}
+
+func (e *GeneralError) Error() string {
+	return e.Message
 }

@@ -33,7 +33,7 @@ func passwordLessStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "PasswordLessStart bind form failed"),
+			Err:     errors.Wrap(err, "PasswordLessStart bind form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -42,7 +42,7 @@ func passwordLessStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "PasswordLessStart validate form failed"),
+			Err:     errors.Wrap(err, "PasswordLessStart validate form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -63,7 +63,7 @@ func passwordLessVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "PasswordLessVerify bind form failed"),
+			Err:     errors.Wrap(err, "PasswordLessVerify bind form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -72,7 +72,7 @@ func passwordLessVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "PasswordLessVerify validate form failed"),
+			Err:     errors.Wrap(err, "PasswordLessVerify validate form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}

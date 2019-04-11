@@ -47,7 +47,7 @@ func createSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "CreateSpace bind form failed"),
+			Err:     errors.Wrap(err, "CreateSpace bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -56,7 +56,7 @@ func createSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "CreateSpace validate form failed"),
+			Err:     errors.Wrap(err, "CreateSpace validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -90,7 +90,7 @@ func updateSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "UpdateSpace bind form failed"),
+			Err:     errors.Wrap(err, "UpdateSpace bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -99,7 +99,7 @@ func updateSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "UpdateSpace validate form failed"),
+			Err:     errors.Wrap(err, "UpdateSpace validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -120,7 +120,7 @@ func createApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "CreateApplication bind form failed"),
+			Err:     errors.Wrap(err, "CreateApplication bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -129,7 +129,7 @@ func createApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "CreateApplication validate form failed"),
+			Err:     errors.Wrap(err, "CreateApplication validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -164,7 +164,7 @@ func updateApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "UpdateApplication bind form failed"),
+			Err:     errors.Wrap(err, "UpdateApplication bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -173,7 +173,7 @@ func updateApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "UpdateApplication validate form failed"),
+			Err:     errors.Wrap(err, "UpdateApplication validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -194,7 +194,7 @@ func addMFA(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "AddMFA bind form failed"),
+			Err:     errors.Wrap(err, "AddMFA bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -203,7 +203,7 @@ func addMFA(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "AddMFA validate form failed"),
+			Err:     errors.Wrap(err, "AddMFA validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -225,7 +225,7 @@ func setPasswordSettings(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "PasswordSettings bind form failed"),
+			Err:     errors.Wrap(err, "PasswordSettings bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -234,7 +234,7 @@ func setPasswordSettings(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "PasswordSettings validate form failed"),
+			Err:     errors.Wrap(err, "PasswordSettings validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -266,7 +266,7 @@ func addIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "AppIdentityProvider bind form failed"),
+			Err:     errors.Wrap(err, "AppIdentityProvider bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -275,7 +275,7 @@ func addIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "Add AppIdentityProvider validate form failed"),
+			Err:     errors.Wrap(err, "Add AppIdentityProvider validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -326,7 +326,7 @@ func updateIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Update AppIdentityProvider bind form failed"),
+			Err:     errors.Wrap(err, "Update AppIdentityProvider bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -335,7 +335,7 @@ func updateIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "Update AppIdentityProvider validate form failed"),
+			Err:     errors.Wrap(err, "Update AppIdentityProvider validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}

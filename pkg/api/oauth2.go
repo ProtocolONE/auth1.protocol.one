@@ -40,14 +40,23 @@ func oauthLogin(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Oauth2 login bind form failed"),
+			Err:     errors.Wrap(err, "Oauth2 login bind form failed"),
 		}
+		//ctx.Error(errors.Wrap(err, "Oauth2 login bind form failed"))
+		return ctx.JSON(http.StatusBadRequest, e)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	previousLogin := ""
 	appID, user, providers, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+			Err:     errors.Cause(err),
+		}
+		//ctx.Error(e)
+		return ctx.JSON(http.StatusBadRequest, e.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 	if url != "" {
@@ -84,7 +93,7 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Oauth submit bind form failed"),
+			Err:     errors.Wrap(err, "Oauth submit bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -92,7 +101,7 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "Oauth submit validate form failed"),
+			Err:     errors.Wrap(err, "Oauth submit validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -113,7 +122,7 @@ func oauthConsent(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Consent bind form failed"),
+			Err:     errors.Wrap(err, "Consent bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -134,7 +143,7 @@ func oauthIntrospect(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Introspect bind form failed"),
+			Err:     errors.Wrap(err, "Introspect bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -155,7 +164,7 @@ func oauthSignUp(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "SignUp bind form failed"),
+			Err:     errors.Wrap(err, "SignUp bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -176,7 +185,7 @@ func oauthCallback(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Callback bind form failed"),
+			Err:     errors.Wrap(err, "Callback bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -203,7 +212,7 @@ func oauthLogout(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Logout bind form failed"),
+			Err:     errors.Wrap(err, "Logout bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}

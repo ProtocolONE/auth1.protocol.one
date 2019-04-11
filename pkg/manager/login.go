@@ -53,17 +53,17 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, form.Connection)
 	if ip == nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.New("Unable to load identity provider")}
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to load identity provider")}
 	}
 
 	u, err := m.identityProviderService.GetAuthUrl(ctx, ip, form)
 	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get auth url for identity provider")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get auth url for identity provider")}
 	}
 
 	return u, nil
@@ -74,21 +74,21 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	s, err := base64.StdEncoding.DecodeString(form.State)
 	if err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to decode state param")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to decode state param")}
 	}
 
 	if err := json.Unmarshal([]byte(s), authForm); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to unmarshal auth form")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to unmarshal auth form")}
 	}
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(authForm.ClientID))
 	if err != nil {
-		return nil, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
+		return nil, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
 	if ip == nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Error: errors.Wrap(err, "Unable to load identity provider")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.Wrap(err, "Unable to load identity provider")}
 	}
 
 	cp, err := m.identityProviderService.GetSocialProfile(ctx, ip)
@@ -96,18 +96,18 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		if err == nil {
 			err = errors.New("Unable to load identity profile data")
 		}
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialData, Error: errors.WithStack(err)}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialData, Err: errors.WithStack(err)}
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ip, cp.ID)
 	if userIdentity != nil && err != mgo.ErrNotFound {
 		user, err := m.userService.Get(userIdentity.UserID)
 		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user identity by email")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user identity by email")}
 		}
 
 		if err := m.authLogService.Add(ctx, user, ""); err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Error: errors.Wrap(err, "Unable to add log authorization for user")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 		}
 
 		ottSettings := &models.OneTimeTokenSettings{
@@ -116,7 +116,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		}
 		ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
 		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Error: errors.Wrap(err, "Unable to create OneTimeToken")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 		}
 
 		return &models.AuthorizeResultResponse{
@@ -128,17 +128,17 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	if cp.Email != "" {
 		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 		if ipPass == nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Error: errors.Wrap(err, "Unable to load identity provider")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.Wrap(err, "Unable to load identity provider")}
 		}
 
 		userIdentity, err := m.userIdentityService.Get(app, ipPass, cp.Email)
 		if err != nil && err != mgo.ErrNotFound {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to get user identity")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 		}
 
 		ss, err := m.r.ApplicationService().LoadSocialSettings()
 		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialSettings, Error: errors.Wrap(err, "Unable to load social settings")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialSettings, Err: errors.Wrap(err, "Unable to load social settings")}
 		}
 
 		ottSettings := &models.OneTimeTokenSettings{
@@ -150,7 +150,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		userIdentity.Email = cp.Email
 		ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
 		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Error: errors.Wrap(err, "Unable to create OneTimeToken")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 		}
 
 		return &models.AuthorizeResultResponse{
@@ -172,7 +172,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		UpdatedAt:     time.Now(),
 	}
 	if err := m.userService.Create(user); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Error: errors.Wrap(err, "Unable to create user")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Err: errors.Wrap(err, "Unable to create user")}
 	}
 
 	userIdentity = &models.UserIdentity{
@@ -188,11 +188,11 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		Credential:         cp.Token,
 	}
 	if err := m.userIdentityService.Create(userIdentity); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Error: errors.Wrap(err, "Unable to create user identity")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
 	if err := m.authLogService.Add(ctx, user, ""); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Error: errors.Wrap(err, "Unable to add log authorization for user")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
 	ottSettings := &models.OneTimeTokenSettings{
@@ -201,7 +201,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	}
 	ott, err := m.r.OneTimeTokenService().Create(&userIdentity, ottSettings)
 	if err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Error: errors.Wrap(err, "Unable to create OneTimeToken")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
 	return &models.AuthorizeResultResponse{
@@ -213,12 +213,12 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, *models.GeneralError) {
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load application")}
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
 	storedUserIdentity := &models.UserIdentity{}
 	if err := m.r.OneTimeTokenService().Use(form.Code, storedUserIdentity); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Error: errors.Wrap(err, "Unable to use OneTimeToken")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
 	user := &models.User{
@@ -237,28 +237,28 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	switch form.Action {
 	case "link":
 		if false == validator.IsPasswordValid(app, form.Password) {
-			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.New(models.ErrorPasswordIncorrect)}
+			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 		}
 
 		ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 		if ipc == nil {
-			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.New("Unable to load identity provider")}
+			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to load identity provider")}
 		}
 
 		userIdentity, err := m.userIdentityService.Get(app, ipc, user.Email)
 		if err != nil && err != mgo.ErrNotFound {
-			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Error: errors.Wrap(err, "Unable to load user identity")}
+			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load user identity")}
 		}
 
 		be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 		err = be.Compare(userIdentity.Credential, form.Password)
 		if err != nil {
-			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Error: errors.Wrap(err, "Unable to crypt password for application")}
+			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.Wrap(err, "Unable to crypt password for application")}
 		}
 
 		mfa, err := m.mfaService.GetUserProviders(user)
 		if err != nil {
-			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to load MFA providers")}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to load MFA providers")}
 		}
 
 		if len(mfa) > 0 {
@@ -273,7 +273,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 				},
 			)
 			if err != nil {
-				return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Error: errors.Wrap(err, "Unable to create OneTimeToken")}
+				return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 			}
 
 			return "", &models.GeneralError{HttpCode: http.StatusForbidden, Code: "common", Message: ott.Token}
@@ -281,25 +281,25 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 		user, err = m.userService.Get(userIdentity.UserID)
 		if err != nil {
-			return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Error: errors.Wrap(err, "Unable to get user")}
+			return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
 		}
 	case "new":
 		if err := m.userService.Create(user); err != nil {
-			return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Error: errors.Wrap(err, "Unable to create user")}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Err: errors.Wrap(err, "Unable to create user")}
 		}
 	default:
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.New("Unknown action type for social link")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unknown action type for social link")}
 	}
 
 	storedUserIdentity.ID = bson.NewObjectId()
 	storedUserIdentity.UserID = user.ID
 	storedUserIdentity.ApplicationID = app.ID
 	if err := m.userIdentityService.Create(storedUserIdentity); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Error: errors.Wrap(err, "Unable to create user identity")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
 	if err := m.authLogService.Add(ctx, user, ""); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Error: errors.Wrap(err, "Unable to add log authorization for user")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
 	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(
@@ -311,7 +311,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		},
 	)
 	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Error: errors.Wrap(err, "Unable to accept login challenge")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
 	}
 
 	return reqACL.RedirectTo, nil

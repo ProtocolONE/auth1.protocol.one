@@ -40,7 +40,7 @@ func authorize(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Authorize bind form failed"),
+			Err:     errors.Wrap(err, "Authorize bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -49,7 +49,7 @@ func authorize(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "Authorize validate form failed"),
+			Err:     errors.Wrap(err, "Authorize validate form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -70,7 +70,7 @@ func authorizeResult(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "AuthorizeResult bind form failed"),
+			Err:     errors.Wrap(err, "AuthorizeResult bind form failed"),
 		}
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -82,7 +82,7 @@ func authorizeResult(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "AuthorizeResult validate form failed"),
+			Err:     errors.Wrap(err, "AuthorizeResult validate form failed"),
 		}
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
@@ -112,7 +112,7 @@ func authorizeLink(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "AuthorizeLink bind form failed"),
+			Err:     errors.Wrap(err, "AuthorizeLink bind form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -121,7 +121,7 @@ func authorizeLink(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "AuthorizeLink validate form failed"),
+			Err:     errors.Wrap(err, "AuthorizeLink validate form failed"),
 		}
 		return helper.JsonError(ctx, e)
 	}
@@ -141,7 +141,7 @@ func loginPage(ctx echo.Context) (err error) {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "Login bind form failed"),
+			Err:     errors.Wrap(err, "Login bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -151,7 +151,7 @@ func loginPage(ctx echo.Context) (err error) {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: "Unable to authorize, please come back later",
-			Error:   errors.Wrap(err, "Unable to create authenticate url"),
+			Err:     errors.Wrap(err, "Unable to create authenticate url"),
 		}
 		return ctx.HTML(http.StatusInternalServerError, e.Message)
 	}

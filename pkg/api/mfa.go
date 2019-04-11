@@ -36,7 +36,7 @@ func mfaChallenge(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "MFAChallenge bind form failed"),
+			Err:     errors.Wrap(err, "MFAChallenge bind form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -45,7 +45,7 @@ func mfaChallenge(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "MFAChallenge validate form failed"),
+			Err:     errors.Wrap(err, "MFAChallenge validate form failed"),
 		}
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
@@ -66,7 +66,7 @@ func mfaVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "MFAVerify bind form failed"),
+			Err:     errors.Wrap(err, "MFAVerify bind form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -75,7 +75,7 @@ func mfaVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "MFAVerify validate form failed"),
+			Err:     errors.Wrap(err, "MFAVerify validate form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -96,7 +96,7 @@ func mfaAdd(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Error:   errors.Wrap(err, "MFAAdd bind form failed"),
+			Err:     errors.Wrap(err, "MFAAdd bind form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
@@ -105,7 +105,7 @@ func mfaAdd(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Error:   errors.Wrap(err, "MFAAdd validate form failed"),
+			Err:     errors.Wrap(err, "MFAAdd validate form failed"),
 		}
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
