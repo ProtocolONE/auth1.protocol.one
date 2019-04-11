@@ -15,7 +15,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -371,7 +370,6 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId))
 	if err != nil {
-		m.Logger.Warn("", zap.Error(err))
 		return &models.Oauth2CallBackResponse{
 				Success:      false,
 				ErrorMessage: `invalid_client_id`,

@@ -8,7 +8,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 )
 
