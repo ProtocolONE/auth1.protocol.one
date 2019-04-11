@@ -12,7 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
@@ -24,7 +23,6 @@ var (
 )
 
 type LoginManager struct {
-	Logger                  *zap.Logger
 	redis                   *redis.Client
 	userService             *models.UserService
 	userIdentityService     *models.UserIdentityService
@@ -34,9 +32,8 @@ type LoginManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry) *LoginManager {
+func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *LoginManager {
 	m := &LoginManager{
-		Logger:                  l,
 		redis:                   redis,
 		r:                       r,
 		userService:             models.NewUserService(h),

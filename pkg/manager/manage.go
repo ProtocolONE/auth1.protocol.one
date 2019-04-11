@@ -10,26 +10,23 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
 
 type ManageManager struct {
-	Logger                  *zap.Logger
 	spaceService            *models.SpaceService
 	mfaService              *models.MfaService
 	identityProviderService *service.AppIdentityProviderService
 	r                       service.InternalRegistry
 }
 
-func NewManageManager(db *mgo.Session, l *zap.Logger, r service.InternalRegistry) *ManageManager {
+func NewManageManager(db *mgo.Session, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		spaceService:            models.NewSpaceService(db),
 		mfaService:              models.NewMfaService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 		r:                       r,
-		Logger:                  l,
 	}
 
 	return m
@@ -168,13 +165,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 		return nil, &models.GeneralError{Message: "Unable to update application", Error: errors.Wrap(err, "Unable to update application")}
 	}
 
-	client, response, err := m.r.HydraSDK().AdminApi.GetOAuth2Client(id)
-	m.Logger.Error(
-		"GET HYDRA CLIENT",
-		zap.Any("Client", client),
-		zap.Any("Response", response),
-		zap.Error(err),
-	)
+	client, _, err := m.r.HydraSDK().AdminApi.GetOAuth2Client(id)
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get hydra client", Error: errors.Wrap(err, "Unable to get hydra client")}
 	}

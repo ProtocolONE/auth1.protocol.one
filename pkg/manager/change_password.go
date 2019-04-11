@@ -9,20 +9,17 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 type ChangePasswordManager struct {
-	Logger                  *zap.Logger
 	redis                   *redis.Client
 	r                       service.InternalRegistry
 	userIdentityService     *models.UserIdentityService
 	identityProviderService *service.AppIdentityProviderService
 }
 
-func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client, ir service.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, r *redis.Client, ir service.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
-		Logger:                  l,
 		redis:                   r,
 		r:                       ir,
 		userIdentityService:     models.NewUserIdentityService(db),

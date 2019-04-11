@@ -14,8 +14,7 @@ import (
 func InitPasswordLess(cfg *Server) error {
 	g := cfg.Echo.Group("/passwordless", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("passwordless_manager", manager.NewPasswordLessManager(logger))
+			c.Set("passwordless_manager", manager.NewPasswordLessManager())
 
 			return next(c)
 		}
@@ -37,7 +36,6 @@ func passwordLessStart(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "PasswordLessStart bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -47,13 +45,11 @@ func passwordLessStart(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "PasswordLessStart validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	token, err := m.PasswordLessStart(form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
@@ -70,7 +66,6 @@ func passwordLessVerify(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "PasswordLessVerify bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -80,13 +75,11 @@ func passwordLessVerify(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "PasswordLessVerify validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	token, err := m.PasswordLessVerify(form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 

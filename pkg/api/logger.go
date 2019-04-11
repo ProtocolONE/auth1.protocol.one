@@ -13,6 +13,11 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 
+			logger := c.Get("logger").(*zap.Logger)
+			if logger != nil {
+				log = logger
+			}
+
 			err := next(c)
 			if err != nil {
 				c.Error(err)

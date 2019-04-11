@@ -11,22 +11,19 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 type MFAManager struct {
 	Redis          *redis.Client
-	Logger         *zap.Logger
 	r              service.InternalRegistry
 	authLogService *models.AuthLogService
 	userService    *models.UserService
 	mfaService     *models.MfaService
 }
 
-func NewMFAManager(h *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry) *MFAManager {
+func NewMFAManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *MFAManager {
 	m := &MFAManager{
 		Redis:          redis,
-		Logger:         l,
 		r:              r,
 		authLogService: models.NewAuthLogService(h),
 		mfaService:     models.NewMfaService(h),

@@ -27,7 +27,6 @@ var (
 )
 
 type OauthManager struct {
-	Logger                  *zap.Logger
 	redis                   *redis.Client
 	sessionConfig           *config.Session
 	hydraConfig             *config.Hydra
@@ -38,12 +37,11 @@ type OauthManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, l *zap.Logger, redis *redis.Client, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
+func NewOauthManager(db *mgo.Session, redis *redis.Client, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
 	m := &OauthManager{
 		redis:                   redis,
 		sessionConfig:           s,
 		hydraConfig:             h,
-		Logger:                  l,
 		r:                       r,
 		userService:             models.NewUserService(db),
 		userIdentityService:     models.NewUserIdentityService(db),
@@ -347,37 +345,41 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	return reqACL.RedirectTo, nil
 }
 
-func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackForm) *models.Oauth2CallBackResponse {
+func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackForm) (*models.Oauth2CallBackResponse, *models.GeneralError) {
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to get session",
-			zap.Error(err),
-		)
 		return &models.Oauth2CallBackResponse{
-			Success:      false,
-			ErrorMessage: `unknown_client_id`,
-		}
+				Success:      false,
+				ErrorMessage: `unknown_client_id`,
+			}, &models.GeneralError{
+				Code:    "common",
+				Message: "Unable to get session",
+				Error:   errors.Wrap(err, "Unable to get session"),
+			}
 	}
 	clientId := sess.Values[clientIdSessionKey].(string)
 	if clientId == "" {
-		m.Logger.Error(
-			"Unable to get client id from session",
-			zap.Object("Oauth2CallBackForm", form),
-		)
 		return &models.Oauth2CallBackResponse{
-			Success:      false,
-			ErrorMessage: `unknown_client_id`,
-		}
+				Success:      false,
+				ErrorMessage: `unknown_client_id`,
+			}, &models.GeneralError{
+				Code:    "common",
+				Message: "Unable to get client id from session",
+				Error:   errors.Wrap(err, "Unable to get client id from session"),
+			}
 	}
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId))
 	if err != nil {
-		m.Logger.Warn("Unable to load application", zap.Error(err))
+		m.Logger.Warn("", zap.Error(err))
 		return &models.Oauth2CallBackResponse{
-			Success:      false,
-			ErrorMessage: `invalid_client_id`,
-		}
+				Success:      false,
+				ErrorMessage: `invalid_client_id`,
+			}, &models.GeneralError{
+				Code:    "client_id",
+				Message: models.ErrorClientIdIncorrect,
+				Error:   errors.Wrap(err, "Unable to load application"),
+			}
 	}
 
 	settings := jwtverifier.Config{
@@ -390,9 +392,13 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 	tokens, err := jwtv.Exchange(ctx.Request().Context(), form.Code)
 	if err != nil {
 		return &models.Oauth2CallBackResponse{
-			Success:      false,
-			ErrorMessage: `unable_exchange_code`,
-		}
+				Success:      false,
+				ErrorMessage: `unable_exchange_code`,
+			}, &models.GeneralError{
+				Code:    "common",
+				Message: models.ErrorUnknownError,
+				Error:   errors.Wrap(err, "Unable to exchange code to token"),
+			}
 	}
 
 	expIn := 0
@@ -405,7 +411,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 		AccessToken: tokens.AccessToken,
 		IdToken:     tokens.Extra("id_token").(string),
 		ExpiresIn:   expIn,
-	}
+	}, nil
 }
 
 func (m *OauthManager) Logout(ctx echo.Context, form *models.Oauth2LogoutForm) (string, *models.GeneralError) {

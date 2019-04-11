@@ -8,7 +8,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -16,8 +15,7 @@ func InitManage(cfg *Server) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Registry))
+			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 
 			return next(c)
 		}
@@ -51,7 +49,6 @@ func createSpace(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "CreateSpace bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -61,7 +58,6 @@ func createSpace(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "CreateSpace validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -96,7 +92,6 @@ func updateSpace(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "UpdateSpace bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -106,7 +101,6 @@ func updateSpace(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "UpdateSpace validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -128,7 +122,6 @@ func createApplication(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "CreateApplication bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -138,7 +131,6 @@ func createApplication(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "CreateApplication validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -174,7 +166,6 @@ func updateApplication(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "UpdateApplication bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -184,7 +175,6 @@ func updateApplication(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "UpdateApplication validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -206,7 +196,6 @@ func addMFA(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "AddMFA bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -216,7 +205,6 @@ func addMFA(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "AddMFA validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -239,7 +227,6 @@ func setPasswordSettings(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "PasswordSettings bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -249,7 +236,6 @@ func setPasswordSettings(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "PasswordSettings validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -282,7 +268,6 @@ func addIdentityProvider(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "AppIdentityProvider bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -292,7 +277,6 @@ func addIdentityProvider(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "Add AppIdentityProvider validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -344,7 +328,6 @@ func updateIdentityProvider(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Update AppIdentityProvider bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -354,7 +337,6 @@ func updateIdentityProvider(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "Update AppIdentityProvider validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 

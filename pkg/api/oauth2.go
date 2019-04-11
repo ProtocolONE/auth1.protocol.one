@@ -8,7 +8,6 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -16,8 +15,7 @@ func InitOauth2(cfg *Server) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.RedisHandler, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig))
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.RedisHandler, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig))
 
 			return next(c)
 		}
@@ -44,14 +42,12 @@ func oauthLogin(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Oauth2 login bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	previousLogin := ""
 	appID, user, providers, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 	if url != "" {
@@ -90,7 +86,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Oauth submit bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
@@ -99,13 +94,11 @@ func oauthLoginSubmit(ctx echo.Context) error {
 			Message: models.ErrorRequiredField,
 			Error:   errors.Wrap(err, "Oauth submit validate form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -122,13 +115,11 @@ func oauthConsent(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Consent bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	url, err := m.Consent(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
@@ -145,13 +136,11 @@ func oauthIntrospect(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Introspect bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
 	token, err := m.Introspect(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -168,13 +157,11 @@ func oauthSignUp(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "SignUp bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.SignUp(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
@@ -191,12 +178,15 @@ func oauthCallback(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Callback bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
-	response := m.CallBack(ctx, form)
-	return ctx.Render(http.StatusOK, "oauth_callback.html", map[string]interface{}{
+	code := http.StatusOK
+	response, err := m.CallBack(ctx, form)
+	if err != nil {
+		code = http.StatusBadRequest
+	}
+	return ctx.Render(code, "oauth_callback.html", map[string]interface{}{
 		"Success":      response.Success,
 		"ErrorMessage": response.ErrorMessage,
 		"AccessToken":  response.AccessToken,
@@ -215,13 +205,11 @@ func oauthLogout(ctx echo.Context) error {
 			Message: models.ErrorInvalidRequestParameters,
 			Error:   errors.Wrap(err, "Logout bind form failed"),
 		}
-		helper.SaveErrorLog(ctx, m.Logger, e)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	url, err := m.Logout(ctx, form)
 	if err != nil {
-		helper.SaveErrorLog(ctx, m.Logger, err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
