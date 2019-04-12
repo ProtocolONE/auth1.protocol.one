@@ -62,7 +62,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypePassword)
 	if ipc == nil {
 		return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity providers")}
 	}
@@ -188,14 +188,19 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
 
-	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Subject))
-	if err != nil {
-		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
-	}
-
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get session")}
+	}
+
+	sess.Values[clientIdSessionKey] = reqGCR.Client.ClientId
+	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+	}
+
+	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Subject))
+	if err != nil {
+		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
 	}
 
 	req := swagger.AcceptConsentRequest{GrantScope: scopes}
@@ -222,11 +227,6 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 	reqACR, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, req)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept consent challenge")}
-	}
-
-	sess.Values[clientIdSessionKey] = reqGCR.Client.ClientId
-	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
 
 	return reqACR.RedirectTo, nil
