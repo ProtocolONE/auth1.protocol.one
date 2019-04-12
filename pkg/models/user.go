@@ -1,18 +1,10 @@
 package models
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
-
-type CaptchaRequiredError CommonError
-
-type UserService struct {
-	db *mgo.Database
-}
 
 type User struct {
 	ID            bson.ObjectId `bson:"_id" json:"id"`
@@ -133,69 +125,4 @@ func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Password", "[HIDDEN]")
 
 	return nil
-}
-
-func (m CaptchaRequiredError) Error() string {
-	return m.Message
-}
-
-func (m *CaptchaRequiredError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *CaptchaRequiredError) GetCode() string {
-	return m.Code
-}
-
-func (m *CaptchaRequiredError) GetMessage() string {
-	return m.Message
-}
-
-func NewUserService(dbHandler *mgo.Session) *UserService {
-	return &UserService{db: dbHandler.DB("")}
-}
-
-func (us UserService) Create(user *User) error {
-	if err := us.db.C(database.TableUser).Insert(user); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserService) Update(user *User) error {
-	if err := us.db.C(database.TableUser).UpdateId(user.ID, user); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserService) Get(id bson.ObjectId) (*User, error) {
-	u := &User{}
-	if err := us.db.C(database.TableUser).
-		FindId(id).
-		One(&u); err != nil {
-		return nil, err
-	}
-
-	return u, nil
-}
-
-func (us UserService) GetByEmail(app *Application, email string) (*User, error) {
-	u := &User{}
-	/*b, _ := us.GetUserIdentityByEmail(app, email, "password")
-	r := mgo.DBRef{
-		ID:         b.ID,
-		Name:   us.db.Name,
-		Collection: database.TableUser,
-	}
-
-	if err := us.db.FindRef(r).CC(database.TableUser).
-		Find(bson.D{{"email", email}}).
-		One(&u); err != nil {
-		return nil, err
-	}*/
-
-	return u, nil
 }

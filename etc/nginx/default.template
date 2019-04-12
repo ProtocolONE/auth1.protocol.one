@@ -21,6 +21,7 @@ server {
 
     location / {
         proxy_pass ${AUTHONE_SERVER};
+        proxy_set_header Host localhost;
     }
 }
 server {

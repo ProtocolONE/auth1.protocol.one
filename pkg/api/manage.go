@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -7,16 +7,14 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
 	"net/http"
 )
 
-func InitManage(cfg Config) error {
+func InitManage(cfg *Server) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("manage_manager", manager.NewManageManager(db, logger, cfg.Hydra))
+			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 
 			return next(c)
 		}
@@ -35,6 +33,7 @@ func InitManage(cfg Config) error {
 	g.GET("/app/:app_id/identity/:id", getIdentityProvider)
 	g.GET("/app/:id/identity", getIdentityProviders)
 	g.GET("/identity/templates", getIdentityProviderTemplates)
+	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
 
 	return nil
@@ -45,36 +44,26 @@ func createSpace(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"CreateSpace bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"CreateSpace validate form failed",
-			zap.Object("SpaceForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	s, err := m.CreateSpace(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the space")
 	}
 
@@ -87,6 +76,7 @@ func getSpace(ctx echo.Context) error {
 
 	space, err := m.GetSpace(ctx, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Space not exists")
 	}
 
@@ -99,36 +89,26 @@ func updateSpace(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"UpdateSpace bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"UpdateSpace validate form failed",
-			zap.Object("SpaceForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	space, err := m.UpdateSpace(ctx, id, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the space")
 	}
 
@@ -140,36 +120,26 @@ func createApplication(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		m.Logger.Error(
-			"CreateApplication bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
-		m.Logger.Error(
-			"CreateApplication validate form failed",
-			zap.Object("ApplicationForm", applicationForm),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.CreateApplication(ctx, applicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
 
@@ -183,6 +153,7 @@ func getApplication(ctx echo.Context) error {
 
 	a, err := m.GetApplication(ctx, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
 
@@ -195,36 +166,26 @@ func updateApplication(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(applicationForm); err != nil {
-		m.Logger.Error(
-			"UpdateApplication bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(applicationForm); err != nil {
-		m.Logger.Error(
-			"UpdateApplication validate form failed",
-			zap.Object("ApplicationForm", applicationForm),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.UpdateApplication(ctx, id, applicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
 	}
 
@@ -236,36 +197,26 @@ func addMFA(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(mfaApplicationForm); err != nil {
-		m.Logger.Error(
-			"AddMFA bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(mfaApplicationForm); err != nil {
-		m.Logger.Error(
-			"AddMFA validate form failed",
-			zap.Object("MfaApplicationForm", mfaApplicationForm),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.AddMFA(ctx, mfaApplicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
 
@@ -273,39 +224,30 @@ func addMFA(ctx echo.Context) error {
 }
 
 func setPasswordSettings(ctx echo.Context) error {
+	id := ctx.Param("id")
 	form := &models.PasswordSettings{}
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"PasswordSettings bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"PasswordSettings validate form failed",
-			zap.Object("PasswordSettings", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
-	if err := m.SetPasswordSettings(ctx, form); err != nil {
+	if err := m.SetPasswordSettings(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
 	}
 
@@ -318,6 +260,7 @@ func getPasswordSettings(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	ps, err := m.GetPasswordSettings(id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
 
@@ -329,35 +272,25 @@ func addIdentityProvider(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"AppIdentityProvider bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"AppIdentityProvider validate form failed",
-			zap.Object("AppIdentityProvider", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
 	}
 
@@ -371,6 +304,7 @@ func getIdentityProvider(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	ip, err := m.GetIdentityProvider(ctx, appID, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Identity provider not exists")
 	}
 
@@ -383,6 +317,7 @@ func getIdentityProviders(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	list, err := m.GetIdentityProviders(ctx, appID)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to give identity providers")
 	}
 
@@ -400,37 +335,58 @@ func updateIdentityProvider(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"AppIdentityProvider bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"AppIdentityProvider validate form failed",
-			zap.Object("AppIdentityProvider", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
 	}
 
 	return ctx.JSON(http.StatusOK, form)
+}
+
+func setOneTimeTokenSettings(ctx echo.Context) error {
+	id := ctx.Param("id")
+	form := &models.OneTimeTokenSettings{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+
+	if err := ctx.Bind(form); err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
+	}
+
+	if err := m.SetOneTimeTokenSettings(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, "Unable to set OneTimeToken settings for the application")
+	}
+
+	return ctx.HTML(http.StatusOK, "")
 }

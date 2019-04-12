@@ -1,17 +1,9 @@
 package models
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 )
-
-type MfaService struct {
-	db *mgo.Database
-}
-
-type MFARequiredError CommonError
 
 type MfaAuthenticator struct {
 	ID            bson.ObjectId `json:"id"`
@@ -125,86 +117,4 @@ func (m *MfaChallengeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Token", m.Token)
 
 	return nil
-}
-
-func (m MFARequiredError) Error() string {
-	return m.Message
-}
-
-func (m *MFARequiredError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *MFARequiredError) GetCode() string {
-	return m.Code
-}
-
-func (m *MFARequiredError) GetMessage() string {
-	return m.Message
-}
-
-func NewMfaService(dbHandler *mgo.Session) *MfaService {
-	return &MfaService{db: dbHandler.DB("")}
-}
-
-func (s MfaService) Add(provider *MfaProvider) error {
-	if err := s.db.C(database.TableApplicationMfa).Insert(provider); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *MfaService) List(appId bson.ObjectId) (providers []*MfaProvider, err error) {
-	if err = s.db.C(database.TableApplicationMfa).
-		Find(nil).
-		Select(bson.M{"app_id": appId}).
-		All(&providers); err != nil {
-		return nil, err
-	}
-
-	return providers, nil
-}
-
-func (s *MfaService) Get(id bson.ObjectId) (provider *MfaProvider, err error) {
-	if err := s.db.C(database.TableApplicationMfa).
-		FindId(id).
-		One(&provider); err != nil {
-		return nil, err
-	}
-
-	return provider, nil
-}
-
-func (s *MfaService) AddUserProvider(up *MfaUserProvider) error {
-	if err := s.db.C(database.TableUserMfa).Insert(up); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *MfaService) GetUserProviders(u *User) (providers []*MfaProvider, err error) {
-	collection := s.db.C(database.TableUserMfa)
-	pipeline := []bson.M{
-		{"$match": bson.M{"user_id": u.ID}},
-		{"$lookup": bson.M{"from": database.TableApplicationMfa, "localField": "provider_id", "foreignField": "_id", "as": "results"}},
-	}
-	pipe := collection.Pipe(pipeline)
-	iter := pipe.Iter()
-	resp := bson.M{}
-
-	for iter.Next(&resp) {
-		result := resp["results"].([]interface{})[0].(bson.M)
-		var t = &MfaProvider{
-			ID:      result["_id"].(bson.ObjectId),
-			AppID:   result["app_id"].(bson.ObjectId),
-			Name:    result["name"].(string),
-			Type:    result["type"].(string),
-			Channel: result["channel"].(string),
-		}
-		providers = append(providers, t)
-	}
-
-	return providers, nil
 }

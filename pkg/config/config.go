@@ -12,7 +12,8 @@ type Config struct {
 	Session  Session
 	Mailer   Mailer
 
-	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+	KubernetesHost  string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
 
 type Server struct {

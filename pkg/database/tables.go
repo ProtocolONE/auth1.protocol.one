@@ -3,7 +3,6 @@ package database
 const (
 	TableSpace               = "space"
 	TableApplication         = "application"
-	TableAppPasswordSettings = "application_password_settings"
 	TableAppIdentityProvider = "application_identity_provider"
 	TableUser                = "user"
 	TableUserIdentity        = "user_identity"

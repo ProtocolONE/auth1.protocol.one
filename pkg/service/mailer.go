@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"crypto/tls"
@@ -16,7 +16,7 @@ type MailerImpl struct {
 	dialer  *gomail.Dialer
 }
 
-func NewMailer(config config.Mailer) (mailer Mailer) {
+func NewMailer(config *config.Mailer) (mailer Mailer) {
 	dialer := gomail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}
 	mailer = &MailerImpl{config.ReplyTo, config.From, dialer}

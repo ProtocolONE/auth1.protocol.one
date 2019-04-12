@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -8,19 +8,17 @@ import (
 	jwtverifier "github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 )
 
-func InitLogin(cfg Config) error {
+func InitLogin(cfg *Server) error {
 	cfg.Echo.GET("/login/form", loginPage)
 
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("login_manager", manager.NewLoginManager(db, logger, cfg.Redis, cfg.Hydra))
+			c.Set("login_manager", manager.NewLoginManager(db, cfg.RedisHandler, cfg.Registry))
 
 			return next(c)
 		}
@@ -38,37 +36,19 @@ func authorize(ctx echo.Context) error {
 	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Authorize bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"Authorize validate form failed",
-			zap.Object("AuthorizeForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorRequiredField)
 	}
 
 	str, err := m.Authorize(ctx, form)
 	if err != nil {
-		return ctx.HTML(http.StatusBadRequest, err.GetMessage())
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
 	return ctx.Redirect(http.StatusMovedPermanently, str)
@@ -79,35 +59,35 @@ func authorizeResult(ctx echo.Context) error {
 	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"AuthorizeResult bind form failed",
-			zap.Error(err),
-		)
-
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": BadRequiredCodeCommon, "message": models.ErrorInvalidRequestParameters},
+			"Payload": map[string]interface{}{"code": e.Code, "message": e.Message},
 		})
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"AuthorizeResult validate form failed",
-			zap.Object("AuthorizeResultForm", form),
-			zap.Error(err),
-		)
-
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()), "message": models.ErrorRequiredField},
+			"Payload": map[string]interface{}{"code": e.Code, "message": e.Message},
 		})
 	}
 
 	t, err := m.AuthorizeResult(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
 			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": UnknownErrorCode, "message": err.GetMessage()},
+			"Payload": map[string]interface{}{"code": err.Code, "message": err.Message},
 		})
 	}
 
@@ -122,42 +102,27 @@ func authorizeLink(ctx echo.Context) error {
 	m := ctx.Get("login_manager").(*manager.LoginManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"AuthorizeLink bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"AuthorizeLink validate form failed",
-			zap.Object("AuthorizeLinkForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.AuthorizeLink(ctx, form)
 	if err != nil {
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			err.GetCode(),
-			err.GetMessage(),
-		)
+		ctx.Error(err.Err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]string{"url": url})
@@ -165,18 +130,15 @@ func authorizeLink(ctx echo.Context) error {
 
 func loginPage(ctx echo.Context) (err error) {
 	form := new(models.LoginPageForm)
-	logger := ctx.Get("logger").(*zap.Logger)
 
 	if err := ctx.Bind(form); err != nil {
-		logger.Error(
-			"Login page bind form failed",
-			zap.Error(err),
-		)
+		ctx.Error(err)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	url, err := createAuthUrl(ctx, form)
 	if err != nil {
+		ctx.Error(err)
 		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
 	}
 

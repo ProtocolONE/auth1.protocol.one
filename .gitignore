@@ -2,3 +2,5 @@
 *.exe
 *.exe~
 *.out
+/sandbox/
+/bin/

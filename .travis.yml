@@ -4,6 +4,7 @@ go:
   - 1.11.x
 services:
   - mongodb
+  - redis-server
 before_script:
   - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 env:

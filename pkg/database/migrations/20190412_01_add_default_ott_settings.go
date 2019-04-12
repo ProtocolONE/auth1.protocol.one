@@ -19,15 +19,9 @@ func init() {
 			}
 
 			for _, app := range apps {
-				app.PasswordSettings = &models.PasswordSettings{
-					BcryptCost:     models.PasswordBcryptCostDefault,
-					Min:            models.PasswordMinDefault,
-					Max:            models.PasswordMaxDefault,
-					RequireNumber:  models.PasswordRequireNumberDefault,
-					RequireUpper:   models.PasswordRequireUpperDefault,
-					RequireSpecial: models.PasswordRequireSpecialDefault,
-					TokenLength:    models.PasswordTokenLengthDefault,
-					TokenTTL:       models.PasswordTokenTTLDefault,
+				app.OneTimeTokenSettings = &models.OneTimeTokenSettings{
+					Length: 64,
+					TTL:    3600,
 				}
 				if err := db.C(database.TableApplication).UpdateId(app.ID, app); err != nil {
 					return errors.Wrap(err, "Unable to update application")

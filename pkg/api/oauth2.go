@@ -1,4 +1,4 @@
-package route
+package api
 
 import (
 	"fmt"
@@ -7,16 +7,14 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
 	"net/http"
 )
 
-func InitOauth2(cfg Config) error {
+func InitOauth2(cfg *Server) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			logger := c.Get("logger").(*zap.Logger)
-			c.Set("oauth_manager", manager.NewOauthManager(db, logger, cfg.Redis, cfg.Hydra, cfg.SessionConfig))
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.RedisHandler, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig))
 
 			return next(c)
 		}
@@ -25,7 +23,6 @@ func InitOauth2(cfg Config) error {
 	g.GET("/login", oauthLogin)
 	g.POST("/login", oauthLoginSubmit)
 	g.GET("/consent", oauthConsent)
-	g.POST("/consent", oauthConsentSubmit)
 	g.POST("/signup", oauthSignUp)
 	g.POST("/introspect", oauthIntrospect)
 	g.GET("/callback", oauthCallback)
@@ -39,21 +36,15 @@ func oauthLogin(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Login page bind form failed",
-			zap.Error(err),
-		)
+		ctx.Error(err)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	previousLogin := ""
 	appID, user, providers, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
-		m.Logger.Error(
-			"Error checking login request",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 	if url != "" {
 		return ctx.Redirect(http.StatusFound, url)
@@ -86,53 +77,26 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Login bind form failed",
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			BadRequiredCodeCommon,
-			models.ErrorInvalidRequestParameters,
-		)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
-		m.Logger.Error(
-			"Login validate form failed",
-			zap.Object("LoginForm", form),
-			zap.Error(err),
-		)
-
-		return helper.NewErrorResponse(
-			ctx,
-			http.StatusBadRequest,
-			fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			models.ErrorRequiredField,
-		)
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
-		httpCode := http.StatusBadRequest
-		code := BadRequiredCodeCommon
-		message := fmt.Sprint(err)
-
-		if err.GetHttpCode() != 0 {
-			httpCode = err.GetHttpCode()
-		}
-		if err.GetCode() != "" {
-			code = err.GetCode()
-		}
-		if err.GetMessage() != "" {
-			message = err.GetMessage()
-		}
-
-		return ctx.JSON(httpCode, &models.CommonError{
-			Code:    code,
-			Message: message,
-		})
+		ctx.Error(err.Err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -143,54 +107,18 @@ func oauthConsent(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Consent page bind form failed",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	url, err := m.Consent(ctx, form)
 	if err != nil {
-		m.Logger.Error(
-			"Unable to load scopes",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-	}
-
-	return ctx.Redirect(http.StatusFound, url)
-}
-
-func oauthConsentSubmit(ctx echo.Context) error {
-	form := new(models.Oauth2ConsentSubmitForm)
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
-	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Consent page bind form failed",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
-	}
-
-	url, err := m.ConsentSubmit(ctx, form)
-	if err != nil {
-		scopes, err := m.GetScopes()
-		if err != nil {
-			m.Logger.Error(
-				"Unable to load scopes",
-				zap.Error(err),
-			)
-
-			return ctx.HTML(http.StatusBadRequest, models.ErrorUnknownError)
-		}
-
-		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
-			"Challenge": form.Challenge,
-			"Scope":     scopes,
-			"Error":     err.Error(),
-		})
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
 	return ctx.Redirect(http.StatusFound, url)
@@ -201,16 +129,18 @@ func oauthIntrospect(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Introspect page bind form failed",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	token, err := m.Introspect(ctx, form)
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, nil)
+		ctx.Error(err.Err)
+		return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, token)
@@ -221,33 +151,18 @@ func oauthSignUp(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"SignUp bind form failed",
-			zap.Error(err),
-		)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.SignUp(ctx, form)
 	if err != nil {
-		httpCode := http.StatusBadRequest
-		code := BadRequiredCodeCommon
-		message := fmt.Sprint(err)
-
-		if err.GetHttpCode() != 0 {
-			httpCode = err.GetHttpCode()
-		}
-		if err.GetCode() != "" {
-			code = err.GetCode()
-		}
-		if err.GetMessage() != "" {
-			message = err.GetMessage()
-		}
-
-		return ctx.JSON(httpCode, &models.CommonError{
-			Code:    code,
-			Message: message,
-		})
+		ctx.Error(err.Err)
+		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -258,15 +173,17 @@ func oauthCallback(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Callback page bind form failed",
-			zap.Error(err),
-		)
+		ctx.Error(err)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
-	response := m.CallBack(ctx, form)
-	return ctx.Render(http.StatusOK, "oauth_callback.html", map[string]interface{}{
+	code := http.StatusOK
+	response, err := m.CallBack(ctx, form)
+	if err != nil {
+		ctx.Error(err.Err)
+		code = http.StatusBadRequest
+	}
+	return ctx.Render(code, "oauth_callback.html", map[string]interface{}{
 		"Success":      response.Success,
 		"ErrorMessage": response.ErrorMessage,
 		"AccessToken":  response.AccessToken,
@@ -280,16 +197,14 @@ func oauthLogout(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		m.Logger.Error(
-			"Callback page bind form failed",
-			zap.Error(err),
-		)
+		ctx.Error(err)
 		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	url, err := m.Logout(ctx, form)
 	if err != nil {
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
 	if url != "" {

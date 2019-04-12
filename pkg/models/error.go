@@ -40,24 +40,13 @@ type ErrorInterface interface {
 	Error() string
 }
 
-type CommonError struct {
-	HttpCode int    `json:"error,omitempty"`
+type GeneralError struct {
 	Code     string `json:"error,omitempty"`
+	HttpCode int    `json:"-"`
 	Message  string `json:"error_message,omitempty"`
+	Err      error  `json:"-"`
 }
 
-func (m *CommonError) Error() string {
-	return m.Message
-}
-
-func (m *CommonError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *CommonError) GetCode() string {
-	return m.Code
-}
-
-func (m *CommonError) GetMessage() string {
-	return m.Message
+func (e *GeneralError) Error() string {
+	return e.Message
 }
