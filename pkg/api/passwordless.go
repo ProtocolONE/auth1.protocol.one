@@ -6,7 +6,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -33,8 +32,8 @@ func passwordLessStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "PasswordLessStart bind form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -42,13 +41,15 @@ func passwordLessStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "PasswordLessStart validate form failed"),
 		}
+
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	token, err := m.PasswordLessStart(form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
@@ -63,8 +64,8 @@ func passwordLessVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "PasswordLessVerify bind form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -72,13 +73,14 @@ func passwordLessVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "PasswordLessVerify validate form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	token, err := m.PasswordLessVerify(form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 

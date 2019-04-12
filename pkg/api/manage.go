@@ -7,7 +7,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -47,8 +46,8 @@ func createSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "CreateSpace bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -56,13 +55,14 @@ func createSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "CreateSpace validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	s, err := m.CreateSpace(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the space")
 	}
 
@@ -75,6 +75,7 @@ func getSpace(ctx echo.Context) error {
 
 	space, err := m.GetSpace(ctx, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Space not exists")
 	}
 
@@ -90,8 +91,8 @@ func updateSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "UpdateSpace bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -99,13 +100,14 @@ func updateSpace(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "UpdateSpace validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	space, err := m.UpdateSpace(ctx, id, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the space")
 	}
 
@@ -120,8 +122,8 @@ func createApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "CreateApplication bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -129,13 +131,14 @@ func createApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "CreateApplication validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.CreateApplication(ctx, applicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
 
@@ -149,6 +152,7 @@ func getApplication(ctx echo.Context) error {
 
 	a, err := m.GetApplication(ctx, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
 
@@ -164,8 +168,8 @@ func updateApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "UpdateApplication bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -173,13 +177,14 @@ func updateApplication(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "UpdateApplication validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.UpdateApplication(ctx, id, applicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the application")
 	}
 
@@ -194,8 +199,8 @@ func addMFA(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "AddMFA bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -203,13 +208,14 @@ func addMFA(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "AddMFA validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	app, err := m.AddMFA(ctx, mfaApplicationForm)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to create the application")
 	}
 
@@ -225,8 +231,8 @@ func setPasswordSettings(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "PasswordSettings bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -234,12 +240,13 @@ func setPasswordSettings(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "PasswordSettings validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.SetPasswordSettings(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
 	}
 
@@ -252,6 +259,7 @@ func getPasswordSettings(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	ps, err := m.GetPasswordSettings(id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Application not exists")
 	}
 
@@ -266,8 +274,8 @@ func addIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "AppIdentityProvider bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -275,12 +283,13 @@ func addIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "Add AppIdentityProvider validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
 	}
 
@@ -294,6 +303,7 @@ func getIdentityProvider(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	ip, err := m.GetIdentityProvider(ctx, appID, id)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Identity provider not exists")
 	}
 
@@ -306,6 +316,7 @@ func getIdentityProviders(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	list, err := m.GetIdentityProviders(ctx, appID)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to give identity providers")
 	}
 
@@ -326,8 +337,8 @@ func updateIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Update AppIdentityProvider bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -335,12 +346,13 @@ func updateIdentityProvider(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "Update AppIdentityProvider validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
 	}
 

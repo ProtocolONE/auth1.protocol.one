@@ -251,7 +251,7 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 	}
 
 	if ip := m.identityProviderService.FindByTypeAndName(app, form.Type, form.Name); ip != nil {
-		return &models.GeneralError{Message: "Identity provider already exists", Err: errors.Wrap(err, "Identity provider already exists")}
+		return &models.GeneralError{Message: "Identity provider already exists", Err: errors.New("Identity provider already exists")}
 	}
 
 	if err := m.r.ApplicationService().AddIdentityProvider(app, form); err != nil {
@@ -268,11 +268,11 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 	}
 
 	ip := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
-	if ip != nil {
-		return &models.GeneralError{Message: "Unable to get identity provider", Err: errors.Wrap(err, "Unable to get identity provider")}
+	if ip == nil {
+		return &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
 	}
 	if ip.ApplicationID != form.ApplicationID {
-		return &models.GeneralError{Message: "Application not owned this identity provider", Err: errors.Wrap(err, "Application not owned this identity provider")}
+		return &models.GeneralError{Message: "Application not owned this identity provider", Err: errors.New("Application not owned this identity provider")}
 	}
 
 	form.ID = ip.ID
@@ -297,10 +297,10 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id s
 
 	ipc := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
 	if ipc == nil {
-		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.Wrap(err, "Unable to get identity provider")}
+		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
 	}
 	if ipc.ApplicationID.Hex() != appId {
-		return nil, &models.GeneralError{Message: "Wrong application id for the identity provider", Err: errors.Wrap(err, "Wrong application id for the identity provider")}
+		return nil, &models.GeneralError{Message: "Wrong application id for the identity provider", Err: errors.New("Wrong application id for the identity provider")}
 	}
 
 	return ipc, nil
@@ -314,7 +314,7 @@ func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]
 
 	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 	if ipc == nil && len(ipc) > 0 {
-		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.Wrap(err, "Unable to get identity provider")}
+		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
 	}
 
 	return ipc, nil

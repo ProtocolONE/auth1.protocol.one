@@ -7,7 +7,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -37,26 +36,14 @@ func oauthLogin(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Oauth2 login bind form failed"),
-		}
-		//ctx.Error(errors.Wrap(err, "Oauth2 login bind form failed"))
-		return ctx.JSON(http.StatusBadRequest, e)
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	previousLogin := ""
 	appID, user, providers, url, err := m.CheckAuth(ctx, form)
 	if err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Cause(err),
-		}
-		//ctx.Error(e)
-		return ctx.JSON(http.StatusBadRequest, e.Err)
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 	if url != "" {
@@ -93,21 +80,22 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Oauth submit bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "Oauth submit validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -122,13 +110,14 @@ func oauthConsent(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Consent bind form failed"),
 		}
+		ctx.Error(err)
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
 	url, err := m.Consent(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
@@ -143,13 +132,14 @@ func oauthIntrospect(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Introspect bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	token, err := m.Introspect(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -164,13 +154,14 @@ func oauthSignUp(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "SignUp bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.SignUp(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
@@ -182,17 +173,14 @@ func oauthCallback(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Callback bind form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	code := http.StatusOK
 	response, err := m.CallBack(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		code = http.StatusBadRequest
 	}
 	return ctx.Render(code, "oauth_callback.html", map[string]interface{}{
@@ -209,16 +197,13 @@ func oauthLogout(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "Logout bind form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	url, err := m.Logout(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 

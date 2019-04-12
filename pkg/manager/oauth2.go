@@ -64,7 +64,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 	if ipc == nil {
-		return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get identity providers")}
+		return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity providers")}
 	}
 
 	if req.Subject == "" {
@@ -239,7 +239,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 	}
 
 	if app.AuthSecret != form.Secret {
-		return nil, &models.GeneralError{Code: "secret", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Invalid secret key")}
+		return nil, &models.GeneralError{Code: "secret", Message: models.ErrorUnknownError, Err: errors.New("Invalid secret key")}
 	}
 
 	client, _, err := m.r.HydraSDK().AdminApi.IntrospectOAuth2Token(form.Token, "")
@@ -292,7 +292,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if ipc == nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorProviderIdIncorrect, Err: errors.Wrap(err, "Unable to get identity provider")}
+		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorProviderIdIncorrect, Err: errors.New("Unable to get identity provider")}
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
@@ -364,7 +364,7 @@ func (m *OauthManager) CallBack(ctx echo.Context, form *models.Oauth2CallBackFor
 			}, &models.GeneralError{
 				Code:    "common",
 				Message: "Unable to get client id from session",
-				Err:     errors.Wrap(err, "Unable to get client id from session"),
+				Err:     errors.New("Unable to get client id from session"),
 			}
 	}
 

@@ -7,7 +7,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -36,8 +35,8 @@ func changePasswordStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "ChangePasswordStart bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -45,12 +44,13 @@ func changePasswordStart(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "ChangePasswordStart validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.ChangePasswordStart(form); err != nil {
+		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -65,8 +65,8 @@ func changePasswordVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "ChangePasswordVerify bind form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
@@ -74,12 +74,13 @@ func changePasswordVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "ChangePasswordVerify validate form failed"),
 		}
+		ctx.Error(err)
 		return helper.JsonError(ctx, e)
 	}
 
 	if err := m.ChangePasswordVerify(form); err != nil {
+		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
 	}
 
@@ -90,21 +91,13 @@ func changePasswordForm(ctx echo.Context) error {
 	form := new(models.ChangePasswordForm)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "ChangePasswordForm bind form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "ChangePasswordForm validate form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorRequiredField)
 	}
 
 	return ctx.Render(http.StatusOK, "change_password.html", map[string]interface{}{

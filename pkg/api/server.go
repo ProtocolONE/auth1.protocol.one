@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
@@ -72,6 +73,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
 	server.Echo.Renderer = t
+	server.Echo.HTTPErrorHandler = helper.ErrorHandler
 	server.Echo.Use(ZapLogger(zap.L()))
 	server.Echo.Use(middleware.Recover())
 	// TODO: Validate origins for each application by settings

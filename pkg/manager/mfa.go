@@ -55,7 +55,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 	}
 
 	if rsp.Result != true {
-		return nil, &models.GeneralError{Code: `common`, Message: models.ErrorMfaCodeInvalid}
+		return nil, &models.GeneralError{Code: `common`, Message: models.ErrorMfaCodeInvalid, Err: errors.New(models.ErrorMfaCodeInvalid)}
 	}
 
 	user, err := m.userService.Get(mp.UserIdentity.UserID)
@@ -78,7 +78,10 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 
 	p, err := m.mfaService.Get(bson.ObjectIdHex(form.ProviderId))
 	if err != nil || p.AppID != app.ID {
-		return nil, &models.GeneralError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect, Err: errors.Wrap(err, "Unable to get MFA provider for application")}
+		if err == nil {
+			err = errors.New("Provider not equal application")
+		}
+		return nil, &models.GeneralError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect, Err: errors.WithStack(err)}
 	}
 
 	c, err := helper.GetTokenFromAuthHeader(ctx.Request().Header)

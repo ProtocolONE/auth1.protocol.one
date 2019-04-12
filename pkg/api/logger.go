@@ -1,11 +1,9 @@
 package api
 
 import (
-	"bytes"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"io/ioutil"
 	"strconv"
 	"time"
 )
@@ -15,16 +13,7 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 
-			reqBody := []byte{}
-			if c.Request().Body != nil { // Read
-				reqBody, _ = ioutil.ReadAll(c.Request().Body)
-			}
-			c.Request().Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
-
 			err := next(c)
-			if err != nil {
-				c.Error(err)
-			}
 
 			stop := time.Now()
 			req := c.Request()
@@ -48,7 +37,6 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 			status := res.Status
 			fields := []zapcore.Field{
 				zap.Int("status", status),
-				zap.String("request-id", id),
 				zap.String("method", req.Method),
 				zap.String("uri", req.RequestURI),
 				zap.String("host", req.Host),
@@ -73,10 +61,8 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 
 			switch {
 			case status >= 500:
-				fields = append(fields, zap.Any("request", reqBody))
 				log.Error("Server error", fields...)
 			case status >= 400:
-				fields = append(fields, zap.Any("request", reqBody))
 				log.Warn("Client error", fields...)
 			case status >= 300:
 				log.Info("Redirection", fields...)
@@ -84,7 +70,7 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 				log.Info("Success", fields...)
 			}
 
-			return nil
+			return err
 		}
 	}
 }

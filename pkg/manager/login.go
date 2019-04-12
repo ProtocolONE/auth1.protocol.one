@@ -48,7 +48,7 @@ func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegi
 
 func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, *models.GeneralError) {
 	if form.Connection == `incorrect` {
-		return "", &models.GeneralError{Message: models.ErrorConnectionIncorrect}
+		return "", &models.GeneralError{Message: models.ErrorConnectionIncorrect, Err: errors.New("Invalid connection name")}
 	}
 
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
@@ -88,7 +88,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
 	if ip == nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.Wrap(err, "Unable to load identity provider")}
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.New("Unable to load identity provider")}
 	}
 
 	cp, err := m.identityProviderService.GetSocialProfile(ctx, ip)
@@ -128,7 +128,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	if cp.Email != "" {
 		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 		if ipPass == nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.Wrap(err, "Unable to load identity provider")}
+			return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.New("Unable to load identity provider")}
 		}
 
 		userIdentity, err := m.userIdentityService.Get(app, ipPass, cp.Email)

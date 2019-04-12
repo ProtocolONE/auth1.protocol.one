@@ -37,7 +37,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if ipc == nil {
-		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get identity provider")}
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
 	ui, err := m.userIdentityService.Get(app, ipc, form.Email)
@@ -87,11 +87,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if ipc == nil {
-		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get identity provider")}
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
 	ui, err := m.userIdentityService.Get(app, ipc, ts.Email)
-	if err != nil || ui.ID == "" {
+	if err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 	}
 

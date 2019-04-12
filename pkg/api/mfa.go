@@ -7,7 +7,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -33,25 +32,18 @@ func mfaChallenge(ctx echo.Context) error {
 	m := ctx.Get("mfa_manager").(*manager.MFAManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "MFAChallenge bind form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
 	}
 
 	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "MFAChallenge validate form failed"),
-		}
-		return ctx.HTML(http.StatusBadRequest, e.Message)
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorRequiredField)
 	}
 
 	err := m.MFAChallenge(form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
@@ -66,8 +58,8 @@ func mfaVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "MFAVerify bind form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -75,13 +67,14 @@ func mfaVerify(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "MFAVerify validate form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	token, err := m.MFAVerify(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
@@ -96,8 +89,8 @@ func mfaAdd(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
-			Err:     errors.Wrap(err, "MFAAdd bind form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
@@ -105,13 +98,14 @@ func mfaAdd(ctx echo.Context) error {
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
-			Err:     errors.Wrap(err, "MFAAdd validate form failed"),
 		}
+		ctx.Error(err)
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
 	authenticator, err := m.MFAAdd(ctx, form)
 	if err != nil {
+		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
