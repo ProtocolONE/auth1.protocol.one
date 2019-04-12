@@ -33,6 +33,7 @@ func InitManage(cfg *Server) error {
 	g.GET("/app/:app_id/identity/:id", getIdentityProvider)
 	g.GET("/app/:id/identity", getIdentityProviders)
 	g.GET("/identity/templates", getIdentityProviderTemplates)
+	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
 
 	return nil
@@ -357,4 +358,35 @@ func updateIdentityProvider(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, form)
+}
+
+func setOneTimeTokenSettings(ctx echo.Context) error {
+	id := ctx.Param("id")
+	form := &models.OneTimeTokenSettings{}
+	m := ctx.Get("manage_manager").(*manager.ManageManager)
+
+	if err := ctx.Bind(form); err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return helper.JsonError(ctx, e)
+	}
+
+	if err := m.SetOneTimeTokenSettings(ctx, id, form); err != nil {
+		ctx.Error(err.Err)
+		return ctx.HTML(http.StatusBadRequest, "Unable to set OneTimeToken settings for the application")
+	}
+
+	return ctx.HTML(http.StatusOK, "")
 }

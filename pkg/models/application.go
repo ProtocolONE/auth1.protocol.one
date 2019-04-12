@@ -33,18 +33,19 @@ var (
 )
 
 type Application struct {
-	ID                bson.ObjectId          `bson:"_id" json:"id"`
-	SpaceId           bson.ObjectId          `bson:"space_id" json:"space_id"`
-	Name              string                 `bson:"name" json:"name" validate:"required"`
-	Description       string                 `bson:"description" json:"description"`
-	IsActive          bool                   `bson:"is_active" json:"is_active"`
-	CreatedAt         time.Time              `bson:"created_at" json:"-"`
-	UpdatedAt         time.Time              `bson:"updated_at" json:"-"`
-	AuthSecret        string                 `bson:"auth_secret" json:"auth_secret" validate:"required"`
-	AuthRedirectUrls  []string               `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
-	HasSharedUsers    bool                   `bson:"has_shared_users" json:"has_shared_users"`
-	PasswordSettings  *PasswordSettings      `bson:"password_settings" json:"password_settings"`
-	IdentityProviders []*AppIdentityProvider `bson:"identity_providers" json:"identity_providers"`
+	ID                   bson.ObjectId          `bson:"_id" json:"id"`
+	SpaceId              bson.ObjectId          `bson:"space_id" json:"space_id"`
+	Name                 string                 `bson:"name" json:"name" validate:"required"`
+	Description          string                 `bson:"description" json:"description"`
+	IsActive             bool                   `bson:"is_active" json:"is_active"`
+	CreatedAt            time.Time              `bson:"created_at" json:"-"`
+	UpdatedAt            time.Time              `bson:"updated_at" json:"-"`
+	AuthSecret           string                 `bson:"auth_secret" json:"auth_secret" validate:"required"`
+	AuthRedirectUrls     []string               `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
+	HasSharedUsers       bool                   `bson:"has_shared_users" json:"has_shared_users"`
+	PasswordSettings     *PasswordSettings      `bson:"password_settings" json:"password_settings"`
+	OneTimeTokenSettings *OneTimeTokenSettings  `bson:"ott_settings" json:"ott_settings"`
+	IdentityProviders    []*AppIdentityProvider `bson:"identity_providers" json:"identity_providers"`
 }
 
 type PasswordSettings struct {

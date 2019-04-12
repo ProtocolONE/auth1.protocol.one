@@ -106,12 +106,16 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			TokenLength:    models.PasswordTokenLengthDefault,
 			TokenTTL:       models.PasswordTokenTTLDefault,
 		},
+		OneTimeTokenSettings: &models.OneTimeTokenSettings{
+			Length: 64,
+			TTL:    3600,
+		},
 		IdentityProviders: []*models.AppIdentityProvider{{
 			ID:            bson.NewObjectId(),
 			ApplicationID: appID,
 			Type:          models.AppIdentityProviderTypePassword,
 			Name:          models.AppIdentityProviderNameDefault,
-			DisplayName:   "Initial connection",
+			DisplayName:   models.AppIdentityProviderDisplayNameDefault,
 		}},
 	}
 
@@ -187,29 +191,6 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 	}
 
 	return s, nil
-}
-
-func (m *ManageManager) SetPasswordSettings(ctx echo.Context, appID string, form *models.PasswordSettings) *models.GeneralError {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
-	if err != nil {
-		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
-	}
-
-	app.PasswordSettings = &models.PasswordSettings{
-		BcryptCost:     form.BcryptCost,
-		Min:            form.Min,
-		Max:            form.Max,
-		RequireNumber:  form.RequireNumber,
-		RequireUpper:   form.RequireUpper,
-		RequireSpecial: form.RequireSpecial,
-		TokenLength:    form.TokenLength,
-		TokenTTL:       form.TokenTTL,
-	}
-	if err := m.r.ApplicationService().Update(app); err != nil {
-		return &models.GeneralError{Message: "Unable to save application password", Err: errors.Wrap(err, "Unable to save application password")}
-	}
-
-	return nil
 }
 
 func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, *models.GeneralError) {
@@ -322,4 +303,18 @@ func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]
 
 func (m *ManageManager) GetIdentityProviderTemplates() []*models.AppIdentityProvider {
 	return m.identityProviderService.GetAllTemplates()
+}
+
+func (m *ManageManager) SetOneTimeTokenSettings(ctx echo.Context, appID string, form *models.OneTimeTokenSettings) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
+	if err != nil {
+		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	app.OneTimeTokenSettings = form
+	if err := m.r.ApplicationService().Update(app); err != nil {
+		return &models.GeneralError{Message: "Unable to save application OneTimeToken settings", Err: errors.Wrap(err, "Unable to save application OneTimeToken settings")}
+	}
+
+	return nil
 }

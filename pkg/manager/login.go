@@ -110,11 +110,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 		}
 
-		ottSettings := &models.OneTimeTokenSettings{
-			Length: 64,
-			TTL:    3600,
-		}
-		ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
+		ott, err := m.r.OneTimeTokenService().Create(userIdentity, app.OneTimeTokenSettings)
 		if err != nil {
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 		}
@@ -195,11 +191,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: 64,
-		TTL:    3600,
-	}
-	ott, err := m.r.OneTimeTokenService().Create(&userIdentity, ottSettings)
+	ott, err := m.r.OneTimeTokenService().Create(&userIdentity, app.OneTimeTokenSettings)
 	if err != nil {
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
@@ -267,10 +259,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 					UserIdentity: userIdentity,
 					MfaProvider:  mfa[0],
 				},
-				&models.OneTimeTokenSettings{
-					Length: 64,
-					TTL:    3600,
-				},
+				app.OneTimeTokenSettings,
 			)
 			if err != nil {
 				return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
