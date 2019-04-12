@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
+	"gopkg.in/tomb.v2"
 	"time"
 )
 
@@ -67,14 +68,19 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity providers")}
 	}
 
-	if req.Subject == "" {
-		return req.Client.ClientId, nil, ipc, "", nil
-	}
-
 	sess, err := session.Get(m.sessionConfig.Name, ctx)
 	if err != nil {
 		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get session")}
 	}
+	sess.Values[clientIdSessionKey] = req.Client.ClientId
+	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
+		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+	}
+
+	if req.Subject == "" {
+		return req.Client.ClientId, nil, ipc, "", nil
+	}
+
 	sess.Values[loginRememberKey] = req.Skip == true
 	if err := sessions.Save(ctx.Request(), ctx.Response()); err != nil {
 		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
@@ -121,6 +127,12 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 			}
 
+			t, _ := tomb.WithContext(ctx.Request().Context())
+			t.Go(func() error {
+				encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+				return encryptor.Compare(userIdentity.Credential, form.Password)
+			})
+
 			ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 			if ipc == nil {
 				return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to get identity provider")}
@@ -131,9 +143,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user identity")}
 			}
 
-			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
-			err = encryptor.Compare(userIdentity.Credential, form.Password)
-			if err != nil {
+			if err := t.Wait(); err != nil {
 				return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.Wrap(err, "Bad user password")}
 			}
 		}
@@ -269,13 +279,9 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
+	clientId := sess.Values[clientIdSessionKey].(string)
 
-	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
-	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
-	}
-
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Client.ClientId))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId))
 	if err != nil {
 		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
@@ -283,11 +289,20 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 	}
 
-	encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+	encryptedPassword := ""
+	t, _ := tomb.WithContext(ctx.Request().Context())
+	t.Go(func() error {
+		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+		encryptedPassword, err = encryptor.Digest(form.Password)
+		return err
+	})
 
-	ep, err := encryptor.Digest(form.Password)
+	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
 	if err != nil {
-		return "", &models.GeneralError{Code: "password", Message: models.ErrorCryptPassword, Err: errors.Wrap(err, "Unable to crypt password")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
+	}
+	if req.Client.ClientId != clientId {
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Client ID is incorrect")}
 	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
@@ -298,6 +313,10 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
 	if err != nil && err != mgo.ErrNotFound {
 		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user with identity for application")}
+	}
+
+	if err := t.Wait(); err != nil {
+		return "", &models.GeneralError{Code: "password", Message: models.ErrorCryptPassword, Err: errors.Wrap(err, "Unable to crypt password")}
 	}
 
 	user := &models.User{
@@ -323,7 +342,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		ApplicationID:      app.ID,
 		ExternalID:         form.Email,
 		IdentityProviderID: ipc.ID,
-		Credential:         ep,
+		Credential:         encryptedPassword,
 		Email:              form.Email,
 		CreatedAt:          time.Now(),
 		UpdatedAt:          time.Now(),
