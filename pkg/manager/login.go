@@ -24,10 +24,10 @@ var (
 
 type LoginManager struct {
 	redis                   *redis.Client
-	userService             *models.UserService
-	userIdentityService     *models.UserIdentityService
-	mfaService              *models.MfaService
-	authLogService          *models.AuthLogService
+	userService             *service.UserService
+	userIdentityService     *service.UserIdentityService
+	mfaService              *service.MfaService
+	authLogService          *service.AuthLogService
 	identityProviderService *service.AppIdentityProviderService
 	r                       service.InternalRegistry
 }
@@ -36,10 +36,10 @@ func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegi
 	m := &LoginManager{
 		redis:                   redis,
 		r:                       r,
-		userService:             models.NewUserService(h),
-		userIdentityService:     models.NewUserIdentityService(h),
-		mfaService:              models.NewMfaService(h),
-		authLogService:          models.NewAuthLogService(h),
+		userService:             service.NewUserService(h),
+		userIdentityService:     service.NewUserIdentityService(h),
+		mfaService:              service.NewMfaService(h),
+		authLogService:          service.NewAuthLogService(h),
 		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 

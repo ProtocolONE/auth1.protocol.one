@@ -16,18 +16,18 @@ import (
 type MFAManager struct {
 	Redis          *redis.Client
 	r              service.InternalRegistry
-	authLogService *models.AuthLogService
-	userService    *models.UserService
-	mfaService     *models.MfaService
+	authLogService *service.AuthLogService
+	userService    *service.UserService
+	mfaService     *service.MfaService
 }
 
 func NewMFAManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *MFAManager {
 	m := &MFAManager{
 		Redis:          redis,
 		r:              r,
-		authLogService: models.NewAuthLogService(h),
-		mfaService:     models.NewMfaService(h),
-		userService:    models.NewUserService(h),
+		authLogService: service.NewAuthLogService(h),
+		mfaService:     service.NewMfaService(h),
+		userService:    service.NewUserService(h),
 	}
 
 	return m

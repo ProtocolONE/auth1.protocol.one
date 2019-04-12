@@ -1,18 +1,12 @@
 package models
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
 
 type (
-	UserIdentityService struct {
-		db *mgo.Database
-	}
-
 	UserIdentity struct {
 		ID                 bson.ObjectId `bson:"_id" json:"id"`
 		UserID             bson.ObjectId `bson:"user_id" json:"user_id"`
@@ -69,33 +63,4 @@ func (a *UserIdentitySocial) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Email", a.Email)
 
 	return nil
-}
-
-func NewUserIdentityService(dbHandler *mgo.Session) *UserIdentityService {
-	return &UserIdentityService{db: dbHandler.DB("")}
-}
-
-func (us UserIdentityService) Create(userIdentity *UserIdentity) error {
-	if err := us.db.C(database.TableUserIdentity).Insert(userIdentity); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserIdentityService) Update(userIdentity *UserIdentity) error {
-	if err := us.db.C(database.TableUserIdentity).UpdateId(userIdentity.ID, userIdentity); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserIdentityService) Get(app *Application, identityProvider *AppIdentityProvider, externalId string) (*UserIdentity, error) {
-	ui := &UserIdentity{}
-	err := us.db.C(database.TableUserIdentity).
-		Find(bson.M{"app_id": app.ID, "identity_provider_id": identityProvider.ID, "external_id": externalId}).
-		One(&ui)
-
-	return ui, err
 }

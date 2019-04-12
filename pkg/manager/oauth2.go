@@ -29,9 +29,9 @@ type OauthManager struct {
 	redis                   *redis.Client
 	sessionConfig           *config.Session
 	hydraConfig             *config.Hydra
-	userService             *models.UserService
-	userIdentityService     *models.UserIdentityService
-	authLogService          *models.AuthLogService
+	userService             *service.UserService
+	userIdentityService     *service.UserIdentityService
+	authLogService          *service.AuthLogService
 	identityProviderService *service.AppIdentityProviderService
 	r                       service.InternalRegistry
 }
@@ -42,9 +42,9 @@ func NewOauthManager(db *mgo.Session, redis *redis.Client, r service.InternalReg
 		sessionConfig:           s,
 		hydraConfig:             h,
 		r:                       r,
-		userService:             models.NewUserService(db),
-		userIdentityService:     models.NewUserIdentityService(db),
-		authLogService:          models.NewAuthLogService(db),
+		userService:             service.NewUserService(db),
+		userIdentityService:     service.NewUserIdentityService(db),
+		authLogService:          service.NewAuthLogService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 

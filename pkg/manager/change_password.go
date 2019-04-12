@@ -14,7 +14,7 @@ import (
 type ChangePasswordManager struct {
 	redis                   *redis.Client
 	r                       service.InternalRegistry
-	userIdentityService     *models.UserIdentityService
+	userIdentityService     *service.UserIdentityService
 	identityProviderService *service.AppIdentityProviderService
 }
 
@@ -22,7 +22,7 @@ func NewChangePasswordManager(db *mgo.Session, r *redis.Client, ir service.Inter
 	m := &ChangePasswordManager{
 		redis:                   r,
 		r:                       ir,
-		userIdentityService:     models.NewUserIdentityService(db),
+		userIdentityService:     service.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 
