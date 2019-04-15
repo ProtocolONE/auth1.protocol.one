@@ -8,7 +8,7 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/ory/hydra-legacy-sdk/swagger"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"

@@ -7,7 +7,7 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
-	"github.com/ory/hydra/sdk/go/hydra"
+	h "github.com/ory/hydra-legacy-sdk"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +17,7 @@ type RegistryBase struct {
 	as      *ApplicationService
 	ott     *OneTimeTokenService
 	watcher persist.Watcher
-	hydra   *hydra.CodeGenSDK
+	hydra   *h.CodeGenSDK
 	mfa     proto.MfaService
 	mailer  Mailer
 }
@@ -31,7 +31,7 @@ type RegistryConfig struct {
 }
 
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
-	h, err := hydra.NewSDK(&hydra.Configuration{AdminURL: config.HydraConfig.AdminURL})
+	h, err := h.NewSDK(&h.Configuration{AdminURL: config.HydraConfig.AdminURL})
 	if err != nil {
 		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
 	}
@@ -57,7 +57,7 @@ func (r *RegistryBase) MgoSession() *mgo.Session {
 	return r.session
 }
 
-func (r *RegistryBase) HydraSDK() *hydra.CodeGenSDK {
+func (r *RegistryBase) HydraSDK() *h.CodeGenSDK {
 	return r.hydra
 }
 

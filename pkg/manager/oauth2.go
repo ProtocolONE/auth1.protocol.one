@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/ory/hydra-legacy-sdk/swagger"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
 	"time"
