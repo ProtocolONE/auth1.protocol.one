@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
+	"github.com/ory/hydra/sdk/go/hydra"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"log"
@@ -64,16 +65,21 @@ func runServer(cmd *cobra.Command, args []string) {
 	service.Init()
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
+	hydraSDK, err := hydra.NewSDK(&hydra.Configuration{AdminURL: cfg.Hydra.AdminURL})
+	if err != nil {
+		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
+	}
+
 	serverConfig := api.ServerConfig{
-		ApiConfig:      &cfg.Server,
-		DatabaseConfig: &cfg.Database,
-		HydraConfig:    &cfg.Hydra,
-		SessionConfig:  &cfg.Session,
-		MfaService:     ms,
-		MgoSession:     db,
-		SessionStore:   store,
-		RedisClient:    redisClient,
-		Mailer:         &cfg.Mailer,
+		ApiConfig:     &cfg.Server,
+		HydraConfig:   &cfg.Hydra,
+		SessionConfig: &cfg.Session,
+		MfaService:    ms,
+		MgoSession:    db,
+		SessionStore:  store,
+		RedisClient:   redisClient,
+		HydraAdminApi: hydraSDK,
+		Mailer:        &cfg.Mailer,
 	}
 
 	server, err := api.NewServer(&serverConfig)

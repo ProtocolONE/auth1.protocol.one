@@ -10,7 +10,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra-legacy-sdk/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
@@ -291,7 +291,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
-	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(
+	reqACL, _, err := m.r.HydraAdminApi().AcceptLoginRequest(
 		form.Challenge,
 		swagger.AcceptLoginRequest{
 			Subject:     user.ID.Hex(),

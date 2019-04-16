@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/ory/hydra-legacy-sdk/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"go.uber.org/zap/zapcore"
 )
 

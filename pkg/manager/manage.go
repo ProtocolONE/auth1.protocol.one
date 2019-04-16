@@ -8,7 +8,7 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra-legacy-sdk/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
@@ -123,7 +123,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		return nil, &models.GeneralError{Message: "Unable to create application", Err: errors.Wrap(err, "Unable to create application")}
 	}
 
-	_, response, err := m.r.HydraSDK().AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
+	_, response, err := m.r.HydraAdminApi().CreateOAuth2Client(swagger.OAuth2Client{
 		ClientId:      app.ID.Hex(),
 		ClientName:    app.Name,
 		ClientSecret:  app.AuthSecret,
@@ -169,14 +169,14 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}
 	}
 
-	client, _, err := m.r.HydraSDK().AdminApi.GetOAuth2Client(id)
+	client, _, err := m.r.HydraAdminApi().GetOAuth2Client(id)
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get hydra client", Err: errors.Wrap(err, "Unable to get hydra client")}
 	}
 
 	client.RedirectUris = form.Application.AuthRedirectUrls
 
-	_, _, err = m.r.HydraSDK().AdminApi.UpdateOAuth2Client(id, *client)
+	_, _, err = m.r.HydraAdminApi().UpdateOAuth2Client(id, *client)
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to update hydra client", Err: errors.Wrap(err, "Unable to update hydra client")}
 	}

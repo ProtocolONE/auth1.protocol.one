@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/ory/hydra/sdk/go/hydra"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
@@ -28,15 +29,15 @@ import (
 )
 
 type ServerConfig struct {
-	ApiConfig      *config.Server
-	DatabaseConfig *config.Database
-	HydraConfig    *config.Hydra
-	SessionConfig  *config.Session
-	MfaService     proto.MfaService
-	MgoSession     *mgo.Session
-	SessionStore   *redistore.RediStore
-	RedisClient    *redis.Client
-	Mailer         *config.Mailer
+	ApiConfig     *config.Server
+	HydraConfig   *config.Hydra
+	HydraAdminApi hydra.OAuth2API
+	SessionConfig *config.Session
+	MfaService    proto.MfaService
+	MgoSession    *mgo.Session
+	SessionStore  *redistore.RediStore
+	RedisClient   *redis.Client
+	Mailer        *config.Mailer
 }
 
 type Server struct {
@@ -54,11 +55,11 @@ type Template struct {
 
 func NewServer(c *ServerConfig) (*Server, error) {
 	registryConfig := &service.RegistryConfig{
-		MgoSession:  c.MgoSession,
-		HydraConfig: c.HydraConfig,
-		MfaService:  c.MfaService,
-		RedisClient: c.RedisClient,
-		Mailer:      service.NewMailer(c.Mailer),
+		MgoSession:    c.MgoSession,
+		HydraAdminApi: c.HydraAdminApi,
+		MfaService:    c.MfaService,
+		RedisClient:   c.RedisClient,
+		Mailer:        service.NewMailer(c.Mailer),
 	}
 	server := &Server{
 		Echo:          echo.New(),

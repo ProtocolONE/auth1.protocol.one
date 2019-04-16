@@ -4,13 +4,13 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
-	h "github.com/ory/hydra-legacy-sdk"
+	"github.com/ory/hydra/sdk/go/hydra"
 )
 
 type InternalRegistry interface {
 	Watcher() persist.Watcher
 	MgoSession() *mgo.Session
-	HydraSDK() *h.CodeGenSDK
+	HydraAdminApi() hydra.OAuth2API
 	MfaService() proto.MfaService
 	ApplicationService() *ApplicationService
 	OneTimeTokenService() *OneTimeTokenService

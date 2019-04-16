@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra-legacy-sdk/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
 	"time"
@@ -53,7 +53,7 @@ func NewOauthManager(db *mgo.Session, redis *redis.Client, r service.InternalReg
 }
 
 func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError) {
-	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraAdminApi().GetLoginRequest(form.Challenge)
 	if err != nil {
 		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
 	}
@@ -87,7 +87,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 	}
 
 	if req.Skip == true {
-		reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
+		reqACL, _, err := m.r.HydraAdminApi().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: req.Subject})
 		if err != nil {
 			return req.Client.ClientId, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorPasswordIncorrect, Err: errors.Wrap(err, "Unable to accept login challenge")}
 		}
@@ -109,7 +109,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get session")}
 	}
 
-	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraAdminApi().GetLoginRequest(form.Challenge)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
 	}
@@ -168,7 +168,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 	// TODO: Add MFA cases
 
-	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(
+	reqACL, _, err := m.r.HydraAdminApi().AcceptLoginRequest(
 		form.Challenge,
 		swagger.AcceptLoginRequest{
 			Subject:     userId,
@@ -188,7 +188,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 	// TODO: What scope should be requested to send a person to accept them?
 	// For now, we automatically agree with those that the user came with.
 
-	reqGCR, _, err := m.r.HydraSDK().GetConsentRequest(form.Challenge)
+	reqGCR, _, err := m.r.HydraAdminApi().GetConsentRequest(form.Challenge)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
@@ -229,7 +229,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		}
 	}
 
-	reqACR, _, err := m.r.HydraSDK().AcceptConsentRequest(form.Challenge, req)
+	reqACR, _, err := m.r.HydraAdminApi().AcceptConsentRequest(form.Challenge, req)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept consent challenge")}
 	}
@@ -247,7 +247,7 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 		return nil, &models.GeneralError{Code: "secret", Message: models.ErrorUnknownError, Err: errors.New("Invalid secret key")}
 	}
 
-	client, _, err := m.r.HydraSDK().AdminApi.IntrospectOAuth2Token(form.Token, "")
+	client, _, err := m.r.HydraAdminApi().IntrospectOAuth2Token(form.Token, "")
 	if err != nil {
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to introspect token")}
 	}
@@ -292,7 +292,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return err
 	})
 
-	req, _, err := m.r.HydraSDK().GetLoginRequest(form.Challenge)
+	req, _, err := m.r.HydraAdminApi().GetLoginRequest(form.Challenge)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
 	}
@@ -350,7 +350,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add auth log")}
 	}
 
-	reqACL, _, err := m.r.HydraSDK().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
+	reqACL, _, err := m.r.HydraAdminApi().AcceptLoginRequest(form.Challenge, swagger.AcceptLoginRequest{Subject: user.ID.Hex()})
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
 	}
