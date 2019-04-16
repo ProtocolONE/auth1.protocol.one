@@ -12,12 +12,12 @@ import (
 type RegistryBase struct {
 	redis   *redis.Client
 	session *mgo.Session
-	as      *ApplicationService
-	ott     *OneTimeTokenService
+	as      ApplicationServiceInterface
+	ott     OneTimeTokenServiceInterface
 	watcher persist.Watcher
 	hydra   hydra.OAuth2API
 	mfa     proto.MfaService
-	mailer  Mailer
+	mailer  MailerInterface
 }
 
 type RegistryConfig struct {
@@ -25,7 +25,7 @@ type RegistryConfig struct {
 	RedisClient   *redis.Client
 	MfaService    proto.MfaService
 	HydraAdminApi hydra.OAuth2API
-	Mailer        Mailer
+	Mailer        MailerInterface
 }
 
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
@@ -58,11 +58,11 @@ func (r *RegistryBase) MfaService() proto.MfaService {
 	return r.mfa
 }
 
-func (r *RegistryBase) Mailer() Mailer {
+func (r *RegistryBase) Mailer() MailerInterface {
 	return r.mailer
 }
 
-func (r *RegistryBase) ApplicationService() *ApplicationService {
+func (r *RegistryBase) ApplicationService() ApplicationServiceInterface {
 	if r.as == nil {
 		r.as = NewApplicationService(r)
 	}
@@ -70,8 +70,8 @@ func (r *RegistryBase) ApplicationService() *ApplicationService {
 	return r.as
 }
 
-func (r *RegistryBase) OneTimeTokenService() *OneTimeTokenService {
-	if r.as == nil {
+func (r *RegistryBase) OneTimeTokenService() OneTimeTokenServiceInterface {
+	if r.ott == nil {
 		r.ott = NewOneTimeTokenService(r.redis)
 	}
 

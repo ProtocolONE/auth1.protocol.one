@@ -8,22 +8,19 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
 type MFAManager struct {
-	Redis          *redis.Client
 	r              service.InternalRegistry
-	authLogService *service.AuthLogService
-	userService    *service.UserService
-	mfaService     *service.MfaService
+	authLogService service.AuthLogServiceInterface
+	userService    service.UserServiceInterface
+	mfaService     service.MfaServiceInterface
 }
 
-func NewMFAManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *MFAManager {
+func NewMFAManager(h *mgo.Session, r service.InternalRegistry) *MFAManager {
 	m := &MFAManager{
-		Redis:          redis,
 		r:              r,
 		authLogService: service.NewAuthLogService(h),
 		mfaService:     service.NewMfaService(h),

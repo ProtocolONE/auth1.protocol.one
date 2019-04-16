@@ -9,7 +9,6 @@ import (
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -27,19 +26,17 @@ var (
 )
 
 type OauthManager struct {
-	redis                   *redis.Client
 	sessionConfig           *config.Session
 	hydraConfig             *config.Hydra
-	userService             *service.UserService
-	userIdentityService     *service.UserIdentityService
-	authLogService          *service.AuthLogService
-	identityProviderService *service.AppIdentityProviderService
+	userService             service.UserServiceInterface
+	userIdentityService     service.UserIdentityServiceInterface
+	authLogService          service.AuthLogServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, redis *redis.Client, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
+func NewOauthManager(db *mgo.Session, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
 	m := &OauthManager{
-		redis:                   redis,
 		sessionConfig:           s,
 		hydraConfig:             h,
 		r:                       r,

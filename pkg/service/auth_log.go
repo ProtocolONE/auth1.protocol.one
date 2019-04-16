@@ -8,6 +8,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type AuthLogServiceInterface interface {
+	Add(echo.Context, *models.User, string) error
+}
+
 type AuthLogService struct {
 	db *mgo.Database
 }

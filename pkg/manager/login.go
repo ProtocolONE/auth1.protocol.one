@@ -8,7 +8,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 	"github.com/pkg/errors"
@@ -23,18 +22,16 @@ var (
 )
 
 type LoginManager struct {
-	redis                   *redis.Client
-	userService             *service.UserService
-	userIdentityService     *service.UserIdentityService
-	mfaService              *service.MfaService
-	authLogService          *service.AuthLogService
-	identityProviderService *service.AppIdentityProviderService
+	userService             service.UserServiceInterface
+	userIdentityService     service.UserIdentityServiceInterface
+	mfaService              service.MfaServiceInterface
+	authLogService          service.AuthLogServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *LoginManager {
+func NewLoginManager(h *mgo.Session, r service.InternalRegistry) *LoginManager {
 	m := &LoginManager{
-		redis:                   redis,
 		r:                       r,
 		userService:             service.NewUserService(h),
 		userIdentityService:     service.NewUserIdentityService(h),

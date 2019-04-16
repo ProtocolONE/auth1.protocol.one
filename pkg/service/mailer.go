@@ -6,24 +6,24 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-type Mailer interface {
+type MailerInterface interface {
 	Send(to, subject, body string) error
 }
 
-type MailerImpl struct {
+type Mailer struct {
 	replyTo string
 	from    string
 	dialer  *gomail.Dialer
 }
 
-func NewMailer(config *config.Mailer) (mailer Mailer) {
+func NewMailer(config *config.Mailer) (mailer MailerInterface) {
 	dialer := gomail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}
-	mailer = &MailerImpl{config.ReplyTo, config.From, dialer}
+	mailer = &Mailer{config.ReplyTo, config.From, dialer}
 	return
 }
 
-func (mailer *MailerImpl) Send(to, subject, body string) (err error) {
+func (mailer *Mailer) Send(to, subject, body string) (err error) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", mailer.from)
 	m.SetHeader("To", to)

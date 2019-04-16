@@ -11,6 +11,12 @@ import (
 
 const OneTimeTokenStoragePattern = "ott_data_%s"
 
+type OneTimeTokenServiceInterface interface {
+	Create(interface{}, *models.OneTimeTokenSettings) (*models.OneTimeToken, error)
+	Get(string, interface{}) error
+	Use(string, interface{}) error
+}
+
 type OneTimeTokenService struct {
 	Redis    *redis.Client
 	Settings *models.OneTimeTokenSettings

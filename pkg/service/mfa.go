@@ -7,6 +7,14 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+type MfaServiceInterface interface {
+	Add(*models.MfaProvider) error
+	List(bson.ObjectId) ([]*models.MfaProvider, error)
+	Get(bson.ObjectId) (*models.MfaProvider, error)
+	AddUserProvider(*models.MfaUserProvider) error
+	GetUserProviders(*models.User) ([]*models.MfaProvider, error)
+}
+
 type MfaService struct {
 	db *mgo.Database
 }

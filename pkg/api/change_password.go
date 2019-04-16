@@ -14,7 +14,7 @@ func InitChangePassword(cfg *Server) error {
 	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.RedisHandler, cfg.Registry))
+			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry))
 
 			return next(c)
 		}

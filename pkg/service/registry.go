@@ -12,7 +12,7 @@ type InternalRegistry interface {
 	MgoSession() *mgo.Session
 	HydraAdminApi() hydra.OAuth2API
 	MfaService() proto.MfaService
-	ApplicationService() *ApplicationService
-	OneTimeTokenService() *OneTimeTokenService
-	Mailer() Mailer
+	ApplicationService() ApplicationServiceInterface
+	OneTimeTokenService() OneTimeTokenServiceInterface
+	Mailer() MailerInterface
 }

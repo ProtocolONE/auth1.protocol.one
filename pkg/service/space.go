@@ -7,6 +7,12 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+type SpaceServiceInterface interface {
+	CreateSpace(*models.Space) error
+	UpdateSpace(*models.Space) error
+	GetSpace(bson.ObjectId) (*models.Space, error)
+}
+
 type SpaceService struct {
 	db *mgo.Database
 }

@@ -22,6 +22,18 @@ import (
 	"strings"
 )
 
+type AppIdentityProviderServiceInterface interface {
+	Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+	FindByType(*models.Application, string) []*models.AppIdentityProvider
+	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
+	NormalizeSocialConnection(*models.AppIdentityProvider) error
+	GetAvailableTemplates() []string
+	GetAllTemplates() []*models.AppIdentityProvider
+	GetTemplate(string) (*models.AppIdentityProvider, error)
+	GetAuthUrl(echo.Context, *models.AppIdentityProvider, interface{}) (string, error)
+	GetSocialProfile(echo.Context, *models.AppIdentityProvider) (*models.UserIdentitySocial, error)
+}
+
 type AppIdentityProviderService struct {
 }
 

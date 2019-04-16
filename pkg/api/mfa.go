@@ -14,7 +14,7 @@ func InitMFA(cfg *Server) error {
 	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(*mgo.Session)
-			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.RedisHandler, cfg.Registry))
+			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Registry))
 
 			return next(c)
 		}

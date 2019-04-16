@@ -15,9 +15,9 @@ import (
 )
 
 type ManageManager struct {
-	spaceService            *service.SpaceService
-	mfaService              *service.MfaService
-	identityProviderService *service.AppIdentityProviderService
+	spaceService            service.SpaceServiceInterface
+	mfaService              service.MfaServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 }
 

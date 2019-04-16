@@ -7,20 +7,17 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
 )
 
 type ChangePasswordManager struct {
-	redis                   *redis.Client
 	r                       service.InternalRegistry
-	userIdentityService     *service.UserIdentityService
-	identityProviderService *service.AppIdentityProviderService
+	userIdentityService     service.UserIdentityServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
-func NewChangePasswordManager(db *mgo.Session, r *redis.Client, ir service.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db *mgo.Session, ir service.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
-		redis:                   r,
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
