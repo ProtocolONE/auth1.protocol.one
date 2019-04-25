@@ -8,9 +8,9 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	hydra_models "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
-	"net/http"
 	"time"
 )
 
@@ -123,16 +123,19 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		return nil, &models.GeneralError{Message: "Unable to create application", Err: errors.Wrap(err, "Unable to create application")}
 	}
 
-	_, response, err := m.r.HydraAdminApi().CreateOAuth2Client(swagger.OAuth2Client{
-		ClientId:      app.ID.Hex(),
-		ClientName:    app.Name,
-		ClientSecret:  app.AuthSecret,
-		GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
-		ResponseTypes: []string{"code", "id_token", "token"},
-		RedirectUris:  app.AuthRedirectUrls,
-		Scope:         "openid offline",
+	_, err = m.r.HydraAdminApi().CreateOAuth2Client(&admin.CreateOAuth2ClientParams{
+		Context: ctx.Request().Context(),
+		Body: &hydra_models.Client{
+			ClientID:      app.ID.Hex(),
+			Name:          app.Name,
+			Secret:        app.AuthSecret,
+			GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
+			ResponseTypes: []string{"code", "id_token", "token"},
+			RedirectUris:  app.AuthRedirectUrls,
+			Scope:         "openid offline",
+		},
 	})
-	if err != nil || response.StatusCode != http.StatusCreated {
+	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to create hydra client", Err: errors.Wrap(err, "Unable to create hydra client")}
 	}
 
@@ -169,14 +172,14 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}
 	}
 
-	client, _, err := m.r.HydraAdminApi().GetOAuth2Client(id)
+	client, err := m.r.HydraAdminApi().GetOAuth2Client(&admin.GetOAuth2ClientParams{ID: id, Context: ctx.Request().Context()})
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get hydra client", Err: errors.Wrap(err, "Unable to get hydra client")}
 	}
 
-	client.RedirectUris = form.Application.AuthRedirectUrls
+	client.Payload.RedirectUris = form.Application.AuthRedirectUrls
 
-	_, _, err = m.r.HydraAdminApi().UpdateOAuth2Client(id, *client)
+	_, err = m.r.HydraAdminApi().UpdateOAuth2Client(&admin.UpdateOAuth2ClientParams{ID: id, Body: client.Payload, Context: ctx.Request().Context()})
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to update hydra client", Err: errors.Wrap(err, "Unable to update hydra client")}
 	}

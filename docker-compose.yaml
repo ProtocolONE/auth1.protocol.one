@@ -24,23 +24,22 @@ services:
     command: bin/bash -c "envsubst < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
+    image: oryd/hydra:v1.0.0-rc.9_oryOS.10
     container_name: hydra-migrate
     depends_on:
       - auth1-postgres
     networks:
       - subnet
     environment:
-      - LOG.LEVEL=debug
+      - LOG_LEVEL=debug
       - DSN=postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable
-      - SYSTEMS.SECRET=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
-      - SECRETS.COOKIE=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
-      - SYSTEM_SECRET=youReallyNeedToChangeThis
+      - SYSTEMS_SECRET=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
+      - SECRETS_COOKIE=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
     restart: on-failure
     command: "migrate sql postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable"
 
   hydra:
-    image: oryd/hydra:v1.0.0-rc.8_oryOS.10
+    image: oryd/hydra:v1.0.0-rc.9_oryOS.10
     container_name: hydra
     depends_on:
       - hydra-migrate
@@ -48,18 +47,17 @@ services:
       - subnet
     environment:
       - DSN=postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable
-      - URLS.SELF.ISSUER=http://localhost
-      - URLS.SELF.PUBLIC=http://localhost
-      - URLS.CONSENT=http://localhost/oauth2/consent
-      - URLS.LOGIN=http://localhost/oauth2/login
-      - URLS.POST_LOGOUT_REDIRECT=http://localhost/oauth2/logout
-      - LOG.LEVEL=debug
-      - OAUTH2.HASHERS.BCRYPT.COST=8
-      - SECRETS.SYSTEM=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
-      - SECRETS.COOKIE=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
-      - SYSTEM_SECRET=youReallyNeedToChangeThis
-      - ACCESS_TOKEN_LIFESPAN=3h
-      - REFRESH_TOKEN_LIFESPAN=720h
+      - URLS_SELF_ISSUER=http://localhost
+      - URLS_SELF_PUBLIC=http://localhost
+      - URLS_CONSENT=http://localhost/oauth2/consent
+      - URLS_LOGIN=http://localhost/oauth2/login
+      - URLS_POST_LOGOUT_REDIRECT=http://localhost/oauth2/logout
+      - LOG_LEVEL=debug
+      - OAUTH2_HASHERS_BCRYPT_COST=8
+      - SECRETS_SYSTEM=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
+      - SECRETS_COOKIE=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
+      - TTL_ACCESS_TOKEN=3h
+      - TTL_REFRESH_TOKEN=720h
     restart: unless-stopped
     command: "serve all --dangerous-force-http"
 

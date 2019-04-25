@@ -6,7 +6,6 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
-	"github.com/ory/hydra/sdk/go/hydra"
 )
 
 type RegistryBase struct {
@@ -15,7 +14,7 @@ type RegistryBase struct {
 	as      *ApplicationService
 	ott     *OneTimeTokenService
 	watcher persist.Watcher
-	hydra   hydra.OAuth2API
+	hydra   HydraAdminApi
 	mfa     proto.MfaService
 	mailer  Mailer
 }
@@ -24,7 +23,7 @@ type RegistryConfig struct {
 	MgoSession    *mgo.Session
 	RedisClient   *redis.Client
 	MfaService    proto.MfaService
-	HydraAdminApi hydra.OAuth2API
+	HydraAdminApi HydraAdminApi
 	Mailer        Mailer
 }
 
@@ -50,7 +49,7 @@ func (r *RegistryBase) MgoSession() *mgo.Session {
 	return r.session
 }
 
-func (r *RegistryBase) HydraAdminApi() hydra.OAuth2API {
+func (r *RegistryBase) HydraAdminApi() HydraAdminApi {
 	return r.hydra
 }
 
