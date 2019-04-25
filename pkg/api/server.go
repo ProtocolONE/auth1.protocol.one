@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/ory/hydra/sdk/go/hydra"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
@@ -31,7 +31,7 @@ import (
 type ServerConfig struct {
 	ApiConfig     *config.Server
 	HydraConfig   *config.Hydra
-	HydraAdminApi hydra.OAuth2API
+	HydraAdminApi *admin.Client
 	SessionConfig *config.Session
 	MfaService    proto.MfaService
 	MgoSession    database.Session

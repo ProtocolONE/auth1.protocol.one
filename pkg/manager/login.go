@@ -10,7 +10,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
@@ -289,17 +290,15 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
-	reqACL, _, err := m.r.HydraAdminApi().AcceptLoginRequest(
-		form.Challenge,
-		swagger.AcceptLoginRequest{
-			Subject:     user.ID.Hex(),
-			Remember:    false,
-			RememberFor: 0,
-		},
-	)
+	userId := user.ID.Hex()
+	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
+		Challenge: form.Challenge,
+		Body:      &models2.HandledLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
+		Context:   ctx.Request().Context(),
+	})
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
 	}
 
-	return reqACL.RedirectTo, nil
+	return reqACL.Payload.RedirectTo, nil
 }

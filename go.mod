@@ -11,6 +11,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
+	github.com/go-openapi/runtime v0.19.0
 	github.com/go-openapi/strfmt v0.19.0
 	github.com/go-openapi/swag v0.19.0
 	github.com/go-playground/locales v0.12.1 // indirect
@@ -46,8 +47,7 @@ require (
 	github.com/micro/protoc-gen-micro v0.5.0 // indirect
 	github.com/miekg/dns v1.1.2 // indirect
 	github.com/nlopes/slack v0.4.0 // indirect
-	github.com/ory/hydra v0.0.0-20190403071628-f3264bef920d
-	github.com/ory/hydra-legacy-sdk v0.0.0-20190409103449-1f564942be76
+	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
 	github.com/pkg/errors v0.8.1
 	github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516 // indirect
 	github.com/sirupsen/logrus v1.4.0
