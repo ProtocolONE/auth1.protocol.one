@@ -37,6 +37,12 @@ type AppIdentityProviderServiceInterface interface {
 type AppIdentityProviderService struct {
 }
 
+var (
+	ErrorInvalidSocialProviderName = "Invalid identity provider: %s"
+	ErrorInvalidTemplate           = "Identity provider [%s] template not found"
+	ErrorFuncNumberParameters      = "The number of parameters is not adapted"
+)
+
 func NewAppIdentityProviderService() *AppIdentityProviderService {
 	return &AppIdentityProviderService{}
 }
@@ -75,7 +81,7 @@ func (s AppIdentityProviderService) FindByTypeAndName(app *models.Application, c
 func (s AppIdentityProviderService) NormalizeSocialConnection(ipc *models.AppIdentityProvider) error {
 	template, err := s.GetTemplate(ipc.Name)
 	if err != nil {
-		return errors.New("Invalid identity provider" + ipc.Name)
+		return errors.Errorf(ErrorInvalidSocialProviderName, ipc.Name)
 	}
 
 	list := append(template.ClientScopes, ipc.ClientScopes...)
@@ -126,7 +132,7 @@ func (s *AppIdentityProviderService) GetTemplate(name string) (*models.AppIdenti
 	case models.AppIdentityProviderNameVk:
 		return s.getVkTemplate(), nil
 	}
-	return nil, errors.New(fmt.Sprintf("identity provider [%s] template not found", name))
+	return nil, errors.Errorf(ErrorInvalidTemplate, name)
 }
 
 func (s *AppIdentityProviderService) getFacebookTemplate() *models.AppIdentityProvider {
@@ -257,7 +263,7 @@ func parseResponse(name string, params ...interface{}) (result *models.UserIdent
 	}
 	f := reflect.ValueOf(funcs[name])
 	if len(params) != f.Type().NumIn() {
-		err = errors.New("The number of params is not adapted.")
+		err = errors.New(ErrorFuncNumberParameters)
 		return
 	}
 	in := make([]reflect.Value, len(params))
