@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -13,7 +13,7 @@ import (
 func InitMFA(cfg *Server) error {
 	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(*mgo.Session)
+			db := c.Get("database").(database.Session)
 			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Registry))
 
 			return next(c)

@@ -3,6 +3,7 @@ package manager
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
@@ -30,7 +31,7 @@ type LoginManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, r service.InternalRegistry) *LoginManager {
+func NewLoginManager(h database.Session, r service.InternalRegistry) *LoginManager {
 	m := &LoginManager{
 		r:                       r,
 		userService:             service.NewUserService(h),

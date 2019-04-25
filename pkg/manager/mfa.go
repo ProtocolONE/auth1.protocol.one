@@ -2,11 +2,11 @@ package manager
 
 import (
 	"context"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ type MFAManager struct {
 	mfaService     service.MfaServiceInterface
 }
 
-func NewMFAManager(h *mgo.Session, r service.InternalRegistry) *MFAManager {
+func NewMFAManager(h database.Session, r service.InternalRegistry) *MFAManager {
 	m := &MFAManager{
 		r:              r,
 		authLogService: service.NewAuthLogService(h),

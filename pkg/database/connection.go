@@ -7,7 +7,28 @@ import (
 	"time"
 )
 
-func NewConnection(c *config.Database) (*mgo.Session, error) {
+// Session is an interface to access to the Session struct.
+type Session interface {
+	DB(name string) *mgo.Database
+	Copy() *mgo.Session
+	Close()
+}
+
+// DataLayer is an interface to access to the database struct.
+type Database interface {
+	C(name string) *mgo.Collection
+}
+
+// Collection is an interface to access to the collection struct.
+type Collection interface {
+	Find(query interface{}) *mgo.Query
+	Count() (n int, err error)
+	Insert(docs ...interface{}) error
+	Remove(selector interface{}) error
+	Update(selector interface{}, update interface{}) error
+}
+
+func NewConnection(c *config.Database) (Session, error) {
 	info, err := mgo.ParseURL(BuildConnString(c))
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ type MfaService struct {
 	db *mgo.Database
 }
 
-func NewMfaService(dbHandler *mgo.Session) *MfaService {
+func NewMfaService(dbHandler database.Session) *MfaService {
 	return &MfaService{db: dbHandler.DB("")}
 }
 

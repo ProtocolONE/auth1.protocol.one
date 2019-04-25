@@ -3,6 +3,7 @@ package manager
 import (
 	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
@@ -35,7 +36,7 @@ type OauthManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewOauthManager(db *mgo.Session, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
+func NewOauthManager(db database.Session, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
 	m := &OauthManager{
 		sessionConfig:           s,
 		hydraConfig:             h,

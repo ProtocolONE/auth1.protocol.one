@@ -2,11 +2,11 @@ package api
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	jwtverifier "github.com/ProtocolONE/authone-jwt-verifier-golang"
-	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
@@ -17,7 +17,7 @@ func InitLogin(cfg *Server) error {
 
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(*mgo.Session)
+			db := c.Get("database").(database.Session)
 			c.Set("login_manager", manager.NewLoginManager(db, cfg.Registry))
 
 			return next(c)

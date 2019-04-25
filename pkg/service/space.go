@@ -17,7 +17,7 @@ type SpaceService struct {
 	db *mgo.Database
 }
 
-func NewSpaceService(dbHandler *mgo.Session) *SpaceService {
+func NewSpaceService(dbHandler database.Session) *SpaceService {
 	return &SpaceService{db: dbHandler.DB("")}
 }
 

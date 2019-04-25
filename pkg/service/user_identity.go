@@ -17,7 +17,7 @@ type UserIdentityService struct {
 	db *mgo.Database
 }
 
-func NewUserIdentityService(dbHandler *mgo.Session) *UserIdentityService {
+func NewUserIdentityService(dbHandler database.Session) *UserIdentityService {
 	return &UserIdentityService{db: dbHandler.DB("")}
 }
 

@@ -2,10 +2,10 @@ package manager
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
@@ -21,7 +21,7 @@ type ManageManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewManageManager(db *mgo.Session, r service.InternalRegistry) *ManageManager {
+func NewManageManager(db database.Session, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		spaceService:            service.NewSpaceService(db),
 		mfaService:              service.NewMfaService(db),

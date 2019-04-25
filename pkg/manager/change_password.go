@@ -2,10 +2,10 @@ package manager
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 )
@@ -16,7 +16,7 @@ type ChangePasswordManager struct {
 	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
-func NewChangePasswordManager(db *mgo.Session, ir service.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db database.Session, ir service.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
