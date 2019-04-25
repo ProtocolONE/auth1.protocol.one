@@ -5,11 +5,10 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo/v4"
 )
 
 type AuthLogServiceInterface interface {
-	Add(echo.Context, *models.User, string) error
+	Add(string, string, *models.User, string) error
 }
 
 type AuthLogService struct {
@@ -20,13 +19,13 @@ func NewAuthLogService(h database.Session) *AuthLogService {
 	return &AuthLogService{db: h.DB("")}
 }
 
-func (s AuthLogService) Add(ctx echo.Context, user *models.User, token string) error {
-	ua, err := s.addUserAgent(ctx.Request().UserAgent())
+func (s AuthLogService) Add(ipAddr string, userAgent string, user *models.User, token string) error {
+	ua, err := s.addUserAgent(userAgent)
 	if err != nil {
 		return err
 	}
 
-	ip, err := s.addUserIP(ctx.RealIP())
+	ip, err := s.addUserIP(ipAddr)
 	if err != nil {
 		return err
 	}

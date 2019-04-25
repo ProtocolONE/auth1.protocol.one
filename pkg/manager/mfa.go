@@ -60,7 +60,7 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		return nil, &models.GeneralError{Code: `email`, Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
 	}
 
-	if err := m.authLogService.Add(ctx, user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
 		return nil, &models.GeneralError{Code: `common`, Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add user auth log")}
 	}
 

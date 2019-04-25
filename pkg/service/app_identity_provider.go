@@ -2,12 +2,12 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
-	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
@@ -30,8 +30,8 @@ type AppIdentityProviderServiceInterface interface {
 	GetAvailableTemplates() []string
 	GetAllTemplates() []*models.AppIdentityProvider
 	GetTemplate(string) (*models.AppIdentityProvider, error)
-	GetAuthUrl(echo.Context, *models.AppIdentityProvider, interface{}) (string, error)
-	GetSocialProfile(echo.Context, *models.AppIdentityProvider) (*models.UserIdentitySocial, error)
+	GetAuthUrl(string, *models.AppIdentityProvider, interface{}) (string, error)
+	GetSocialProfile(context.Context, string, string, *models.AppIdentityProvider) (*models.UserIdentitySocial, error)
 }
 
 type AppIdentityProviderService struct {
@@ -177,13 +177,13 @@ func (s *AppIdentityProviderService) getVkTemplate() *models.AppIdentityProvider
 	}
 }
 
-func (s *AppIdentityProviderService) GetAuthUrl(ctx echo.Context, ip *models.AppIdentityProvider, form interface{}) (string, error) {
+func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIdentityProvider, form interface{}) (string, error) {
 	var buf bytes.Buffer
 	buf.WriteString(ip.EndpointAuthURL)
 	v := url.Values{
 		"response_type": {"code"},
 		"client_id":     {ip.ClientID},
-		"redirect_uri":  {fmt.Sprintf("%s://%s/authorize/result", ctx.Scheme(), ctx.Request().Host)},
+		"redirect_uri":  {fmt.Sprintf("%s/authorize/result", domain)},
 	}
 	if len(ip.ClientScopes) > 0 {
 		v.Set("scope", strings.Join(ip.ClientScopes, " "))
@@ -202,8 +202,8 @@ func (s *AppIdentityProviderService) GetAuthUrl(ctx echo.Context, ip *models.App
 	return buf.String(), nil
 }
 
-func (s *AppIdentityProviderService) GetSocialProfile(ctx echo.Context, ip *models.AppIdentityProvider) (*models.UserIdentitySocial, error) {
-	rUrl := fmt.Sprintf("%s://%s/authorize/result", ctx.Scheme(), ctx.Request().Host)
+func (s *AppIdentityProviderService) GetSocialProfile(ctx context.Context, domain string, code string, ip *models.AppIdentityProvider) (*models.UserIdentitySocial, error) {
+	rUrl := fmt.Sprintf("%s/authorize/result", domain)
 	conf := &oauth2.Config{
 		ClientID:     ip.ClientID,
 		ClientSecret: ip.ClientSecret,
@@ -215,7 +215,7 @@ func (s *AppIdentityProviderService) GetSocialProfile(ctx echo.Context, ip *mode
 		},
 	}
 
-	t, err := conf.Exchange(ctx.Request().Context(), ctx.QueryParam("code"))
+	t, err := conf.Exchange(ctx, code)
 	if err != nil {
 		return nil, err
 	}
