@@ -47,10 +47,6 @@ func NewLoginManager(h database.Session, r service.InternalRegistry) *LoginManag
 }
 
 func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, *models.GeneralError) {
-	if form.Connection == `incorrect` {
-		return "", &models.GeneralError{Message: models.ErrorConnectionIncorrect, Err: errors.New("Invalid connection name")}
-	}
-
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}

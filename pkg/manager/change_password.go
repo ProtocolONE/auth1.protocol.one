@@ -88,7 +88,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	ui, err := m.userIdentityService.Get(app, ipc, ts.Email)
-	if err != nil {
+	if err != nil || ui.ID == "" {
+		if err == nil {
+			err = errors.New("User identity not found")
+		}
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 	}
 
