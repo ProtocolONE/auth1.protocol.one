@@ -1018,9 +1018,19 @@ func TestAuthorizeLinkReturnUrlOnSuccessResult(t *testing.T) {
 	assert.Equal(t, "url", url)
 }
 
-func getContext() echo.Context {
+func getContext(args ...map[string]interface{}) echo.Context {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/url", strings.NewReader(""))
 	rec := httptest.NewRecorder()
+
+	for _, values := range args {
+		if _, ok := values["headers"]; ok {
+			headers := values["headers"].(map[string]interface{})
+			for key, value := range headers {
+				req.Header.Set(key, value.(string))
+			}
+		}
+	}
+
 	return e.NewContext(req, rec)
 }

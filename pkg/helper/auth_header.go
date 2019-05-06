@@ -27,5 +27,5 @@ func GetTokenFromAuthHeader(headers http.Header) (token *models.JwtClaim, err er
 		return nil, errors.New(`invalid client id`)
 	}
 
-	return nil, nil
+	return &models.JwtClaim{}, nil
 }

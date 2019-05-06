@@ -4,7 +4,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist/redis"
-	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/go-redis/redis"
 )
 
@@ -15,14 +14,14 @@ type RegistryBase struct {
 	ott     OneTimeTokenServiceInterface
 	watcher persist.Watcher
 	hydra   HydraAdminApi
-	mfa     proto.MfaService
+	mfa     MfaApiInterface
 	mailer  MailerInterface
 }
 
 type RegistryConfig struct {
 	MgoSession    database.Session
 	RedisClient   *redis.Client
-	MfaService    proto.MfaService
+	MfaService    MfaApiInterface
 	HydraAdminApi HydraAdminApi
 	Mailer        MailerInterface
 }
@@ -53,7 +52,7 @@ func (r *RegistryBase) HydraAdminApi() HydraAdminApi {
 	return r.hydra
 }
 
-func (r *RegistryBase) MfaService() proto.MfaService {
+func (r *RegistryBase) MfaService() MfaApiInterface {
 	return r.mfa
 }
 
