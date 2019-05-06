@@ -1,182 +1,110 @@
 package manager
 
 import (
+	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
-	"go.uber.org/zap"
+	"github.com/pkg/errors"
 )
 
+type ChangePasswordManagerInterface interface{}
+
 type ChangePasswordManager struct {
-	redis               *redis.Client
-	logger              *zap.Logger
-	appService          *models.ApplicationService
-	userIdentityService *models.UserIdentityService
+	r                       service.InternalRegistry
+	userIdentityService     service.UserIdentityServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
-func NewChangePasswordManager(db *mgo.Session, l *zap.Logger, r *redis.Client) *ChangePasswordManager {
+func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
-		redis:               r,
-		logger:              l,
-		appService:          models.NewApplicationService(db),
-		userIdentityService: models.NewUserIdentityService(db),
+		r:                       ir,
+		userIdentityService:     service.NewUserIdentityService(db),
+		identityProviderService: service.NewAppIdentityProviderService(),
 	}
 
 	return m
 }
 
-func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.CommonError {
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
-
+func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.logger.Warn(
-			"Unable to receive client id",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, form.Email)
-
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get user identity by email",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
+	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if ipc == nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
-	if ui == nil || err != nil {
+	ui, err := m.userIdentityService.Get(app, ipc, form.Email)
+	if err != nil {
+		return &models.GeneralError{Code: "email", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity by email")}
+	}
+
+	if ui == nil || ui.ID == "" {
 		// INFO: Do not need to disclose the login
 		return nil
 	}
 
-	ps, err := m.appService.LoadPasswordSettings()
+	ottSettings := &models.OneTimeTokenSettings{
+		Length: app.PasswordSettings.TokenLength,
+		TTL:    app.PasswordSettings.TokenTTL,
+	}
+	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email}, ottSettings)
 	if err != nil {
-		m.logger.Warn(
-			"Unable to load password settings an application",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableChangePassword}
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
-	err = m.createOneTimeTokenSettings(form.Email, ps)
-	if err != nil {
-		m.logger.Warn(
-			"Unable to create one time token settings",
-			zap.Object("ChangePasswordStartForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableCreateOttSettings}
+	if err := m.r.Mailer().Send(form.Email, "Change password token", fmt.Sprintf("Token: %s", token.Token)); err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to send mail with change password token")}
 	}
 
 	return nil
 }
 
-func (m *ChangePasswordManager) createOneTimeTokenSettings(email string, ps *models.PasswordSettings) error {
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.ChangeTokenLength,
-		TTL:    ps.ChangeTokenTTL,
-	}
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
-
-	_, err := os.Create(&models.ChangePasswordTokenSource{Email: email})
-
-	return err
-}
-
-func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) *models.CommonError {
+func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePasswordVerifyForm) *models.GeneralError {
 	if form.PasswordRepeat != form.Password {
-		return &models.CommonError{Code: `password_repeat`, Message: models.ErrorPasswordRepeat}
+		return &models.GeneralError{Code: "password_repeat", Message: models.ErrorPasswordRepeat, Err: errors.New(models.ErrorPasswordRepeat)}
 	}
 
-	a, err := m.appService.Get(bson.ObjectIdHex(form.ClientID))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
-		m.logger.Warn(
-			"Unable to get application",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `client_id`, Message: models.ErrorClientIdIncorrect}
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	ps, err := m.appService.LoadPasswordSettings()
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get app password settings",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `common`, Message: models.ErrorUnableValidatePassword}
+	if false == validator.IsPasswordValid(app, form.Password) {
+		return &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 	}
 
-	if false == ps.IsValid(form.Password) {
-		return &models.CommonError{Code: `password`, Message: models.ErrorPasswordIncorrect}
-	}
-
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: ps.ChangeTokenLength,
-		TTL:    ps.ChangeTokenTTL,
-	}
-
-	os := models.NewOneTimeTokenService(m.redis, ottSettings)
 	ts := &models.ChangePasswordTokenSource{}
-
-	if err := os.Use(form.Token, ts); err != nil {
-		m.logger.Warn(
-			"Unable to use token of application",
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
+	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
-	ui, err := m.userIdentityService.Get(a, models.UserIdentityProviderPassword, form.Connection, ts.Email)
-
-	if err != nil {
-		m.logger.Warn(
-			"Unable to get user identity for the application",
-			zap.String("Email", ts.Email),
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
+	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+	if ipc == nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
-	if ui == nil || err != nil {
-		return &models.CommonError{Code: `common`, Message: models.ErrorCannotUseToken}
+	ui, err := m.userIdentityService.Get(app, ipc, ts.Email)
+	if err != nil || ui.ID == "" {
+		if err == nil {
+			err = errors.New("User identity not found")
+		}
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 	}
 
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: ps.BcryptCost})
+	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
 	ui.Credential, err = be.Digest(form.Password)
-
 	if err != nil {
-		m.logger.Warn(
-			"Unable to crypt password in application",
-			zap.String("Password", form.Password),
-			zap.Object("ChangePasswordVerifyForm", form),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `password`, Message: models.ErrorCryptPassword}
+		return &models.GeneralError{Code: "password", Message: models.ErrorCryptPassword, Err: errors.Wrap(err, "Unable to crypt password")}
 	}
 
 	if err = m.userIdentityService.Update(ui); err != nil {
-		m.logger.Warn(
-			"Unable to update user identity password",
-			zap.Object("UserIdentity", ui),
-			zap.Error(err),
-		)
-
-		return &models.CommonError{Code: `password`, Message: models.ErrorUnableChangePassword}
+		return &models.GeneralError{Code: "password", Message: models.ErrorUnableChangePassword, Err: errors.Wrap(err, "Unable to update password")}
 	}
 
 	return nil

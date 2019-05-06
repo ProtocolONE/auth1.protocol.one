@@ -7,13 +7,15 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
-	"github.com/ory/hydra/sdk/go/hydra"
+	"github.com/ory/hydra/sdk/go/hydra/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"log"
+	"net/http"
+	"net/url"
 )
 
 var serverCmd = &cobra.Command{
@@ -27,6 +29,13 @@ func init() {
 }
 
 func runServer(cmd *cobra.Command, args []string) {
+	db := createDatabase(&cfg.Database)
+	defer db.Close()
+
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
 	store, err := redistore.NewRediStore(
 		cfg.Session.Size,
 		cfg.Session.Network,
@@ -38,9 +47,6 @@ func runServer(cmd *cobra.Command, args []string) {
 		zap.L().Fatal("Unable to start redis session store", zap.Error(err))
 	}
 	defer store.Close()
-
-	db := createDatabase(&cfg.Database)
-	defer db.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
@@ -59,22 +65,28 @@ func runServer(cmd *cobra.Command, args []string) {
 	service.Init()
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
-	h, err := hydra.NewSDK(&hydra.Configuration{AdminURL: cfg.Hydra.AdminURL})
+	u, err := url.Parse(cfg.Hydra.AdminURL)
+	if err != nil {
+		zap.L().Fatal("Invalid of the Hydra admin url", zap.Error(err))
+	}
+
+	hydraSDK := client.NewHTTPClientWithConfig(nil, &client.TransportConfig{Schemes: []string{u.Scheme}, Host: u.Host})
 	if err != nil {
 		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
 	}
 
 	serverConfig := api.ServerConfig{
-		ApiConfig:      &cfg.Server,
-		DatabaseConfig: &cfg.Database,
-		HydraConfig:    &cfg.Hydra,
-		SessionConfig:  &cfg.Session,
-		MfaService:     ms,
-		Hydra:          h,
-		MgoSession:     db,
-		SessionStore:   store,
-		RedisClient:    redisClient,
+		ApiConfig:     &cfg.Server,
+		HydraConfig:   &cfg.Hydra,
+		SessionConfig: &cfg.Session,
+		MfaService:    ms,
+		MgoSession:    db,
+		SessionStore:  store,
+		RedisClient:   redisClient,
+		HydraAdminApi: hydraSDK.Admin,
+		Mailer:        &cfg.Mailer,
 	}
+
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {
 		zap.L().Fatal("Failed to create server", zap.Error(err))
@@ -86,14 +98,10 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 }
 
-func createDatabase(cfg *config.Database) *mgo.Session {
+func createDatabase(cfg *config.Database) database.MgoSession {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))
-	}
-
-	if err := database.MigrateDb(db, cfg.Name); err != nil {
-		zap.L().Fatal("Error in db migration", zap.Error(err))
 	}
 
 	return db

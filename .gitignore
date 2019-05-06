@@ -2,4 +2,5 @@
 *.exe
 *.exe~
 *.out
-pkg/models/application.go
+/sandbox/
+/bin/

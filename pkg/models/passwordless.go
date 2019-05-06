@@ -16,14 +16,14 @@ type PasswordLessVerifyForm struct {
 
 func (m *PasswordLessStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientId", m.ClientId)
-	enc.AddString("Connection", m.Connection)
+	enc.AddString("Name", m.Connection)
 
 	return nil
 }
 
 func (m *PasswordLessVerifyForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientId", m.ClientId)
-	enc.AddString("Connection", m.Connection)
+	enc.AddString("Name", m.Connection)
 	enc.AddString("Code", m.Code)
 	enc.AddString("Token", m.Token)
 

@@ -1,18 +1,10 @@
 package models
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
-
-type CaptchaRequiredError CommonError
-
-type UserService struct {
-	db *mgo.Database
-}
 
 type User struct {
 	ID            bson.ObjectId `bson:"_id" json:"id"`
@@ -58,10 +50,11 @@ type AuthorizeResultResponse struct {
 }
 
 type AuthorizeLinkForm struct {
-	ClientID string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
-	Code     string `query:"code" form:"code" json:"code" validate:"required"`
-	Action   string `query:"action" form:"action" json:"action" validate:"required"`
-	Password string `query:"password" form:"password" json:"password"`
+	Challenge string `query:"challenge" form:"challenge" json:"challenge" validate:"required"`
+	ClientID  string `query:"client_id" form:"client_id" json:"client_id" validate:"required"`
+	Code      string `query:"code" form:"code" json:"code" validate:"required"`
+	Action    string `query:"action" form:"action" json:"action" validate:"required"`
+	Password  string `query:"password" form:"password" json:"password"`
 }
 
 type LoginForm struct {
@@ -81,7 +74,7 @@ type LoginPageForm struct {
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", a.ID.String())
-	enc.AddString("AppID", a.AppID.String())
+	enc.AddString("ApplicationID", a.AppID.String())
 	enc.AddString("Email", a.Email)
 	enc.AddBool("EmailVerified", a.EmailVerified)
 	enc.AddTime("CreatedAt", a.CreatedAt)
@@ -92,7 +85,7 @@ func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (a *AuthorizeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientID", a.ClientID)
-	enc.AddString("Connection", a.Connection)
+	enc.AddString("Name", a.Connection)
 	enc.AddString("RedirectUri", a.RedirectUri)
 	enc.AddString("State", a.State)
 
@@ -127,74 +120,9 @@ func (a *LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (a *SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ClientID", a.ClientID)
-	enc.AddString("Connection", a.Connection)
+	enc.AddString("Name", a.Connection)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")
 
 	return nil
-}
-
-func (m CaptchaRequiredError) Error() string {
-	return m.Message
-}
-
-func (m *CaptchaRequiredError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *CaptchaRequiredError) GetCode() string {
-	return m.Code
-}
-
-func (m *CaptchaRequiredError) GetMessage() string {
-	return m.Message
-}
-
-func NewUserService(dbHandler *mgo.Session) *UserService {
-	return &UserService{db: dbHandler.DB("")}
-}
-
-func (us UserService) Create(user *User) error {
-	if err := us.db.C(database.TableUser).Insert(user); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserService) Update(user *User) error {
-	if err := us.db.C(database.TableUser).UpdateId(user.ID, user); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (us UserService) Get(id bson.ObjectId) (*User, error) {
-	u := &User{}
-	if err := us.db.C(database.TableUser).
-		FindId(id).
-		One(&u); err != nil {
-		return nil, err
-	}
-
-	return u, nil
-}
-
-func (us UserService) GetByEmail(app *Application, email string) (*User, error) {
-	u := &User{}
-	/*b, _ := us.GetUserIdentityByEmail(app, email, "password")
-	r := mgo.DBRef{
-		ID:         b.ID,
-		Name:   us.db.Name,
-		Collection: database.TableUser,
-	}
-
-	if err := us.db.FindRef(r).CC(database.TableUser).
-		Find(bson.D{{"email", email}}).
-		One(&u); err != nil {
-		return nil, err
-	}*/
-
-	return u, nil
 }

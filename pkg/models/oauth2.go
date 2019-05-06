@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
+	hydra_models "github.com/ory/hydra/sdk/go/hydra/models"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -20,7 +20,8 @@ type Oauth2LoginSubmitForm struct {
 	Email         string `query:"email" form:"email"`
 	Password      string `query:"password" form:"password"`
 	PreviousLogin string `query:"previous_login" form:"previous_login"`
-	Remember      bool   `query:"remember"`
+	Token         string `query:"token" form:"token"`
+	Remember      bool   `query:"remember" form:"remember"`
 }
 
 type Oauth2ConsentForm struct {
@@ -61,7 +62,7 @@ func (a *Oauth2IntrospectForm) MarshalLogObject(enc zapcore.ObjectEncoder) error
 }
 
 type Oauth2TokenIntrospection struct {
-	*swagger.OAuth2TokenIntrospection
+	*hydra_models.Introspection
 }
 
 type Oauth2SignUpForm struct {

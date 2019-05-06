@@ -1,16 +1,10 @@
 package models
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
-
-type SpaceService struct {
-	db *mgo.Database
-}
 
 type Space struct {
 	Id          bson.ObjectId `bson:"_id" json:"id"`                        // unique space identifier
@@ -42,35 +36,4 @@ func (s *SpaceForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("IsActive", s.IsActive)
 
 	return nil
-}
-
-func NewSpaceService(dbHandler *mgo.Session) *SpaceService {
-	return &SpaceService{db: dbHandler.DB("")}
-}
-
-func (ss SpaceService) CreateSpace(space *Space) error {
-	if err := ss.db.C(database.TableSpace).Insert(space); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ss SpaceService) UpdateSpace(space *Space) error {
-	if err := ss.db.C(database.TableSpace).UpdateId(space.Id, space); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ss SpaceService) GetSpace(id bson.ObjectId) (*Space, error) {
-	s := &Space{}
-	if err := ss.db.C(database.TableSpace).
-		FindId(id).
-		One(&s); err != nil {
-		return nil, err
-	}
-
-	return s, nil
 }

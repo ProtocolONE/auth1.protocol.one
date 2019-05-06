@@ -3,16 +3,17 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/route"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/ory/hydra/sdk/go/hydra"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 	"html/template"
@@ -28,25 +29,24 @@ import (
 )
 
 type ServerConfig struct {
-	ApiConfig      *config.Server
-	DatabaseConfig *config.Database
-	HydraConfig    *config.Hydra
-	SessionConfig  *config.Session
-	MfaService     proto.MfaService
-	MgoSession     *mgo.Session
-	Hydra          *hydra.CodeGenSDK
-	SessionStore   *redistore.RediStore
-	RedisClient    *redis.Client
-	MongoPoolSize  int
+	ApiConfig     *config.Server
+	HydraConfig   *config.Hydra
+	HydraAdminApi *admin.Client
+	SessionConfig *config.Session
+	MfaService    proto.MfaService
+	MgoSession    database.MgoSession
+	SessionStore  *redistore.RediStore
+	RedisClient   *redis.Client
+	Mailer        *config.Mailer
 }
 
 type Server struct {
 	Echo          *echo.Echo
 	ServerConfig  *config.Server
 	RedisHandler  *redis.Client
-	MfaService    proto.MfaService
-	Hydra         *hydra.CodeGenSDK
+	HydraConfig   *config.Hydra
 	SessionConfig *config.Session
+	Registry      service.InternalRegistry
 }
 
 type Template struct {
@@ -54,19 +54,27 @@ type Template struct {
 }
 
 func NewServer(c *ServerConfig) (*Server, error) {
+	registryConfig := &service.RegistryConfig{
+		MgoSession:    c.MgoSession,
+		HydraAdminApi: c.HydraAdminApi,
+		MfaService:    c.MfaService,
+		RedisClient:   c.RedisClient,
+		Mailer:        service.NewMailer(c.Mailer),
+	}
 	server := &Server{
 		Echo:          echo.New(),
 		RedisHandler:  c.RedisClient,
-		MfaService:    c.MfaService,
 		ServerConfig:  c.ApiConfig,
-		Hydra:         c.Hydra,
 		SessionConfig: c.SessionConfig,
+		HydraConfig:   c.HydraConfig,
+		Registry:      service.NewRegistryBase(registryConfig),
 	}
 
 	t := &Template{
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
 	server.Echo.Renderer = t
+	server.Echo.HTTPErrorHandler = helper.ErrorHandler
 	server.Echo.Use(ZapLogger(zap.L()))
 	server.Echo.Use(middleware.Recover())
 	// TODO: Validate origins for each application by settings
@@ -141,6 +149,7 @@ func (s *Server) Start() error {
 	select {
 	// wait on kill signal
 	case <-shutdown:
+		zap.L().Fatal("Server is shutting down")
 	}
 
 	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
@@ -151,26 +160,18 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) setupRoutes() error {
-	routeConfig := route.Config{
-		Echo:          s.Echo,
-		Redis:         s.RedisHandler,
-		MfaService:    s.MfaService,
-		Hydra:         s.Hydra,
-		SessionConfig: s.SessionConfig,
-	}
-
-	routes := []func(c route.Config) error{
-		route.InitLogin,
-		route.InitPasswordLess,
-		route.InitChangePassword,
-		route.InitMFA,
-		route.InitManage,
-		route.InitOauth2,
-		route.InitHealth,
+	routes := []func(c *Server) error{
+		InitLogin,
+		InitPasswordLess,
+		InitChangePassword,
+		InitMFA,
+		InitManage,
+		InitOauth2,
+		InitHealth,
 	}
 
 	for _, r := range routes {
-		if err := r(routeConfig); err != nil {
+		if err := r(s); err != nil {
 			return err
 		}
 	}

@@ -1,40 +1,38 @@
 package manager
 
 import (
-	"errors"
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra"
-	"github.com/ory/hydra/sdk/go/hydra/swagger"
-	"go.uber.org/zap"
-	"net/http"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	hydra_models "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/pkg/errors"
 	"time"
 )
 
 type ManageManager struct {
-	spaceService *models.SpaceService
-	appService   *models.ApplicationService
-	mfaService   *models.MfaService
-	hydraSDK     *hydra.CodeGenSDK
-	logger       *zap.Logger
+	spaceService            service.SpaceServiceInterface
+	mfaService              service.MfaServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
+	r                       service.InternalRegistry
 }
 
-func NewManageManager(db *mgo.Session, l *zap.Logger, h *hydra.CodeGenSDK) *ManageManager {
+func NewManageManager(db database.MgoSession, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
-		spaceService: models.NewSpaceService(db),
-		appService:   models.NewApplicationService(db),
-		mfaService:   models.NewMfaService(db),
-		hydraSDK:     h,
-		logger:       l,
+		spaceService:            service.NewSpaceService(db),
+		mfaService:              service.NewMfaService(db),
+		identityProviderService: service.NewAppIdentityProviderService(),
+		r:                       r,
 	}
 
 	return m
 }
 
-func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, error) {
+func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
 	s := &models.Space{
 		Id:          bson.NewObjectId(),
 		Name:        form.Name,
@@ -45,21 +43,16 @@ func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*
 	}
 
 	if err := m.spaceService.CreateSpace(s); err != nil {
-		m.logger.Error(
-			"Unable to create space",
-			zap.Object("space", s),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to create space", Err: errors.Wrap(err, "Unable to create space")}
 	}
 
 	return s, nil
 }
 
-func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.SpaceForm) (*models.Space, error) {
+func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
 	}
 
 	s.Name = form.Name
@@ -67,105 +60,92 @@ func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.Sp
 	s.IsActive = form.IsActive
 
 	if err := m.spaceService.UpdateSpace(s); err != nil {
-		m.logger.Error(
-			"Unable to update space",
-			zap.Object("space", s),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to update space", Err: errors.Wrap(err, "Unable to update space")}
 	}
 
 	return s, nil
 }
 
-func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, error) {
+func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, *models.GeneralError) {
 	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
-			"Unable to get space",
-			zap.String("spaceId", id),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
 	}
 
 	return s, nil
 }
 
-func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, error) {
+func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, *models.GeneralError) {
 	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {
-		m.logger.Error(
-			"Unable to get space",
-			zap.String("spaceId", form.SpaceId.String()),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
 	}
 
 	defaultRedirectUri := fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
 	form.Application.AuthRedirectUrls = append(form.Application.AuthRedirectUrls, defaultRedirectUri)
 
+	appID := bson.NewObjectId()
 	app := &models.Application{
-		ID:               bson.NewObjectId(),
+		ID:               appID,
 		SpaceId:          s.Id,
 		Name:             form.Application.Name,
 		Description:      form.Application.Description,
 		IsActive:         form.Application.IsActive,
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
-		AuthSecret:       models.GetRandString(64),
+		AuthSecret:       helper.GetRandString(64),
 		AuthRedirectUrls: form.Application.AuthRedirectUrls,
+		HasSharedUsers:   form.Application.HasSharedUsers,
+		PasswordSettings: &models.PasswordSettings{
+			BcryptCost:     models.PasswordBcryptCostDefault,
+			Min:            models.PasswordMinDefault,
+			Max:            models.PasswordMaxDefault,
+			RequireNumber:  models.PasswordRequireNumberDefault,
+			RequireUpper:   models.PasswordRequireUpperDefault,
+			RequireSpecial: models.PasswordRequireSpecialDefault,
+			TokenLength:    models.PasswordTokenLengthDefault,
+			TokenTTL:       models.PasswordTokenTTLDefault,
+		},
+		OneTimeTokenSettings: &models.OneTimeTokenSettings{
+			Length: 64,
+			TTL:    3600,
+		},
+		IdentityProviders: []*models.AppIdentityProvider{{
+			ID:            bson.NewObjectId(),
+			ApplicationID: appID,
+			Type:          models.AppIdentityProviderTypePassword,
+			Name:          models.AppIdentityProviderNameDefault,
+			DisplayName:   models.AppIdentityProviderDisplayNameDefault,
+		}},
 	}
 
-	if err := m.appService.Create(app); err != nil {
-		m.logger.Error(
-			"Unable to create application",
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-		return nil, err
+	if err := m.r.ApplicationService().Create(app); err != nil {
+		return nil, &models.GeneralError{Message: "Unable to create application", Err: errors.Wrap(err, "Unable to create application")}
 	}
 
-	_, response, err := m.hydraSDK.AdminApi.CreateOAuth2Client(swagger.OAuth2Client{
-		ClientId:      app.ID.Hex(),
-		ClientName:    app.Name,
-		ClientSecret:  app.AuthSecret,
-		GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
-		ResponseTypes: []string{"code", "id_token", "token"},
-		RedirectUris:  app.AuthRedirectUrls,
-		Scope:         "openid offline",
+	_, err = m.r.HydraAdminApi().CreateOAuth2Client(&admin.CreateOAuth2ClientParams{
+		Context: ctx.Request().Context(),
+		Body: &hydra_models.Client{
+			ClientID:      app.ID.Hex(),
+			Name:          app.Name,
+			Secret:        app.AuthSecret,
+			GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
+			ResponseTypes: []string{"code", "id_token", "token"},
+			RedirectUris:  app.AuthRedirectUrls,
+			Scope:         "openid offline",
+		},
 	})
-	if err != nil || response.StatusCode != http.StatusCreated {
-		m.logger.Error(
-			"Unable to create hydra client",
-			zap.Object("Application", app),
-			zap.Error(err),
-		)
-		return nil, err
+	if err != nil {
+		return nil, &models.GeneralError{Message: "Unable to create hydra client", Err: errors.Wrap(err, "Unable to create hydra client")}
 	}
 
 	return app, nil
 }
 
-func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, error) {
-	a, err := m.appService.Get(bson.ObjectIdHex(id))
+func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *models.ApplicationForm) (*models.Application, *models.GeneralError) {
+	a, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
-		return nil, errors.New("application not exists")
-	}
-
-	if _, err := m.spaceService.GetSpace(form.SpaceId); err != nil {
-		m.logger.Error(
-			"Unable to get space",
-			zap.Object("ApplicationForm", form),
-			zap.Error(err),
-		)
-		return nil, errors.New("space not exists")
+		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
 
 	defaultRedirectUri := fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
@@ -186,62 +166,69 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.IsActive = form.Application.IsActive
 	a.UpdatedAt = time.Now()
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
+	a.HasSharedUsers = form.Application.HasSharedUsers
 
-	if err := m.appService.Update(a); err != nil {
-		m.logger.Error(
-			"Unable to update application",
-			zap.Object("Application", a),
-			zap.Error(err),
-		)
-		return nil, err
+	if err := m.r.ApplicationService().Update(a); err != nil {
+		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}
 	}
 
-	client, response, err := m.hydraSDK.AdminApi.GetOAuth2Client(id)
-	m.logger.Error(
-		"GET HYDRA CLIENT",
-		zap.Any("Client", client),
-		zap.Any("Response", response),
-		zap.Error(err),
-	)
+	client, err := m.r.HydraAdminApi().GetOAuth2Client(&admin.GetOAuth2ClientParams{ID: id, Context: ctx.Request().Context()})
 	if err != nil {
-		m.logger.Error(
-			"Unable to get hydra client",
-			zap.Object("Application", a),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to get hydra client", Err: errors.Wrap(err, "Unable to get hydra client")}
 	}
 
-	client.RedirectUris = form.Application.AuthRedirectUrls
+	client.Payload.RedirectUris = form.Application.AuthRedirectUrls
 
-	_, _, err = m.hydraSDK.AdminApi.UpdateOAuth2Client(id, *client)
+	_, err = m.r.HydraAdminApi().UpdateOAuth2Client(&admin.UpdateOAuth2ClientParams{ID: id, Body: client.Payload, Context: ctx.Request().Context()})
 	if err != nil {
-		m.logger.Error(
-			"Unable to update hydra client",
-			zap.Object("Application", a),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to update hydra client", Err: errors.Wrap(err, "Unable to update hydra client")}
 	}
 
 	return a, nil
 }
 
-func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, error) {
-	s, err := m.appService.Get(bson.ObjectIdHex(id))
+func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.Application, *models.GeneralError) {
+	s, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
 	if err != nil {
-		m.logger.Error(
-			"Unable to get app",
-			zap.String("AppId", id),
-			zap.Error(err),
-		)
-		return nil, err
+		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
 
 	return s, nil
 }
 
-func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, error) {
+func (m *ManageManager) SetPasswordSettings(ctx echo.Context, appID string, form *models.PasswordSettings) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
+	if err != nil {
+		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	app.PasswordSettings = &models.PasswordSettings{
+		BcryptCost:     form.BcryptCost,
+		Min:            form.Min,
+		Max:            form.Max,
+		RequireNumber:  form.RequireNumber,
+		RequireUpper:   form.RequireUpper,
+		RequireSpecial: form.RequireSpecial,
+		TokenLength:    form.TokenLength,
+		TokenTTL:       form.TokenTTL,
+	}
+	if err := m.r.ApplicationService().Update(app); err != nil {
+		return &models.GeneralError{Message: "Unable to save application password", Err: errors.Wrap(err, "Unable to save application password")}
+	}
+
+	return nil
+}
+
+func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, *models.GeneralError) {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
+	if err != nil {
+		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	return app.PasswordSettings, nil
+}
+
+func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, *models.GeneralError) {
 	p := &models.MfaProvider{
 		ID:      bson.NewObjectId(),
 		AppID:   f.AppId,
@@ -251,13 +238,109 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 	}
 
 	if err := m.mfaService.Add(p); err != nil {
-		m.logger.Error(
-			"Unable to add MFA provider to application",
-			zap.Object("MfaProvider", p),
-			zap.Error(err),
-		)
-		return nil, &models.CommonError{Code: `provider_id`, Message: models.ErrorProviderIdIncorrect}
+		return nil, &models.GeneralError{Message: "Unable to add MFA provider", Err: errors.Wrap(err, "Unable to add MFA provider")}
 	}
 
 	return p, nil
+}
+
+func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+	if err != nil {
+		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	form.ID = bson.NewObjectId()
+	if form.Type == models.AppIdentityProviderTypeSocial {
+		if err := m.identityProviderService.NormalizeSocialConnection(form); err != nil {
+			return &models.GeneralError{Message: "Unable to normalize identity provider", Err: errors.Wrap(err, "Unable to normalize identity provider")}
+		}
+	}
+
+	if ip := m.identityProviderService.FindByTypeAndName(app, form.Type, form.Name); ip != nil {
+		return &models.GeneralError{Message: "Identity provider already exists", Err: errors.New("Identity provider already exists")}
+	}
+
+	if err := m.r.ApplicationService().AddIdentityProvider(app, form); err != nil {
+		return &models.GeneralError{Message: "Unable to create identity provider", Err: errors.Wrap(err, "Unable to create identity provider")}
+	}
+
+	return nil
+}
+
+func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, form *models.AppIdentityProvider) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+	if err != nil {
+		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	ip := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	if ip == nil {
+		return &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
+	}
+	if ip.ApplicationID != form.ApplicationID {
+		return &models.GeneralError{Message: "Application not owned this identity provider", Err: errors.New("Application not owned this identity provider")}
+	}
+
+	form.ID = ip.ID
+	if form.Type == models.AppIdentityProviderTypeSocial {
+		if err := m.identityProviderService.NormalizeSocialConnection(form); err != nil {
+			return &models.GeneralError{Message: "Unable to normalize identity provider", Err: errors.Wrap(err, "Unable to normalize identity provider")}
+		}
+	}
+
+	if err := m.r.ApplicationService().UpdateIdentityProvider(app, form); err != nil {
+		return &models.GeneralError{Message: "Unable to update identity provider", Err: errors.Wrap(err, "Unable to update identity provider")}
+	}
+
+	return nil
+}
+
+func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id string) (*models.AppIdentityProvider, *models.GeneralError) {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
+	if err != nil {
+		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	ipc := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	if ipc == nil {
+		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
+	}
+	if ipc.ApplicationID.Hex() != appId {
+		return nil, &models.GeneralError{Message: "Wrong application id for the identity provider", Err: errors.New("Wrong application id for the identity provider")}
+	}
+
+	return ipc, nil
+}
+
+func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]*models.AppIdentityProvider, *models.GeneralError) {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
+	if err != nil {
+		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	if ipc == nil && len(ipc) > 0 {
+		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
+	}
+
+	return ipc, nil
+}
+
+func (m *ManageManager) GetIdentityProviderTemplates() []*models.AppIdentityProvider {
+	return m.identityProviderService.GetAllTemplates()
+}
+
+func (m *ManageManager) SetOneTimeTokenSettings(ctx echo.Context, appID string, form *models.OneTimeTokenSettings) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
+	if err != nil {
+		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
+	}
+
+	app.OneTimeTokenSettings = form
+	if err := m.r.ApplicationService().Update(app); err != nil {
+		return &models.GeneralError{Message: "Unable to save application OneTimeToken settings", Err: errors.Wrap(err, "Unable to save application OneTimeToken settings")}
+	}
+
+	return nil
 }

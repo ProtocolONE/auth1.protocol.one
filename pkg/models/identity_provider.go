@@ -1,39 +1,36 @@
 package models
 
 import (
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"time"
+	"go.uber.org/zap/zapcore"
 )
 
-type (
-	IdentityProviderService struct {
-		db *mgo.Database
-	}
+type AppIdentityProvider struct {
+	ID                  bson.ObjectId `bson:"_id" json:"id"`
+	ApplicationID       bson.ObjectId `bson:"app_id" json:"application_id"`
+	DisplayName         string        `bson:"display_name" json:"display_name"`
+	Name                string        `bson:"name" json:"name"`
+	Type                string        `bson:"type" json:"type"`
+	ClientID            string        `bson:"client_id" json:"client_id"`
+	ClientSecret        string        `bson:"client_secret" json:"client_secret"`
+	ClientScopes        []string      `bson:"client_scopes" json:"client_scopes"`
+	EndpointAuthURL     string        `bson:"endpoint_auth_url" json:"endpoint_auth_url"`
+	EndpointTokenURL    string        `bson:"endpoint_token_url" json:"endpoint_token_url"`
+	EndpointUserInfoURL string        `bson:"endpoint_userinfo_url" json:"endpoint_userinfo_url"`
+}
 
-	Connection struct {
-		ID       bson.ObjectId `bson:"_id" json:"id"`
-		Name     string        `bson:"name" json:"name"`
-		Slug     string        `bson:"slug" json:"slug"`
-		IsSocial bool          `bson:"is_social" json:"is_social"`
+func (ipc *AppIdentityProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ID", ipc.ID.String())
+	enc.AddString("ApplicationID", ipc.ApplicationID.String())
+	enc.AddString("DisplayName", ipc.DisplayName)
+	enc.AddString("Name", ipc.Name)
+	enc.AddString("Type", ipc.Type)
+	enc.AddString("ClientID", ipc.ClientID)
+	enc.AddString("ClientSecret", ipc.ClientSecret)
+	enc.AddReflected("ClientScopes", ipc.ClientScopes)
+	enc.AddString("EndpointAuthURL", ipc.EndpointAuthURL)
+	enc.AddString("EndpointTokenURL", ipc.EndpointTokenURL)
+	enc.AddString("EndpointUserInfoURL", ipc.EndpointUserInfoURL)
 
-		ClientID         string    `bson:"client_id" json:"client_id"`
-		ClientSecret     string    `bson:"client_secret" json:"client_secret"`
-		Scopes           []string  `bson:"scopes" json:"scopes"`
-		AvailableDomains []string  `bson:"available_domains" json:"available_domains"`
-		CreatedAt        time.Time `bson:"created_at" json:"created_at"`
-		UpdatedAt        time.Time `bson:"updated_at" json:"updated_at"`
-	}
-
-	IdentityProvider struct {
-		ID               bson.ObjectId `bson:"_id" json:"id"`
-		ApplicationID    bson.ObjectId `bson:"app_id" json:"app_id"`
-		ConnectionID     string        `bson:"connection_id" json:"connection_id"`
-		ClientID         string        `bson:"client_id" json:"client_id"`
-		ClientSecret     string        `bson:"client_secret" json:"client_secret"`
-		Scopes           []string      `bson:"scopes" json:"scopes"`
-		AvailableDomains []string      `bson:"available_domains" json:"available_domains"`
-		CreatedAt        time.Time     `bson:"created_at" json:"created_at"`
-		UpdatedAt        time.Time     `bson:"updated_at" json:"updated_at"`
-	}
-)
+	return nil
+}

@@ -7,6 +7,7 @@ var (
 	ErrorAddAuthLog               = "Unable to add auth log"
 	ErrorCreateCookie             = "Unable to create cookie"
 	ErrorCreateUser               = "Unable to create user"
+	ErrorUpdateUser               = "Unable to update user"
 	ErrorCreateUserIdentity       = "Unable to create user identity"
 	ErrorLoginIncorrect           = "Login is incorrect"
 	ErrorCryptPassword            = "Unable to crypt password"
@@ -16,7 +17,7 @@ var (
 	ErrorPasswordRepeat           = "Password repeat is not equal to password"
 	ErrorUnableValidatePassword   = "Unable to validate password"
 	ErrorClientIdIncorrect        = "Client ID is incorrect"
-	ErrorConnectionIncorrect      = "Connection is incorrect"
+	ErrorConnectionIncorrect      = "Name is incorrect"
 	ErrorCannotCreateToken        = "Cannot create token"
 	ErrorCannotUseToken           = "Cannot use this token"
 	ErrorRedirectUriIncorrect     = "Redirect URI is incorrect"
@@ -39,24 +40,13 @@ type ErrorInterface interface {
 	Error() string
 }
 
-type CommonError struct {
-	HttpCode int    `json:"error,omitempty"`
+type GeneralError struct {
 	Code     string `json:"error,omitempty"`
+	HttpCode int    `json:"-"`
 	Message  string `json:"error_message,omitempty"`
+	Err      error  `json:"-"`
 }
 
-func (m *CommonError) Error() string {
-	return m.Message
-}
-
-func (m *CommonError) GetHttpCode() int {
-	return m.HttpCode
-}
-
-func (m *CommonError) GetCode() string {
-	return m.Code
-}
-
-func (m *CommonError) GetMessage() string {
-	return m.Message
+func (e *GeneralError) Error() string {
+	return e.Message
 }

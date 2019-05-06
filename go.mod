@@ -1,27 +1,33 @@
 module github.com/ProtocolONE/auth1.protocol.one
 
 require (
-	cloud.google.com/go v0.34.0 // indirect
+	contrib.go.opencensus.io/exporter/stackdriver v0.7.0 // indirect
+	git.apache.org/thrift.git v0.12.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
 	github.com/ProtocolONE/mfa-service v0.1.0
-	github.com/appleboy/mgo-migrate v0.0.0-20180815064022-63ab506a9f84
+	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
+	github.com/alicebob/miniredis v2.5.0+incompatible
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/elliotchance/redismock v1.5.1
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
-	github.com/go-openapi/strfmt v0.17.2
-	github.com/go-openapi/swag v0.17.2
+	github.com/go-openapi/runtime v0.19.0
+	github.com/go-openapi/strfmt v0.19.0
+	github.com/go-openapi/swag v0.19.0
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/go-redis/redis v6.15.1+incompatible
-	github.com/golang/mock v1.2.0 // indirect
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
-	github.com/golang/protobuf v1.2.0
+	github.com/golang/protobuf v1.3.1
 	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
-	github.com/gorilla/handlers v1.4.0 // indirect
+	github.com/google/uuid v1.1.1
+	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.3
 	github.com/gorilla/websocket v1.4.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.6.2 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
 	github.com/juju/mgosession v1.0.0 // indirect
@@ -43,25 +49,23 @@ require (
 	github.com/micro/protoc-gen-micro v0.5.0 // indirect
 	github.com/miekg/dns v1.1.2 // indirect
 	github.com/nlopes/slack v0.4.0 // indirect
-	github.com/onsi/ginkgo v1.7.0 // indirect
-	github.com/onsi/gomega v1.4.3 // indirect
-	github.com/ory/hydra v0.0.0-20181218121201-bdb6634e3d87
+	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
 	github.com/pkg/errors v0.8.1
 	github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516 // indirect
-	github.com/sirupsen/logrus v1.2.0
+	github.com/sirupsen/logrus v1.4.0
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/viper v1.3.1
+	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
+	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2
-	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
-	golang.org/x/tools v0.0.0-20181211221832-59cd96f77e7e // indirect
-	google.golang.org/appengine v1.3.0 // indirect
-	google.golang.org/genproto v0.0.0-20181202183823-bd91e49a0898 // indirect
+	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
+	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	gopkg.in/go-playground/validator.v9 v9.26.0
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
+	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
+	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
-	honnef.co/go/tools v0.0.0-20180920025451-e3ad64cb4ed3 // indirect
 )
