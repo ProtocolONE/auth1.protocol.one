@@ -1,11 +1,11 @@
-package api
+package route
 
 import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
-func InitHealth(cfg *Server) error {
+func InitHealth(cfg Config) error {
 	cfg.Echo.GET("/health", health)
 
 	return nil

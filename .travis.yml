@@ -2,14 +2,6 @@ language: go
 sudo: false
 go:
   - 1.11.x
-services:
-  - mongodb
-  - redis-server
-before_script:
-  - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
-env:
-  global:
-    - GO111MODULE=on
 
 stages:
   - test
@@ -19,10 +11,14 @@ stages:
 jobs:
   include:
     - stage: test
+      services: mongodb
       install: true
       env:
         - AUTHONE_DATABASE_USER=travis
         - AUTHONE_DATABASE_PASSWORD=test
+        - GO111MODULE=on
+      before_script:
+        - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
       script:
         - go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
       after_success:
