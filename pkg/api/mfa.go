@@ -13,7 +13,7 @@ import (
 func InitMFA(cfg *Server) error {
 	g := cfg.Echo.Group("/mfa", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(database.Session)
+			db := c.Get("database").(database.MgoSession)
 			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Registry))
 
 			return next(c)

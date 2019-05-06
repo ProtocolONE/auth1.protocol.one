@@ -9,7 +9,7 @@ import (
 
 type RegistryBase struct {
 	redis   *redis.Client
-	session database.Session
+	session database.MgoSession
 	as      ApplicationServiceInterface
 	ott     OneTimeTokenServiceInterface
 	watcher persist.Watcher
@@ -19,7 +19,7 @@ type RegistryBase struct {
 }
 
 type RegistryConfig struct {
-	MgoSession    database.Session
+	MgoSession    database.MgoSession
 	RedisClient   *redis.Client
 	MfaService    MfaApiInterface
 	HydraAdminApi HydraAdminApi
@@ -44,7 +44,7 @@ func (r *RegistryBase) Watcher() persist.Watcher {
 	return r.watcher
 }
 
-func (r *RegistryBase) MgoSession() database.Session {
+func (r *RegistryBase) MgoSession() database.MgoSession {
 	return r.session
 }
 

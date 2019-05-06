@@ -21,7 +21,7 @@ type ManageManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewManageManager(db database.Session, r service.InternalRegistry) *ManageManager {
+func NewManageManager(db database.MgoSession, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		spaceService:            service.NewSpaceService(db),
 		mfaService:              service.NewMfaService(db),

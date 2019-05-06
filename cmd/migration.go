@@ -34,7 +34,7 @@ func runMigration(cmd *cobra.Command, args []string) {
 	return
 }
 
-func migrateDb(s database.Session, direction string) error {
+func migrateDb(s database.MgoSession, direction string) error {
 	migrate.SetDatabase(s.DB(""))
 	migrate.SetMigrationsCollection("auth1-migration")
 

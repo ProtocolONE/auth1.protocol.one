@@ -13,7 +13,7 @@ import (
 func InitManage(cfg *Server) error {
 	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(database.Session)
+			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 
 			return next(c)

@@ -8,7 +8,7 @@ import (
 )
 
 // Session is an interface to access to the Session struct.
-type Session interface {
+type MgoSession interface {
 	DB(name string) *mgo.Database
 	Copy() *mgo.Session
 	Close()
@@ -28,7 +28,7 @@ type Collection interface {
 	Update(selector interface{}, update interface{}) error
 }
 
-func NewConnection(c *config.Database) (Session, error) {
+func NewConnection(c *config.Database) (MgoSession, error) {
 	info, err := mgo.ParseURL(BuildConnString(c))
 	if err != nil {
 		return nil, err

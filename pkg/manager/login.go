@@ -24,6 +24,8 @@ var (
 	SocialAccountError   = "error"
 )
 
+type LoginManagerInterface interface{}
+
 type LoginManager struct {
 	userService             service.UserServiceInterface
 	userIdentityService     service.UserIdentityServiceInterface
@@ -33,7 +35,7 @@ type LoginManager struct {
 	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h database.Session, r service.InternalRegistry) *LoginManager {
+func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginManagerInterface {
 	m := &LoginManager{
 		r:                       r,
 		userService:             service.NewUserService(h),

@@ -98,7 +98,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 }
 
-func createDatabase(cfg *config.Database) database.Session {
+func createDatabase(cfg *config.Database) database.MgoSession {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))

@@ -7,7 +7,7 @@ import (
 
 type InternalRegistry interface {
 	Watcher() persist.Watcher
-	MgoSession() database.Session
+	MgoSession() database.MgoSession
 	HydraAdminApi() HydraAdminApi
 	MfaService() MfaApiInterface
 	ApplicationService() ApplicationServiceInterface

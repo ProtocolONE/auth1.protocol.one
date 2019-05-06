@@ -34,7 +34,7 @@ type ServerConfig struct {
 	HydraAdminApi *admin.Client
 	SessionConfig *config.Session
 	MfaService    proto.MfaService
-	MgoSession    database.Session
+	MgoSession    database.MgoSession
 	SessionStore  *redistore.RediStore
 	RedisClient   *redis.Client
 	Mailer        *config.Mailer

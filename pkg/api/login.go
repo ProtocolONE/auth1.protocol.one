@@ -17,7 +17,7 @@ func InitLogin(cfg *Server) error {
 
 	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(database.Session)
+			db := c.Get("database").(database.MgoSession)
 			c.Set("login_manager", manager.NewLoginManager(db, cfg.Registry))
 
 			return next(c)

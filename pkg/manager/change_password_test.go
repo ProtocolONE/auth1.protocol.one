@@ -3,12 +3,20 @@ package manager
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
+
+func TestChangePasswordManager(t *testing.T) {
+	s := &mocks.MgoSession{}
+	s.On("DB", mock.Anything).Return(&mgo.Database{})
+	m := NewChangePasswordManager(s, &mocks.InternalRegistry{})
+	assert.Implements(t, (*ChangePasswordManagerInterface)(nil), m)
+}
 
 func TestChangePasswordStartReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}

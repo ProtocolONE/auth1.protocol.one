@@ -25,6 +25,8 @@ var (
 	logoutHydraUrl     = "/oauth2/auth/sessions/login/revoke"
 )
 
+type OauthManagerInterface interface{}
+
 type OauthManager struct {
 	hydraConfig             *config.Hydra
 	userService             service.UserServiceInterface
@@ -35,7 +37,7 @@ type OauthManager struct {
 	session                 service.SessionService
 }
 
-func NewOauthManager(db database.Session, r service.InternalRegistry, s *config.Session, h *config.Hydra) *OauthManager {
+func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *config.Session, h *config.Hydra) OauthManagerInterface {
 	m := &OauthManager{
 		hydraConfig:             h,
 		r:                       r,

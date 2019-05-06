@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+type MFAManagerInterface interface{}
+
 type MFAManager struct {
 	r              service.InternalRegistry
 	authLogService service.AuthLogServiceInterface
@@ -19,7 +21,7 @@ type MFAManager struct {
 	mfaService     service.MfaServiceInterface
 }
 
-func NewMFAManager(h database.Session, r service.InternalRegistry) *MFAManager {
+func NewMFAManager(h database.MgoSession, r service.InternalRegistry) MFAManagerInterface {
 	m := &MFAManager{
 		r:              r,
 		authLogService: service.NewAuthLogService(h),

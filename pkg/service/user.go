@@ -17,7 +17,7 @@ type UserService struct {
 	db *mgo.Database
 }
 
-func NewUserService(dbHandler database.Session) *UserService {
+func NewUserService(dbHandler database.MgoSession) *UserService {
 	return &UserService{db: dbHandler.DB("")}
 }
 

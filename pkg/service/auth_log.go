@@ -15,7 +15,7 @@ type AuthLogService struct {
 	db *mgo.Database
 }
 
-func NewAuthLogService(h database.Session) *AuthLogService {
+func NewAuthLogService(h database.MgoSession) *AuthLogService {
 	return &AuthLogService{db: h.DB("")}
 }
 

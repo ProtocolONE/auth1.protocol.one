@@ -77,15 +77,15 @@ func (_m *InternalRegistry) MfaService() service.MfaApiInterface {
 }
 
 // MgoSession provides a mock function with given fields:
-func (_m *InternalRegistry) MgoSession() database.Session {
+func (_m *InternalRegistry) MgoSession() database.MgoSession {
 	ret := _m.Called()
 
-	var r0 database.Session
-	if rf, ok := ret.Get(0).(func() database.Session); ok {
+	var r0 database.MgoSession
+	if rf, ok := ret.Get(0).(func() database.MgoSession); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(database.Session)
+			r0 = ret.Get(0).(database.MgoSession)
 		}
 	}
 

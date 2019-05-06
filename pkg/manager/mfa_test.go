@@ -4,12 +4,20 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
+
+func TestMFAManager(t *testing.T) {
+	s := &mocks.MgoSession{}
+	s.On("DB", mock.Anything).Return(&mgo.Database{})
+	m := NewMFAManager(s, &mocks.InternalRegistry{})
+	assert.Implements(t, (*MFAManagerInterface)(nil), m)
+}
 
 func TestMFAVerifyReturnErrorWithUnableToGetToken(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}

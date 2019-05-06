@@ -1,8 +1,10 @@
 package manager
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
@@ -11,6 +13,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
+
+func TestOauthManager(t *testing.T) {
+	s := &mocks.MgoSession{}
+	s.On("DB", mock.Anything).Return(&mgo.Database{})
+	m := NewOauthManager(s, &mocks.InternalRegistry{}, &config.Session{Name: ""}, &config.Hydra{})
+	assert.Implements(t, (*OauthManagerInterface)(nil), m)
+}
 
 func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}

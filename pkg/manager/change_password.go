@@ -10,13 +10,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ChangePasswordManagerInterface interface{}
+
 type ChangePasswordManager struct {
 	r                       service.InternalRegistry
 	userIdentityService     service.UserIdentityServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
-func NewChangePasswordManager(db database.Session, ir service.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),

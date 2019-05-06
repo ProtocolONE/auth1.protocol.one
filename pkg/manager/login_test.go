@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
@@ -17,6 +18,13 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestLoginManager(t *testing.T) {
+	s := &mocks.MgoSession{}
+	s.On("DB", mock.Anything).Return(&mgo.Database{})
+	m := NewLoginManager(s, &mocks.InternalRegistry{})
+	assert.Implements(t, (*LoginManagerInterface)(nil), m)
+}
 
 func TestAuthorizeReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
