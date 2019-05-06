@@ -5,10 +5,12 @@ require (
 	git.apache.org/thrift.git v0.12.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
 	github.com/ProtocolONE/mfa-service v0.1.0
+	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
+	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/elliotchance/redismock v1.5.1
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-openapi/runtime v0.19.0
@@ -16,7 +18,7 @@ require (
 	github.com/go-openapi/swag v0.19.0
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/go-redis/redis v6.15.1+incompatible
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.3.1
 	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
@@ -56,6 +58,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
+	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a

@@ -7,7 +7,6 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	k8s "github.com/micro/kubernetes/go/micro"
@@ -99,7 +98,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 }
 
-func createDatabase(cfg *config.Database) *mgo.Session {
+func createDatabase(cfg *config.Database) database.Session {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
 		zap.L().Fatal("Name connection failed with error", zap.Error(err))

@@ -12,6 +12,16 @@ import (
 
 const ApplicationWatcherChannel = "application"
 
+type ApplicationServiceInterface interface {
+	Create(*models.Application) error
+	Update(*models.Application) error
+	Get(bson.ObjectId) (*models.Application, error)
+	LoadSocialSettings() (*models.SocialSettings, error)
+	LoadMfaConnection(string) ([]*models.MfaConnection, error)
+	AddIdentityProvider(*models.Application, *models.AppIdentityProvider) error
+	UpdateIdentityProvider(*models.Application, *models.AppIdentityProvider) error
+}
+
 type ApplicationService struct {
 	db *mgo.Database
 	mx sync.Mutex

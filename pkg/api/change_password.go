@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -13,8 +13,8 @@ import (
 func InitChangePassword(cfg *Server) error {
 	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			db := c.Get("database").(*mgo.Session)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.RedisHandler, cfg.Registry))
+			db := c.Get("database").(database.Session)
+			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry))
 
 			return next(c)
 		}

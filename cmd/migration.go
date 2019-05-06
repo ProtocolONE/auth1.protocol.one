@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
-	"github.com/globalsign/mgo"
 	"github.com/spf13/cobra"
 	"github.com/xakep666/mongo-migrate"
 	"go.uber.org/zap"
@@ -35,7 +34,7 @@ func runMigration(cmd *cobra.Command, args []string) {
 	return
 }
 
-func migrateDb(s *mgo.Session, direction string) error {
+func migrateDb(s database.Session, direction string) error {
 	migrate.SetDatabase(s.DB(""))
 	migrate.SetMigrationsCollection("auth1-migration")
 

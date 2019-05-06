@@ -1,17 +1,16 @@
 package service
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
-	"github.com/ProtocolONE/mfa-service/pkg/proto"
-	"github.com/globalsign/mgo"
 )
 
 type InternalRegistry interface {
 	Watcher() persist.Watcher
-	MgoSession() *mgo.Session
+	MgoSession() database.Session
 	HydraAdminApi() HydraAdminApi
-	MfaService() proto.MfaService
-	ApplicationService() *ApplicationService
-	OneTimeTokenService() *OneTimeTokenService
-	Mailer() Mailer
+	MfaService() MfaApiInterface
+	ApplicationService() ApplicationServiceInterface
+	OneTimeTokenService() OneTimeTokenServiceInterface
+	Mailer() MailerInterface
 }

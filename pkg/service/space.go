@@ -7,11 +7,17 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+type SpaceServiceInterface interface {
+	CreateSpace(*models.Space) error
+	UpdateSpace(*models.Space) error
+	GetSpace(bson.ObjectId) (*models.Space, error)
+}
+
 type SpaceService struct {
 	db *mgo.Database
 }
 
-func NewSpaceService(dbHandler *mgo.Session) *SpaceService {
+func NewSpaceService(dbHandler database.Session) *SpaceService {
 	return &SpaceService{db: dbHandler.DB("")}
 }
 

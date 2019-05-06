@@ -3,12 +3,13 @@ package manager
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
@@ -24,18 +25,16 @@ var (
 )
 
 type LoginManager struct {
-	redis                   *redis.Client
-	userService             *service.UserService
-	userIdentityService     *service.UserIdentityService
-	mfaService              *service.MfaService
-	authLogService          *service.AuthLogService
-	identityProviderService *service.AppIdentityProviderService
+	userService             service.UserServiceInterface
+	userIdentityService     service.UserIdentityServiceInterface
+	mfaService              service.MfaServiceInterface
+	authLogService          service.AuthLogServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 }
 
-func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegistry) *LoginManager {
+func NewLoginManager(h database.Session, r service.InternalRegistry) *LoginManager {
 	m := &LoginManager{
-		redis:                   redis,
 		r:                       r,
 		userService:             service.NewUserService(h),
 		userIdentityService:     service.NewUserIdentityService(h),
@@ -48,10 +47,6 @@ func NewLoginManager(h *mgo.Session, redis *redis.Client, r service.InternalRegi
 }
 
 func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, *models.GeneralError) {
-	if form.Connection == `incorrect` {
-		return "", &models.GeneralError{Message: models.ErrorConnectionIncorrect, Err: errors.New("Invalid connection name")}
-	}
-
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
@@ -62,7 +57,8 @@ func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (
 		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to load identity provider")}
 	}
 
-	u, err := m.identityProviderService.GetAuthUrl(ctx, ip, form)
+	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
+	u, err := m.identityProviderService.GetAuthUrl(domain, ip, form)
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get auth url for identity provider")}
 	}
@@ -92,7 +88,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.New("Unable to load identity provider")}
 	}
 
-	cp, err := m.identityProviderService.GetSocialProfile(ctx, ip)
+	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
+	cp, err := m.identityProviderService.GetSocialProfile(ctx.Request().Context(), domain, ctx.QueryParam("code"), ip)
 	if err != nil || cp.ID == "" {
 		if err == nil {
 			err = errors.New("Unable to load identity profile data")
@@ -107,7 +104,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user identity by email")}
 		}
 
-		if err := m.authLogService.Add(ctx, user, ""); err != nil {
+		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 		}
 
@@ -188,7 +185,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
-	if err := m.authLogService.Add(ctx, user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
@@ -288,7 +285,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
-	if err := m.authLogService.Add(ctx, user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 

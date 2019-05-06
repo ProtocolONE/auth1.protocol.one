@@ -3,12 +3,12 @@ package api
 import (
 	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
-	"github.com/globalsign/mgo"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -34,7 +34,7 @@ type ServerConfig struct {
 	HydraAdminApi *admin.Client
 	SessionConfig *config.Session
 	MfaService    proto.MfaService
-	MgoSession    *mgo.Session
+	MgoSession    database.Session
 	SessionStore  *redistore.RediStore
 	RedisClient   *redis.Client
 	Mailer        *config.Mailer

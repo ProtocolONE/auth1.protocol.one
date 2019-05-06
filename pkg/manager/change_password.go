@@ -2,25 +2,22 @@ package manager
 
 import (
 	"fmt"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
 )
 
 type ChangePasswordManager struct {
-	redis                   *redis.Client
 	r                       service.InternalRegistry
-	userIdentityService     *service.UserIdentityService
-	identityProviderService *service.AppIdentityProviderService
+	userIdentityService     service.UserIdentityServiceInterface
+	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
-func NewChangePasswordManager(db *mgo.Session, r *redis.Client, ir service.InternalRegistry) *ChangePasswordManager {
+func NewChangePasswordManager(db database.Session, ir service.InternalRegistry) *ChangePasswordManager {
 	m := &ChangePasswordManager{
-		redis:                   r,
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
@@ -91,7 +88,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	ui, err := m.userIdentityService.Get(app, ipc, ts.Email)
-	if err != nil {
+	if err != nil || ui.ID == "" {
+		if err == nil {
+			err = errors.New("User identity not found")
+		}
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 	}
 

@@ -14,7 +14,7 @@ func GetTokenFromAuthHeader(headers http.Header) (token *models.JwtClaim, err er
 		return nil, errors.New(`invalid authenticate header`)
 	}
 
-	s := strings.Split(authHeader, ` `)
+	s := strings.Split(authHeader, " ")
 	if "Bearer" != s[0] {
 		return nil, errors.New(`invalid authenticate header name`)
 	}
@@ -27,5 +27,5 @@ func GetTokenFromAuthHeader(headers http.Header) (token *models.JwtClaim, err er
 		return nil, errors.New(`invalid client id`)
 	}
 
-	return nil, nil
+	return &models.JwtClaim{}, nil
 }

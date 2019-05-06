@@ -1,17 +1,33 @@
 package service
 
 import (
+	"context"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	mfa "github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/micro/go-micro/client"
 )
+
+type MfaServiceInterface interface {
+	Add(*models.MfaProvider) error
+	List(bson.ObjectId) ([]*models.MfaProvider, error)
+	Get(bson.ObjectId) (*models.MfaProvider, error)
+	AddUserProvider(*models.MfaUserProvider) error
+	GetUserProviders(*models.User) ([]*models.MfaProvider, error)
+}
+
+type MfaApiInterface interface {
+	Create(ctx context.Context, in *mfa.MfaCreateDataRequest, opts ...client.CallOption) (*mfa.MfaCreateDataResponse, error)
+	Check(ctx context.Context, in *mfa.MfaCheckDataRequest, opts ...client.CallOption) (*mfa.MfaCheckDataResponse, error)
+}
 
 type MfaService struct {
 	db *mgo.Database
 }
 
-func NewMfaService(dbHandler *mgo.Session) *MfaService {
+func NewMfaService(dbHandler database.Session) *MfaService {
 	return &MfaService{db: dbHandler.DB("")}
 }
 

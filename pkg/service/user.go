@@ -7,11 +7,17 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+type UserServiceInterface interface {
+	Create(*models.User) error
+	Update(*models.User) error
+	Get(bson.ObjectId) (*models.User, error)
+}
+
 type UserService struct {
 	db *mgo.Database
 }
 
-func NewUserService(dbHandler *mgo.Session) *UserService {
+func NewUserService(dbHandler database.Session) *UserService {
 	return &UserService{db: dbHandler.DB("")}
 }
 
