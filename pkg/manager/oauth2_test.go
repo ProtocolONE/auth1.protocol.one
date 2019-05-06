@@ -798,6 +798,25 @@ func TestSignUpReturnErrorWithUnableToGetClientFromSession(t *testing.T) {
 	r := &mocks.InternalRegistry{}
 
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
+	s.On("Get", mock.Anything, clientIdSessionKey).Return(nil, errors.New(""))
+	r.On("ApplicationService").Return(app)
+
+	m := &OauthManager{
+		r:       r,
+		session: s,
+	}
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
+	assert.NotNil(t, err)
+	assert.Equal(t, "common", err.Code)
+	assert.Equal(t, models.ErrorUnknownError, err.Message)
+}
+
+func TestSignUpReturnErrorWithUnableToGetApplication(t *testing.T) {
+	s := &mocks.SessionService{}
+	app := &mocks.ApplicationServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
