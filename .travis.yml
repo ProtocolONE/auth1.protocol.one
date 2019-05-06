@@ -11,7 +11,9 @@ stages:
 jobs:
   include:
     - stage: test
-      services: mongodb
+      services:
+        - mongodb
+        - redis-server
       install: true
       env:
         - AUTHONE_DATABASE_USER=travis
