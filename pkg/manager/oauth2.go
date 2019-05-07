@@ -9,6 +9,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
+	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
@@ -241,7 +242,12 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to introspect token")}
 	}
 
-	return &models.Oauth2TokenIntrospection{client.Payload}, nil
+	token := &models.Oauth2TokenIntrospection{}
+	if err := copier.Copy(&token, client.Payload); err != nil {
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to copy token")}
+	}
+
+	return token, nil
 }
 
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, *models.GeneralError) {
