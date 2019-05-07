@@ -40,9 +40,11 @@ func (us UserIdentityService) Update(userIdentity *models.UserIdentity) error {
 
 func (us UserIdentityService) Get(app *models.Application, identityProvider *models.AppIdentityProvider, externalId string) (*models.UserIdentity, error) {
 	ui := &models.UserIdentity{}
-	err := us.db.C(database.TableUserIdentity).
+	if err := us.db.C(database.TableUserIdentity).
 		Find(bson.M{"app_id": app.ID, "identity_provider_id": identityProvider.ID, "external_id": externalId}).
-		One(&ui)
+		One(&ui); err != nil {
+		return nil, err
+	}
 
-	return ui, err
+	return ui, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
@@ -62,7 +61,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypePassword)
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 	if ipc == nil {
 		return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity providers")}
 	}
@@ -288,7 +287,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
-	if err != nil && err != mgo.ErrNotFound {
+	if err == nil {
 		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user with identity for application")}
 	}
 
