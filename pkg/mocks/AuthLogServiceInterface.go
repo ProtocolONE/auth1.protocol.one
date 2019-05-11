@@ -10,9 +10,9 @@ type AuthLogServiceInterface struct {
 	mock.Mock
 }
 
-// Add provides a mock function with given fields: _a0, _a1, _a2, _a3
+// Add provides a mock function with given fields: _a0, _a1, _a2
 func (_m *AuthLogServiceInterface) Add(_a0 string, _a1 string, _a2 *models.User) error {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string, *models.User) error); ok {
