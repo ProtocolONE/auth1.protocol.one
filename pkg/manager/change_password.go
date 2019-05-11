@@ -10,14 +10,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ChangePasswordManagerInterface interface{}
+// ChangePasswordManagerInterface describes of methods for the manager.
+type ChangePasswordManagerInterface interface {
+	// ChangePasswordStart initiates a process for changing a user's password.
+	// The method creates a one-time token and sends it to the user's email.
+	ChangePasswordStart(*models.ChangePasswordStartForm) *models.GeneralError
 
+	// ChangePasswordVerify validates a one-time token sent by email and, if successful, changes the user's password.
+	ChangePasswordVerify(*models.ChangePasswordVerifyForm) *models.GeneralError
+}
+
+// ChangePasswordManager is the change password manager.
 type ChangePasswordManager struct {
 	r                       service.InternalRegistry
 	userIdentityService     service.UserIdentityServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 }
 
+// NewChangePasswordManager return new change password manager.
 func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
 		r:                       ir,

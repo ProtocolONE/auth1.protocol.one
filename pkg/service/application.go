@@ -12,16 +12,31 @@ import (
 
 const ApplicationWatcherChannel = "application"
 
+// ApplicationServiceInterface describes of methods for the ApplicationService.
 type ApplicationServiceInterface interface {
+	// Create is creating a new application.
 	Create(*models.Application) error
+
+	// Update is updating a application.
 	Update(*models.Application) error
+
+	// Get return the application by id.
 	Get(bson.ObjectId) (*models.Application, error)
+
+	// LoadSocialSettings return settings for generate one-time token on social network.
 	LoadSocialSettings() (*models.SocialSettings, error)
+
+	// LoadMfaConnection return settings for mfa providers.
 	LoadMfaConnection(string) ([]*models.MfaConnection, error)
+
+	// AddIdentityProvider adds the identity of the provider to the list available for the application.
 	AddIdentityProvider(*models.Application, *models.AppIdentityProvider) error
+
+	// UpdateIdentityProvider updates the provider identity of the application.
 	UpdateIdentityProvider(*models.Application, *models.AppIdentityProvider) error
 }
 
+// ApplicationService is the Application service.
 type ApplicationService struct {
 	db *mgo.Database
 	mx sync.Mutex
@@ -30,6 +45,7 @@ type ApplicationService struct {
 	watcher persist.Watcher
 }
 
+// NewApplicationService return new Application service.
 func NewApplicationService(r InternalRegistry) *ApplicationService {
 	a := &ApplicationService{
 		db:      r.MgoSession().DB(""),

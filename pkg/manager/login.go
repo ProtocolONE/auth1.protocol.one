@@ -24,8 +24,30 @@ var (
 	SocialAccountError   = "error"
 )
 
-type LoginManagerInterface interface{}
+// LoginManagerInterface describes of methods for the manager.
+type LoginManagerInterface interface {
+	// Authorize generates an authorization URL for the social network to redirect the user.
+	Authorize(echo.Context, *models.AuthorizeForm) (string, *models.GeneralError)
 
+	// AuthorizeResult validates the response after authorization in the social network.
+	//
+	// In case of successful authentication, the user will be generated a one-time token to complete the
+	// authorization in the basic authorization form.
+	//
+	// If a user has not previously logged in through a social network, but an account has been found with the same
+	// mail as in a social network, then the user will be asked to link these accounts.
+	AuthorizeResult(echo.Context, *models.AuthorizeResultForm) (*models.AuthorizeResultResponse, *models.GeneralError)
+
+	// AuthorizeLink implements the situation with linking the account from the social network and password login (when their email addresses match).
+	//
+	// If the user chooses the linking of the account, then the password from the account will be validated and,
+	// if successful, this social account will be tied to the basic record.
+	//
+	// If the user refused to link, then a new account will be created.
+	AuthorizeLink(echo.Context, *models.AuthorizeLinkForm) (string, *models.GeneralError)
+}
+
+// LoginManager is the login manager.
 type LoginManager struct {
 	userService             service.UserServiceInterface
 	userIdentityService     service.UserIdentityServiceInterface
@@ -35,6 +57,7 @@ type LoginManager struct {
 	r                       service.InternalRegistry
 }
 
+// NewLoginManager return new login manager.
 func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginManagerInterface {
 	m := &LoginManager{
 		r:                       r,
@@ -106,7 +129,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user identity by email")}
 		}
 
-		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
+		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 		}
 
@@ -187,7 +210,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 
@@ -287,7 +310,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
 	}
 

@@ -7,16 +7,24 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+// UserServiceInterface describes of methods for the user service.
 type UserServiceInterface interface {
+	// Create creates a new user.
 	Create(*models.User) error
+
+	// Update updates user data.
 	Update(*models.User) error
+
+	// Get return the user by id.
 	Get(bson.ObjectId) (*models.User, error)
 }
 
+// UserService is the user service.
 type UserService struct {
 	db *mgo.Database
 }
 
+// NewUserService return new user service.
 func NewUserService(dbHandler database.MgoSession) *UserService {
 	return &UserService{db: dbHandler.DB("")}
 }

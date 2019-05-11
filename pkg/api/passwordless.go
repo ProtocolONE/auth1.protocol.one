@@ -78,11 +78,11 @@ func passwordLessVerify(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	token, err := m.PasswordLessVerify(form)
+	err := m.PasswordLessVerify(form)
 	if err != nil {
 		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
-	return ctx.JSON(http.StatusOK, token)
+	return ctx.JSON(http.StatusOK, "")
 }

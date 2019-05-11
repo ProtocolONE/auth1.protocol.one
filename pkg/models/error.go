@@ -33,18 +33,35 @@ var (
 	ErrorLoginChallenge           = "Invalid login challenge"
 )
 
+// ErrorInterface defines basic methods for application errors.
 type ErrorInterface interface {
+	// GetHttpCode return the http code of the error.
 	GetHttpCode() int
+
+	// GetCode return code of the error.
 	GetCode() string
+
+	// GetMessage return message of the error.
 	GetMessage() string
+
+	// Error return original error.
 	Error() string
 }
 
+// GeneralError is the basic type of application errors that are used in managers and
+// processed in controllers to generate http responses.
 type GeneralError struct {
-	Code     string `json:"error,omitempty"`
-	HttpCode int    `json:"-"`
-	Message  string `json:"error_message,omitempty"`
-	Err      error  `json:"-"`
+	// Code is the error code.
+	Code string `json:"error,omitempty"`
+
+	// HttpCode is the code for http response.
+	HttpCode int `json:"-"`
+
+	// Message is the human-readable string of error message.
+	Message string `json:"error_message,omitempty"`
+
+	// Error contains original error.
+	Err error `json:"-"`
 }
 
 func (e *GeneralError) Error() string {

@@ -6,16 +6,20 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
+// MailerInterface describes of methods for the mailer.
 type MailerInterface interface {
+	// Send sends mail for the specified email address with the specified header and content.
 	Send(to, subject, body string) error
 }
 
+// Mailer is the mailer service.
 type Mailer struct {
 	replyTo string
 	from    string
 	dialer  *gomail.Dialer
 }
 
+// NewMailer return new mailer service.
 func NewMailer(config *config.Mailer) (mailer MailerInterface) {
 	dialer := gomail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}

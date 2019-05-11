@@ -23,6 +23,7 @@ func InitOauth2(cfg *Server) error {
 	g.GET("/login", oauthLogin)
 	g.POST("/login", oauthLoginSubmit)
 	g.GET("/consent", oauthConsent)
+	g.POST("/consent", oauthConsentSubmit)
 	g.POST("/signup", oauthSignUp)
 	g.POST("/introspect", oauthIntrospect)
 	g.GET("/callback", oauthCallback)
@@ -115,13 +116,42 @@ func oauthConsent(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, e.Message)
 	}
 
-	url, err := m.Consent(ctx, form)
+	scopes, err := m.Consent(ctx, form)
 	if err != nil {
 		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
-	return ctx.Redirect(http.StatusFound, url)
+	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
+		"Challenge": form.Challenge,
+		"Scopes":    scopes,
+	})
+}
+
+func oauthConsentSubmit(ctx echo.Context) error {
+	form := new(models.Oauth2ConsentSubmitForm)
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	if err := ctx.Bind(form); err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, e.Message)
+	}
+
+	url, err := m.ConsentSubmit(ctx, form)
+	if err != nil {
+		scopes, _ := m.GetScopes()
+		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
+			"Challenge": form.Challenge,
+			"Scope":     scopes,
+			"Error":     err.Error(),
+		})
+	}
+
+	return ctx.Redirect(http.StatusPermanentRedirect, url)
 }
 
 func oauthIntrospect(ctx echo.Context) error {

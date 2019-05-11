@@ -4,18 +4,34 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// Config is general configuration settings for the application.
 type Config struct {
-	Server   Server
-	Database Database
-	Redis    Redis
-	Hydra    Hydra
-	Session  Session
-	Mailer   Mailer
+	// Server contains settings for http application.
+	Server Server
 
-	KubernetesHost  string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+	// Database contains settings for connection to the database.
+	Database Database
+
+	// Redis contains settings for connection to the Redis.
+	Redis Redis
+
+	// Hydra contains settings for public and private urls of the Hydra api.
+	Hydra Hydra
+
+	// Session contains settings for the session.
+	Session Session
+
+	// Mailer contains settings for the postman service.
+	Mailer Mailer
+
+	// KubernetesHost specifies host to the Kubernetes service.
+	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
+
+	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
 
+// Server contains settings for http application.
 type Server struct {
 	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
 	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
@@ -25,6 +41,7 @@ type Server struct {
 	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
 }
 
+// Database contains settings for connection to the database.
 type Database struct {
 	Host           string `envconfig:"HOST" required:"false" default:"127.0.0.1"`
 	Name           string `envconfig:"DATABASE" required:"false" default:"auth-one"`
@@ -33,16 +50,19 @@ type Database struct {
 	MaxConnections int    `envconfig:"MAX_CONNECTIONS" required:"false" default:"100"`
 }
 
+// Redis contains settings for connection to the Redis.
 type Redis struct {
 	Addr     string `envconfig:"ADDRESS" required:"false" default:"127.0.0.1:6379"`
 	Password string `envconfig:"PASSWORD" required:"false" default:""`
 }
 
+// Hydra contains settings for public and private urls of the Hydra api.
 type Hydra struct {
 	PublicURL string `envconfig:"PUBLIC_URL" required:"false" default:"http://localhost:4444"`
 	AdminURL  string `envconfig:"ADMIN_URL" required:"false" default:"http://localhost:4445"`
 }
 
+// Session contains settings for the session.
 type Session struct {
 	Size     int    `envconfig:"SIZE" required:"false" default:"1"`
 	Network  string `envconfig:"NETWORK" required:"false" default:"tcp"`

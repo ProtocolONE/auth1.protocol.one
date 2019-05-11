@@ -5,6 +5,7 @@ import (
 	"unicode"
 )
 
+// IsPasswordValid verifies the password according to the application password settings criteria.
 func IsPasswordValid(app *models.Application, password string) bool {
 	letters := 0
 	number := false

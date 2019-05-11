@@ -11,11 +11,13 @@ import (
 	"net/http"
 )
 
+// GetSingleError returns the first error from the list of validation errors.
 func GetSingleError(err error) validator.FieldError {
 	validationErrors := err.(validator.ValidationErrors)
 	return validationErrors[0]
 }
 
+// JsonError returns the JSON errors based on GeneralError model.
 func JsonError(ctx echo.Context, err *models.GeneralError) error {
 	if err.HttpCode == 0 {
 		err.HttpCode = http.StatusBadRequest
@@ -29,6 +31,8 @@ func JsonError(ctx echo.Context, err *models.GeneralError) error {
 	return ctx.JSON(err.HttpCode, err)
 }
 
+// ErrorHandler generates an error message and saves it to the log
+// The logger must be previously installed in the Echo context.
 func ErrorHandler(err error, c echo.Context) {
 	req := c.Request()
 	res := c.Response()

@@ -22,18 +22,37 @@ import (
 	"strings"
 )
 
+// AppIdentityProviderServiceInterface describes of methods for the AppIdentityProviderService.
 type AppIdentityProviderServiceInterface interface {
+	// Get return the identity provider by application and provider id.
 	Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+
+	// FindByType find and return list of identity providers by type.
 	FindByType(*models.Application, string) []*models.AppIdentityProvider
+
+	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
+
+	// NormalizeSocialConnection fills in the default fields for social providers.
 	NormalizeSocialConnection(*models.AppIdentityProvider) error
+
+	// GetAvailableTemplates return list of string with available social networks.
 	GetAvailableTemplates() []string
+
+	// GetAllTemplates returns a list of social providers with default values for each provider.
 	GetAllTemplates() []*models.AppIdentityProvider
+
+	// GetTemplate returns a social provider with default values.
 	GetTemplate(string) (*models.AppIdentityProvider, error)
+
+	// GetAuthUrl generates an authorization string for the social provider oauth2.
 	GetAuthUrl(string, *models.AppIdentityProvider, interface{}) (string, error)
+
+	// GetSocialProfile swaps the authorization code for an access token on a social network and gets a user profile in it.
 	GetSocialProfile(context.Context, string, string, *models.AppIdentityProvider) (*models.UserIdentitySocial, error)
 }
 
+// AppIdentityProviderService is the AppIdentityProvider service.
 type AppIdentityProviderService struct {
 }
 
@@ -43,6 +62,7 @@ var (
 	ErrorFuncNumberParameters      = "The number of parameters is not adapted"
 )
 
+// NewAppIdentityProviderService return new AppIdentityProvider service.
 func NewAppIdentityProviderService() *AppIdentityProviderService {
 	return &AppIdentityProviderService{}
 }

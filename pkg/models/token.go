@@ -6,21 +6,22 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type AuthToken struct {
-	AccessToken  string `json:"access_token,omitempty"`
-	ExpiresIn    int64  `json:"expires_in,omitempty"`
-	RefreshToken string `json:"id_token,omitempty"`
-}
-
+// OneTimeTokenSettings contains settings for to generate one-time token.
 type OneTimeTokenSettings struct {
+	// Length is the length of token.
 	Length int
-	TTL    int
+
+	//TTL is the expiration time for the token.
+	TTL int
 }
 
+// OneTimeToken contains one-time token.
 type OneTimeToken struct {
+	// Token is the value of one-time token.
 	Token string `json:"token,omitempty"`
 }
 
+// JwtClaim is deprecated and will be removed.
 type JwtClaim struct {
 	UserId         bson.ObjectId `json:"user_id"`
 	AppId          bson.ObjectId `json:"app_id"`
