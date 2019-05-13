@@ -8,8 +8,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
@@ -117,10 +117,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypePassword)
-	if ipc == nil {
-		return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity providers")}
-	}
+	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 
 	if err := m.session.Set(ctx, clientIdSessionKey, req.Payload.Client.ClientID); err != nil {
 		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
@@ -306,7 +303,12 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to introspect token")}
 	}
 
-	return &models.Oauth2TokenIntrospection{client.Payload}, nil
+	token := &models.Oauth2TokenIntrospection{}
+	if err := copier.Copy(&token, client.Payload); err != nil {
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to copy token")}
+	}
+
+	return token, nil
 }
 
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, *models.GeneralError) {
@@ -349,7 +351,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
-	if err != nil && err != mgo.ErrNotFound {
+	if err == nil {
 		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user with identity for application")}
 	}
 

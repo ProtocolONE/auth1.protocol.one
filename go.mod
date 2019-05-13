@@ -29,6 +29,7 @@ require (
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.6.2 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
+	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3
 	github.com/joncalhoun/qson v0.0.0-20170526102502-8a9cab3a62b1 // indirect
 	github.com/juju/mgosession v1.0.0 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
