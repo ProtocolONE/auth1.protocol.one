@@ -13,6 +13,7 @@ var (
 	src           = rand.NewSource(time.Now().UnixNano())
 )
 
+// GetRandString create and return random alphanumeric strings fixed length.
 func GetRandString(length int) string {
 	b := make([]byte, length)
 	for i, cache, remain := length-1, src.Int63(), letterIdxMax; i >= 0; {

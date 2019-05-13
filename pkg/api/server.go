@@ -28,31 +28,63 @@ import (
 	"time"
 )
 
+// ServerConfig contains common configuration parameters for start application server
 type ServerConfig struct {
-	ApiConfig     *config.Server
-	HydraConfig   *config.Hydra
+	// ApiConfig is common http setting for the application like a port, timeouts & etc.
+	ApiConfig *config.Server
+
+	// HydraConfig contains settings for the public and admin url of the Hydra application.
+	HydraConfig *config.Hydra
+
+	// HydraAdminApi is client of the Hydra for administration requests.
 	HydraAdminApi *admin.Client
+
+	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
-	MfaService    proto.MfaService
-	MgoSession    database.MgoSession
-	SessionStore  *redistore.RediStore
-	RedisClient   *redis.Client
-	Mailer        *config.Mailer
+
+	// MfaService describes the interface for working with MFA micro-service.
+	MfaService proto.MfaService
+
+	// MgoSession describes the interface for working with Mongo session.
+	MgoSession database.MgoSession
+
+	// SessionStore is client for session storage.
+	SessionStore *redistore.RediStore
+
+	// RedisClient is Redis client.
+	RedisClient *redis.Client
+
+	// Mailer contains settings for the postman service
+	Mailer *config.Mailer
 }
 
+// Server is the instance of the application
 type Server struct {
-	Echo          *echo.Echo
-	ServerConfig  *config.Server
-	RedisHandler  *redis.Client
-	HydraConfig   *config.Hydra
+	// Echo is instance of the Echo framework
+	Echo *echo.Echo
+
+	// ApiConfig is common http setting for the application like a port, timeouts & etc.
+	ServerConfig *config.Server
+
+	// RedisClient is Redis client.
+	RedisHandler *redis.Client
+
+	// HydraConfig contains settings for the public and admin url of the Hydra application.
+	HydraConfig *config.Hydra
+
+	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
-	Registry      service.InternalRegistry
+
+	// Registry is the registry service
+	Registry service.InternalRegistry
 }
 
+// Template is used to display HTML pages.
 type Template struct {
 	templates *template.Template
 }
 
+// NewServer creates new instance of the application.
 func NewServer(c *ServerConfig) (*Server, error) {
 	registryConfig := &service.RegistryConfig{
 		MgoSession:    c.MgoSession,

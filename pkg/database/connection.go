@@ -14,20 +14,7 @@ type MgoSession interface {
 	Close()
 }
 
-// DataLayer is an interface to access to the database struct.
-type Database interface {
-	C(name string) *mgo.Collection
-}
-
-// Collection is an interface to access to the collection struct.
-type Collection interface {
-	Find(query interface{}) *mgo.Query
-	Count() (n int, err error)
-	Insert(docs ...interface{}) error
-	Remove(selector interface{}) error
-	Update(selector interface{}, update interface{}) error
-}
-
+// NewConnection establishes a new session to the database.
 func NewConnection(c *config.Database) (MgoSession, error) {
 	info, err := mgo.ParseURL(BuildConnString(c))
 	if err != nil {
@@ -45,6 +32,7 @@ func NewConnection(c *config.Database) (MgoSession, error) {
 	return session, err
 }
 
+// BuildConnString creates a database connection string based on configuration parameters.
 func BuildConnString(c *config.Database) string {
 	if c.Name == "" {
 		return ""

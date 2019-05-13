@@ -5,15 +5,21 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// SessionService describes of methods for the session service.
 type SessionService interface {
+	// Get returns value from session by parameter name.
 	Get(echo.Context, string) (interface{}, error)
+
+	// Set sets the value in the session.
 	Set(echo.Context, string, interface{}) error
 }
 
+// SessionSettings is the session service.
 type SessionSettings struct {
 	name string
 }
 
+// NewSessionService return new session service.
 func NewSessionService(name string) SessionService {
 	return &SessionSettings{name: name}
 }

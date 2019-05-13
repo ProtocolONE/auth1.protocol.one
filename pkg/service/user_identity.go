@@ -7,16 +7,24 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+// UserIdentityServiceInterface describes of methods for the user identity service.
 type UserIdentityServiceInterface interface {
+	// Create creates a new user identity.
 	Create(*models.UserIdentity) error
+
+	// Update updates user identity data.
 	Update(*models.UserIdentity) error
+
+	// Get return the user identity by id.
 	Get(*models.Application, *models.AppIdentityProvider, string) (*models.UserIdentity, error)
 }
 
+// UserIdentityService is the user identity service.
 type UserIdentityService struct {
 	db *mgo.Database
 }
 
+// NewUserIdentityService return new user identity service.
 func NewUserIdentityService(dbHandler database.MgoSession) *UserIdentityService {
 	return &UserIdentityService{db: dbHandler.DB("")}
 }

@@ -14,59 +14,117 @@ type MfaAuthenticator struct {
 	RecoveryCodes []string      `json:"recovery_codes"`
 }
 
+// MfaChallengeForm contains form fields for requesting a mfa challenge.
 type MfaChallengeForm struct {
-	ClientId   string `json:"client_id" form:"client_id" validate:"required"`
+	// ClientID is the application id.
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+
+	// Connection is the connection name of the application identity provider.
 	Connection string `json:"connection" form:"connection" validate:"required"`
-	Token      string `json:"mfa_token" form:"mfa_token" validate:"required"`
-	Type       string `json:"challenge_type" form:"challenge_type"`
+
+	// Token is the one-time token for mfa connection.
+	Token string `json:"mfa_token" form:"mfa_token" validate:"required"`
+
+	// Type is the type of mfa challenge (otp, sms).
+	Type string `json:"challenge_type" form:"challenge_type"`
 }
 
+// MfaVerifyForm contains form fields for requesting to verify mfa challenge.
 type MfaVerifyForm struct {
-	ClientId   string `json:"client_id" form:"client_id" validate:"required"`
+	// ClientID is the application id.
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+
+	// ProviderId is the id of the mfa provider.
 	ProviderId string `json:"provider_id" form:"provider_id" validate:"required"`
-	Token      string `json:"mfa_token" form:"mfa_token" validate:"required"`
-	Code       string `json:"code" form:"code"`
+
+	// Token is the one-time token of mfa challenge.
+	Token string `json:"mfa_token" form:"mfa_token" validate:"required"`
+
+	// Code is the string of one-time code.
+	Code string `json:"code" form:"code"`
 }
 
+// MfaVerifyForm contains form fields for requesting to link of mfa provider.
 type MfaAddForm struct {
-	ClientId    string `json:"client_id" form:"client_id" validate:"required"`
-	ProviderId  string `json:"provider_id" form:"provider_id" validate:"required"`
-	Code        string `json:"code" form:"code"`
+	// ClientID is the application id
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+
+	// ProviderId is the id of the mfa provider.
+	ProviderId string `json:"provider_id" form:"provider_id" validate:"required"`
+
+	// Code is the string of one-time code.
+	Code string `json:"code" form:"code"`
+
+	// PhoneNumber is the phone number for which the provider will be associated.
 	PhoneNumber string `json:"phone_number" form:"phone_number"`
 }
 
+// MfaApplicationForm contains form fields for requesting to add of mfa provider.
 type MfaApplicationForm struct {
-	AppId       bson.ObjectId               `json:"app_id" validate:"required"`
+	// AppId is the application id.
+	AppId bson.ObjectId `json:"app_id" validate:"required"`
+
+	// MfaProvider is the MFA provider.
 	MfaProvider *MfaApplicationProviderForm `json:"mfa_provider" validate:"required"`
 }
 
+// MfaApplicationProviderForm contains form fields for the mfa provider.
 type MfaApplicationProviderForm struct {
-	Name    string `bson:"name" json:"name" validate:"required"`
+	// Name is the provider name.
+	Name string `bson:"name" json:"name" validate:"required"`
+
+	// Channel is the channel of delivery code.
 	Channel string `bson:"channel" json:"channel"`
-	Type    string `bson:"type" json:"type"`
+
+	// Type is the type of provider (otp, sms).
+	Type string `bson:"type" json:"type"`
 }
 
+// MfaProvider describes of MFA provider.
 type MfaProvider struct {
-	ID      bson.ObjectId `bson:"_id" json:"id"`
-	AppID   bson.ObjectId `bson:"app_id" json:"app_id"`
-	Name    string        `bson:"name" json:"name"`
-	Type    string        `bson:"type" json:"type"`
-	Channel string        `bson:"channel" json:"channel"`
+	// ID is the id of provider.
+	ID bson.ObjectId `bson:"_id" json:"id"`
+
+	// AppID is the id of the application.
+	AppID bson.ObjectId `bson:"app_id" json:"app_id"`
+
+	// Name is a human-readable name of provider.
+	Name string `bson:"name" json:"name"`
+
+	// Type is the type of provider (otp, sms).
+	Type string `bson:"type" json:"type"`
+
+	// Channel is the channel of delivery code.
+	Channel string `bson:"channel" json:"channel"`
 }
 
+// MfaUserProvider creates a connection between the MFA provider and the user.
 type MfaUserProvider struct {
-	UserID     bson.ObjectId `bson:"user_id" json:"user_id"`
+	// UserID is the id of the user.
+	UserID bson.ObjectId `bson:"user_id" json:"user_id"`
+
+	// ProviderID is the id of the provider.
 	ProviderID bson.ObjectId `bson:"provider_id" json:"provider_id"`
 }
 
+// UserMfaToken contains link between user identity amd mfa provider.
 type UserMfaToken struct {
+	// UserIdentity is the user identity record.
 	UserIdentity *UserIdentity
-	MfaProvider  *MfaProvider
+
+	// MfaProvider is the mfa provider.
+	MfaProvider *MfaProvider
 }
 
+// MfaConnection contains property of mfa provider for showing to the user.
 type MfaConnection struct {
-	Name    string `bson:"name" json:"name"`
-	Type    string `bson:"type" json:"type"`
+	// Name is the name of connection.
+	Name string `bson:"name" json:"name"`
+
+	// Type is the type of provider (otp, sms).
+	Type string `bson:"type" json:"type"`
+
+	// Channel is the channel of delivery code.
 	Channel string `bson:"channel" json:"channel"`
 }
 

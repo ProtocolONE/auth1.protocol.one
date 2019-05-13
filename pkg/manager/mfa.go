@@ -12,8 +12,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MFAManagerInterface interface{}
+// MFAManagerInterface describes of methods for the manager.
+type MFAManagerInterface interface {
+	// MFAChallenge is temporary unused.
+	MFAChallenge(*models.MfaChallengeForm) *models.GeneralError
 
+	// MFAVerify verifies the one-time MFA token.
+	MFAVerify(echo.Context, *models.MfaVerifyForm) *models.GeneralError
+
+	// MFAAdd adds mfa provider for the user.
+	//
+	// If successful, a secret key will be generated, a list of backup codes and a
+	// qr-code to add an authenticator to the program.
+	MFAAdd(echo.Context, *models.MfaAddForm) (*models.MfaAuthenticator, *models.GeneralError)
+}
+
+// MFAManager is the mfa manager.
 type MFAManager struct {
 	r              service.InternalRegistry
 	authLogService service.AuthLogServiceInterface
@@ -21,6 +35,7 @@ type MFAManager struct {
 	mfaService     service.MfaServiceInterface
 }
 
+// NewMFAManager return new mfa manager.
 func NewMFAManager(h database.MgoSession, r service.InternalRegistry) MFAManagerInterface {
 	m := &MFAManager{
 		r:              r,
@@ -32,16 +47,16 @@ func NewMFAManager(h database.MgoSession, r service.InternalRegistry) MFAManager
 	return m
 }
 
-func (m *MFAManager) MFAChallenge(form *models.MfaChallengeForm) (error *models.GeneralError) {
+func (m *MFAManager) MFAChallenge(form *models.MfaChallengeForm) *models.GeneralError {
 	//TODO: For OTP over SMS/Email. Undone
 
 	return nil
 }
 
-func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (token *models.AuthToken, error *models.GeneralError) {
+func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) *models.GeneralError {
 	mp := &models.UserMfaToken{}
 	if err := m.r.OneTimeTokenService().Get(form.Token, mp); err != nil {
-		return nil, &models.GeneralError{Code: "mfa_token", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
+		return &models.GeneralError{Code: "mfa_token", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
 	rsp, err := m.r.MfaService().Check(context.TODO(), &proto.MfaCheckDataRequest{
@@ -50,23 +65,19 @@ func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) (to
 		Code:       form.Code,
 	})
 	if err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorMfaCodeInvalid, Err: errors.Wrap(err, "Unable to verify MFA code")}
+		return &models.GeneralError{Code: "common", Message: models.ErrorMfaCodeInvalid, Err: errors.Wrap(err, "Unable to verify MFA code")}
 	}
 
 	if rsp.Result != true {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorMfaCodeInvalid, Err: errors.New(models.ErrorMfaCodeInvalid)}
+		return &models.GeneralError{Code: "common", Message: models.ErrorMfaCodeInvalid, Err: errors.New(models.ErrorMfaCodeInvalid)}
 	}
 
-	user, err := m.userService.Get(mp.UserIdentity.UserID)
+	_, err = m.userService.Get(mp.UserIdentity.UserID)
 	if err != nil {
-		return nil, &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
+		return &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
 	}
 
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add user auth log")}
-	}
-
-	return nil, nil
+	return nil
 }
 
 func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *models.MfaAuthenticator, error *models.GeneralError) {

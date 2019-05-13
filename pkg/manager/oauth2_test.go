@@ -489,7 +489,7 @@ func TestAuthReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	uis.On("Get", mock.Anything, mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
 	us.On("Get", mock.Anything).Return(&models.User{}, nil)
 	us.On("Update", mock.Anything).Return(nil)
-	al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	al.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
 	r.On("ApplicationService").Return(app)
 	r.On("OneTimeTokenService").Return(ott)
@@ -605,7 +605,39 @@ func TestConsentReturnErrorWithUnableToSetClientToSession(t *testing.T) {
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-func TestConsentReturnErrorWithUnableToGetUser(t *testing.T) {
+func TestConsentReturnScopes(t *testing.T) {
+	h := &mocks.HydraAdminApi{}
+	s := &mocks.SessionService{}
+	r := &mocks.InternalRegistry{}
+
+	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
+	r.On("HydraAdminApi").Return(h)
+
+	m := &OauthManager{
+		r:       r,
+		session: s,
+	}
+	scopes, err := m.Consent(getContext(), &models.Oauth2ConsentForm{Challenge: "consent_challenge"})
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"openid", "offline"}, scopes)
+}
+
+func TestConsentSubmitReturnErrorWithUnableToGetConsentRequest(t *testing.T) {
+	h := &mocks.HydraAdminApi{}
+	r := &mocks.InternalRegistry{}
+
+	h.On("GetConsentRequest", mock.Anything).Return(nil, errors.New(""))
+	r.On("HydraAdminApi").Return(h)
+
+	m := &OauthManager{r: r}
+	_, err := m.ConsentSubmit(getContext(), &models.Oauth2ConsentSubmitForm{Challenge: "consent_challenge"})
+	assert.NotNil(t, err)
+	assert.Equal(t, "common", err.Code)
+	assert.Equal(t, models.ErrorUnknownError, err.Message)
+}
+
+func TestConsentSubmitReturnErrorWithUnableToGetUser(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
@@ -621,13 +653,13 @@ func TestConsentReturnErrorWithUnableToGetUser(t *testing.T) {
 		session:     s,
 		userService: us,
 	}
-	_, err := m.Consent(getContext(), &models.Oauth2ConsentForm{Challenge: "consent_challenge"})
+	_, err := m.ConsentSubmit(getContext(), &models.Oauth2ConsentSubmitForm{Challenge: "consent_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "email", err.Code)
 	assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
 }
 
-func TestConsentReturnErrorWithUnableToGetRemember(t *testing.T) {
+func TestConsentSubmitReturnErrorWithUnableToGetRemember(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
@@ -644,13 +676,13 @@ func TestConsentReturnErrorWithUnableToGetRemember(t *testing.T) {
 		session:     s,
 		userService: us,
 	}
-	_, err := m.Consent(getContext(), &models.Oauth2ConsentForm{Challenge: "consent_challenge"})
+	_, err := m.ConsentSubmit(getContext(), &models.Oauth2ConsentSubmitForm{Challenge: "consent_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-func TestConsentReturnErrorWithUnableToAcceptConsent(t *testing.T) {
+func TestConsentSubmitReturnErrorWithUnableToAcceptConsent(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
@@ -667,13 +699,13 @@ func TestConsentReturnErrorWithUnableToAcceptConsent(t *testing.T) {
 		session:     s,
 		userService: us,
 	}
-	_, err := m.Consent(getContext(), &models.Oauth2ConsentForm{Challenge: "consent_challenge"})
+	_, err := m.ConsentSubmit(getContext(), &models.Oauth2ConsentSubmitForm{Challenge: "consent_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-func TestConsentReturnUrlToRedirect(t *testing.T) {
+func TestConsentSubmitReturnUrlToRedirect(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
@@ -690,7 +722,7 @@ func TestConsentReturnUrlToRedirect(t *testing.T) {
 		session:     s,
 		userService: us,
 	}
-	url, err := m.Consent(getContext(), &models.Oauth2ConsentForm{Challenge: "consent_challenge"})
+	url, err := m.ConsentSubmit(getContext(), &models.Oauth2ConsentSubmitForm{Challenge: "consent_challenge"})
 	assert.Nil(t, err)
 	assert.Equal(t, "url", url)
 }
@@ -1055,7 +1087,7 @@ func TestSignUpReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
 
@@ -1093,7 +1125,7 @@ func TestSignUpReturnErrorWithUnableToAcceptLoginChallenge(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
@@ -1132,7 +1164,7 @@ func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.RequestHandlerResponse{RedirectTo: "url"}}, nil)
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)

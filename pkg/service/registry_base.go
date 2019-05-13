@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
+// RegistryBase contains common services.
 type RegistryBase struct {
 	redis   *redis.Client
 	session database.MgoSession
@@ -18,14 +19,25 @@ type RegistryBase struct {
 	mailer  MailerInterface
 }
 
+// RegistryConfig contains the configuration parameters of Registry
 type RegistryConfig struct {
-	MgoSession    database.MgoSession
-	RedisClient   *redis.Client
-	MfaService    MfaApiInterface
+	// MgoSession is the interface for the Mongo session.
+	MgoSession database.MgoSession
+
+	// RedisClient is the client of the Redis.
+	RedisClient *redis.Client
+
+	// MfaService is the interface for the MFA micro-service.
+	MfaService MfaApiInterface
+
+	// HydraAdminApi is the interface for the Hydra administration api.
 	HydraAdminApi HydraAdminApi
-	Mailer        MailerInterface
+
+	// Mailer is the interface for the postman.
+	Mailer MailerInterface
 }
 
+// NewRegistryBase creates new registry service.
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 	return &RegistryBase{
 		session: config.MgoSession,

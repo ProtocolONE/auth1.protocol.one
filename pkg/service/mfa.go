@@ -10,23 +10,37 @@ import (
 	"github.com/micro/go-micro/client"
 )
 
+// MfaServiceInterface describes of methods for the mfa service.
 type MfaServiceInterface interface {
+	// Add adds a new MFA provider for the application.
 	Add(*models.MfaProvider) error
+
+	// List returns a list of available mfa providers for the application.
 	List(bson.ObjectId) ([]*models.MfaProvider, error)
+
+	// // Get return the mfa providers by id.
 	Get(bson.ObjectId) (*models.MfaProvider, error)
+
+	// AddUserProvider adds mfa provider for the user.
 	AddUserProvider(*models.MfaUserProvider) error
+
+	// GetUserProviders returns a list of available mfa providers for the user.
 	GetUserProviders(*models.User) ([]*models.MfaProvider, error)
 }
 
+// MfaApiInterface describes of methods for the mfa micro-service.
+// See more on https://github.com/ProtocolONE/mfa-service.
 type MfaApiInterface interface {
 	Create(ctx context.Context, in *mfa.MfaCreateDataRequest, opts ...client.CallOption) (*mfa.MfaCreateDataResponse, error)
 	Check(ctx context.Context, in *mfa.MfaCheckDataRequest, opts ...client.CallOption) (*mfa.MfaCheckDataResponse, error)
 }
 
+// MfaService is the mfa service.
 type MfaService struct {
 	db *mgo.Database
 }
 
+// NewMfaService return new mfa service.
 func NewMfaService(dbHandler database.MgoSession) *MfaService {
 	return &MfaService{db: dbHandler.DB("")}
 }

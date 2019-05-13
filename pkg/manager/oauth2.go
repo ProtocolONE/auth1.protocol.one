@@ -25,8 +25,62 @@ var (
 	logoutHydraUrl     = "/oauth2/auth/sessions/login/revoke"
 )
 
-type OauthManagerInterface interface{}
+// OauthManagerInterface describes of methods for the manager.
+type OauthManagerInterface interface {
+	// CheckAuth is a cookie based authentication check.
+	//
+	//  If the user has previously been authorized and selected the option "remember me",
+	//  then this method automatically authorizes the user.
+	//
+	//  If the user does not have an authorization session, his email address will be returned in order
+	//  to offer him authorization under the previous account.
+	//
+	//  If no authorization was found, then a list of social networks is returned (if available) in order to prompt
+	//  the user to log in through them, and not just by login and password.
+	CheckAuth(echo.Context, *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError)
 
+	// Auth authorizes a user based on login and password, previous login or
+	// one-time authorization token (obtained after authorization through social networks).
+	//
+	// After successful authorization, the URL for the redirect will be returned to pass the agreement consent process.
+	Auth(echo.Context, *models.Oauth2LoginSubmitForm) (string, *models.GeneralError)
+
+	// Consent prompts the user to accept the consent.
+	Consent(echo.Context, *models.Oauth2ConsentForm) ([]string, *models.GeneralError)
+
+	// Consent accepts the consent.
+	ConsentSubmit(echo.Context, *models.Oauth2ConsentSubmitForm) (string, *models.GeneralError)
+
+	// GetScopes returns a list of available scope for the application.
+	GetScopes() ([]string, error)
+
+	// Introspect checks the token and returns its contents.
+	//
+	// Contains an access token's session data as specified by IETF RFC 7662, see:
+	// https://tools.ietf.org/html/rfc7662
+	Introspect(echo.Context, *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, *models.GeneralError)
+
+	// SignUp registers a new user using login and password.
+	//
+	// After successful registration, the URL for the redirect will be returned to pass the agreement consent process.
+	SignUp(echo.Context, *models.Oauth2SignUpForm) (string, *models.GeneralError)
+
+	// CallBack verifies the result of oauth2 authorization.
+	//
+	// The method is implemented for applications that do not have their own backend,
+	// for example, an application for a computer or a SPA.
+	//
+	// The page, using the JS SDK, will transmit through the PostMessage and the callback function the result of
+	// the authorization, the token and the time of its completion.
+	CallBack(echo.Context, *models.Oauth2CallBackForm) (*models.Oauth2CallBackResponse, *models.GeneralError)
+
+	// Logout removes the authentication cookie and redirects the user to the specified URL.
+	//
+	// Url should be in the list of trusted ones, as well as during authorization and registration.
+	Logout(echo.Context, *models.Oauth2LogoutForm) (string, *models.GeneralError)
+}
+
+// OauthManager is the oauth manager.
 type OauthManager struct {
 	hydraConfig             *config.Hydra
 	userService             service.UserServiceInterface
@@ -37,6 +91,7 @@ type OauthManager struct {
 	session                 service.SessionService
 }
 
+// NewOauthManager return new oauth manager.
 func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *config.Session, h *config.Hydra) OauthManagerInterface {
 	m := &OauthManager{
 		hydraConfig:             h,
@@ -142,7 +197,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", &models.GeneralError{Code: "common", Message: models.ErrorUpdateUser, Err: errors.Wrap(err, "Unable to update user")}
 		}
 
-		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
+		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 			return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add auth log")}
 		}
 		userId = user.ID.Hex()
@@ -168,18 +223,24 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	return reqACL.Payload.RedirectTo, nil
 }
 
-func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) (string, *models.GeneralError) {
+func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) ([]string, *models.GeneralError) {
 	scopes, err := m.GetScopes()
-	// TODO: What scope should be requested to send a person to accept them?
-	// For now, we automatically agree with those that the user came with.
-
 	reqGCR, err := m.r.HydraAdminApi().GetConsentRequest(&admin.GetConsentRequestParams{Context: ctx.Request().Context(), Challenge: form.Challenge})
 	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
+		return scopes, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
 
 	if err := m.session.Set(ctx, clientIdSessionKey, reqGCR.Payload.Client.ClientID); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+		return scopes, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+	}
+
+	return scopes, nil
+}
+
+func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2ConsentSubmitForm) (string, *models.GeneralError) {
+	reqGCR, err := m.r.HydraAdminApi().GetConsentRequest(&admin.GetConsentRequestParams{Context: ctx.Request().Context(), Challenge: form.Challenge})
+	if err != nil {
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
 
 	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Payload.Subject))
@@ -205,7 +266,7 @@ func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm)
 		"picture":               user.Picture,
 	}
 	req := models2.HandledConsentRequest{
-		GrantedScope: scopes,
+		GrantedScope: form.Scope,
 		Session: &models2.ConsentRequestSessionData{
 			IDToken:     userInfo,
 			AccessToken: map[string]interface{}{"remember": remember}},
@@ -330,7 +391,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
 	}
 
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user, ""); err != nil {
+	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add auth log")}
 	}
 

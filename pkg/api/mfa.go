@@ -72,13 +72,13 @@ func mfaVerify(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	token, err := m.MFAVerify(ctx, form)
+	err := m.MFAVerify(ctx, form)
 	if err != nil {
 		ctx.Error(err.Err)
 		return ctx.JSON(http.StatusBadRequest, err)
 	}
 
-	return ctx.JSON(http.StatusOK, token)
+	return ctx.JSON(http.StatusOK, "")
 }
 
 func mfaAdd(ctx echo.Context) error {

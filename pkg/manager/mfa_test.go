@@ -27,7 +27,7 @@ func TestMFAVerifyReturnErrorWithUnableToGetToken(t *testing.T) {
 	r.On("OneTimeTokenService").Return(ott)
 
 	m := &MFAManager{r: r}
-	_, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{})
+	err := m.MFAVerify(getContext(), &models.MfaVerifyForm{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "mfa_token", err.Code)
 	assert.Equal(t, models.ErrorCannotUseToken, err.Message)
@@ -48,7 +48,7 @@ func TestMFAVerifyReturnErrorWithCheckCode(t *testing.T) {
 	r.On("MfaService").Return(mfa)
 
 	m := &MFAManager{r: r}
-	_, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
+	err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorMfaCodeInvalid, err.Message)
@@ -69,7 +69,7 @@ func TestMFAVerifyReturnErrorWithResultIsFalse(t *testing.T) {
 	r.On("MfaService").Return(mfa)
 
 	m := &MFAManager{r: r}
-	_, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
+	err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorMfaCodeInvalid, err.Message)
@@ -95,39 +95,10 @@ func TestMFAVerifyReturnErrorWithUnableToGetUser(t *testing.T) {
 		r:           r,
 		userService: us,
 	}
-	_, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
+	err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "email", err.Code)
 	assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
-}
-
-func TestMFAVerifyReturnErrorWithUnableToAddAuthLog(t *testing.T) {
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	mfa := &mocks.MfaApiInterface{}
-	us := &mocks.UserServiceInterface{}
-	a := &mocks.AuthLogServiceInterface{}
-	r := &mocks.InternalRegistry{}
-
-	ott.On("Get", "token", &models.UserMfaToken{}).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*models.UserMfaToken)
-		arg.UserIdentity = &models.UserIdentity{UserID: bson.NewObjectId()}
-		arg.MfaProvider = &models.MfaProvider{ID: bson.NewObjectId()}
-	})
-	mfa.On("Check", mock.Anything, mock.Anything).Return(&proto.MfaCheckDataResponse{Result: true}, nil)
-	us.On("Get", mock.Anything).Return(&models.User{}, nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
-	r.On("OneTimeTokenService").Return(ott)
-	r.On("MfaService").Return(mfa)
-
-	m := &MFAManager{
-		r:              r,
-		userService:    us,
-		authLogService: a,
-	}
-	_, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorAddAuthLog, err.Message)
 }
 
 func TestMFAVerifySuccessResult(t *testing.T) {
@@ -144,7 +115,7 @@ func TestMFAVerifySuccessResult(t *testing.T) {
 	})
 	mfa.On("Check", mock.Anything, mock.Anything).Return(&proto.MfaCheckDataResponse{Result: true}, nil)
 	us.On("Get", mock.Anything).Return(&models.User{}, nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	r.On("OneTimeTokenService").Return(ott)
 	r.On("MfaService").Return(mfa)
 
@@ -153,9 +124,8 @@ func TestMFAVerifySuccessResult(t *testing.T) {
 		userService:    us,
 		authLogService: a,
 	}
-	token, err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
+	err := m.MFAVerify(getContext(), &models.MfaVerifyForm{Token: "token"})
 	assert.Nil(t, err)
-	assert.Nil(t, token)
 }
 
 func TestMFAAddReturnErrorWithUnableToGetApplication(t *testing.T) {

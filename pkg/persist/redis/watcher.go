@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Watcher is the watcher service.
 type Watcher struct {
 	id       uuid.UUID
 	options  WatcherOptions
@@ -22,6 +23,7 @@ type event struct {
 	Payload string
 }
 
+// NewWatcher return new watcher service.
 func NewWatcher(client *redis.Client, setters ...WatcherOption) persist.Watcher {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -50,6 +52,7 @@ func NewWatcher(client *redis.Client, setters ...WatcherOption) persist.Watcher 
 	return w
 }
 
+// Close exits the watcher.
 func (w *Watcher) Close() error {
 	w.quit <- true
 	return nil

@@ -7,19 +7,23 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+// AuthLogServiceInterface describes of methods for the AuthLog service.
 type AuthLogServiceInterface interface {
-	Add(string, string, *models.User, string) error
+	// Add adds an authorization log for the user.
+	Add(string, string, *models.User) error
 }
 
+// AuthLogService is the AuthLog service.
 type AuthLogService struct {
 	db *mgo.Database
 }
 
+// NewAuthLogService return new AuthLog service.
 func NewAuthLogService(h database.MgoSession) *AuthLogService {
 	return &AuthLogService{db: h.DB("")}
 }
 
-func (s AuthLogService) Add(ipAddr string, userAgent string, user *models.User, token string) error {
+func (s AuthLogService) Add(ipAddr string, userAgent string, user *models.User) error {
 	ua, err := s.addUserAgent(userAgent)
 	if err != nil {
 		return err
@@ -33,7 +37,6 @@ func (s AuthLogService) Add(ipAddr string, userAgent string, user *models.User, 
 	l := &models.AuthorizeLog{
 		ID:          bson.NewObjectId(),
 		UserID:      user.ID,
-		Token:       token,
 		UserAgentId: ua.ID,
 		IpId:        ip.ID,
 	}
