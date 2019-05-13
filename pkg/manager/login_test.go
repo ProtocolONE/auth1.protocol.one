@@ -184,6 +184,27 @@ func TestAuthorizeResultReturnErrorWithUnableToGetSocialProfile(t *testing.T) {
 	assert.Equal(t, models.ErrorGetSocialData, err.Message)
 }
 
+func TestAuthorizeResultReturnErrorWithUnableToGetSocialProfile2(t *testing.T) {
+	ip := &mocks.AppIdentityProviderServiceInterface{}
+	app := &mocks.ApplicationServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypeSocial, mock.Anything).Return(&models.AppIdentityProvider{})
+	ip.On("GetSocialProfile", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	r.On("ApplicationService").Return(app)
+
+	m := &LoginManager{
+		r:                       r,
+		identityProviderService: ip,
+	}
+	form, _ := json.Marshal(&models.AuthorizeForm{ClientID: bson.NewObjectId().Hex()})
+	_, err := m.AuthorizeResult(getContext(), &models.AuthorizeResultForm{State: base64.StdEncoding.EncodeToString(form)})
+	assert.NotNil(t, err)
+	assert.Equal(t, "common", err.Code)
+	assert.Equal(t, models.ErrorGetSocialData, err.Message)
+}
+
 func TestAuthorizeResultReturnErrorWithUnableToGetExistedUserByExistedUserIdentity(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}

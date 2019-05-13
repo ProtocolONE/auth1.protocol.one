@@ -115,7 +115,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
 	cp, err := m.identityProviderService.GetSocialProfile(ctx.Request().Context(), domain, ctx.QueryParam("code"), ip)
-	if err != nil || cp.ID == "" {
+	if err != nil || cp == nil || cp.ID == "" {
 		if err == nil {
 			err = errors.New("Unable to load identity profile data")
 		}

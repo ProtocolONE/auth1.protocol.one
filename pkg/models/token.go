@@ -9,10 +9,10 @@ import (
 // OneTimeTokenSettings contains settings for to generate one-time token.
 type OneTimeTokenSettings struct {
 	// Length is the length of token.
-	Length int
+	Length int `bson:"length" json:"length"`
 
 	//TTL is the expiration time for the token.
-	TTL int
+	TTL int `bson:"ttl" json:"ttl"`
 }
 
 // OneTimeToken contains one-time token.

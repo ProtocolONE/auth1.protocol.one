@@ -87,7 +87,7 @@ func (m *MFAManager) MFAAdd(ctx echo.Context, form *models.MfaAddForm) (token *m
 	}
 
 	p, err := m.mfaService.Get(bson.ObjectIdHex(form.ProviderId))
-	if err != nil || p.AppID != app.ID {
+	if err != nil || p == nil || p.AppID != app.ID {
 		if err == nil {
 			err = errors.New("Provider not equal application")
 		}

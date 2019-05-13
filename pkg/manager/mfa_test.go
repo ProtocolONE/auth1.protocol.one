@@ -163,6 +163,25 @@ func TestMFAAddReturnErrorWithUnableToGetProvider(t *testing.T) {
 	assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
 }
 
+func TestMFAAddReturnErrorWithUnableToGetProvider2(t *testing.T) {
+	app := &mocks.ApplicationServiceInterface{}
+	mfa := &mocks.MfaServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	mfa.On("Get", mock.Anything).Return(nil, nil)
+	r.On("ApplicationService").Return(app)
+
+	m := &MFAManager{
+		r:          r,
+		mfaService: mfa,
+	}
+	_, err := m.MFAAdd(getContext(), &models.MfaAddForm{ClientId: bson.NewObjectId().Hex(), ProviderId: bson.NewObjectId().Hex()})
+	assert.NotNil(t, err)
+	assert.Equal(t, "provider_id", err.Code)
+	assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
+}
+
 func TestMFAAddReturnErrorWithIncorrectAuthHeader(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
@@ -254,5 +273,11 @@ func TestMFAAddReturnSuccess(t *testing.T) {
 
 	headers := map[string]interface{}{"Authorization": "Bearer 123", "X-CLIENT-ID": bson.NewObjectId().Hex()}
 	_, err := m.MFAAdd(getContext(map[string]interface{}{"headers": headers}), &models.MfaAddForm{ClientId: bson.NewObjectId().Hex(), ProviderId: bson.NewObjectId().Hex()})
+	assert.Nil(t, err)
+}
+
+func TestMFAChallengeReturnNil(t *testing.T) {
+	m := &MFAManager{}
+	err := m.MFAChallenge(&models.MfaChallengeForm{})
 	assert.Nil(t, err)
 }
