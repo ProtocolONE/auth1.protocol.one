@@ -35,8 +35,6 @@ type Config struct {
 type Server struct {
 	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
 	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
-	TimeoutRead      int      `envconfig:"TIMEOUT_READ" required:"false" default:"15"`
-	TimeoutWrite     int      `envconfig:"TIMEOUT_WRITE" required:"false" default:"5"`
 	AllowOrigins     []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
 	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
 }
