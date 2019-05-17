@@ -6,7 +6,10 @@ the basis of the [ORY Hydra](https://github.com/ory/hydra) open source protected
 The server is not integrated into your application, but is used as an external service according to OAuth authorization 
 standards.
 
-[![Build Status](https://travis-ci.org/ProtocolONE/auth1.protocol.one.svg?branch=master)](https://travis-ci.org/ProtocolONE/auth1.protocol.one)[![codecov](https://codecov.io/gh/ProtocolONE/auth1.protocol.one/branch/master/graph/badge.svg)](https://codecov.io/gh/ProtocolONE/auth1.protocol.one)[![Go Report Card](https://goreportcard.com/badge/github.com/ProtocolONE/auth1.protocol.one)](https://goreportcard.com/report/github.com/ProtocolONE/auth1.protocol.one)
+[![Build Status](https://travis-ci.org/ProtocolONE/auth1.protocol.one.svg?branch=master)](https://travis-ci.org/ProtocolONE/auth1.protocol.one)
+[![codecov](https://codecov.io/gh/ProtocolONE/auth1.protocol.one/branch/master/graph/badge.svg)](https://codecov.io/gh/ProtocolONE/auth1.protocol.one)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ProtocolONE/auth1.protocol.one)](https://goreportcard.com/report/github.com/ProtocolONE/auth1.protocol.one)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ---
 
@@ -14,6 +17,7 @@ standards.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Getting Started](#getting-started)
 - [API](#api)
 - [License](#license)
 
@@ -105,8 +109,87 @@ and its lifetime.
 Use the received access token to check its validity and obtain information about the user by sending it to the address 
 `/oauth2/introspect`. Validate it in headers on your API methods to control access.
 
+You can integrate authorization not only through redirection to another user page, but use the JS SDK which will allow 
+you to register and authorize a user without leaving your site. More information can be found in the 
+[ProtocolONE Auth Web SDK](https://github.com/ProtocolONE/auth-web-sdk-embedded) project. 
+
 See an example of use in the demo application located in the 
 [AuthOne JWT](https://github.com/ProtocolONE/authone-jwt-verifier-golang) project.
+
+## Getting Started
+Here you will find instructions on how to launch an authorization server in a few steps, create an application and 
+start registering and authorizing users.
+
+- Start the authorization server using the docker-compose: `docker-compose up`
+- Using API and Postman create space.
+![Create space](public/images/docs/postman_create-space.png)
+- Using the resulting space ID, create an application. In the auth_redirect_urls parameter, specify the address to 
+which the user will be redirected after successful registration or authorization.
+![Create space](public/images/docs/postman_create-app.png)
+- In your application (for example, you have a website located at http://localhost:1323) place a link to registration 
+and authorization, using the previously received application identifier and URL to return: 
+`http://localhost/oauth2/auth?response_type=code&client_id=5cde2f3252ad75007610fa1e&redirect_uri=http%3A%2F%2Flocalhost%3A1323%2Fauth%2Fcallback&state=customstate`. 
+- Prepare a page to which the user will go after the end of registration or authorization (the URL that was previously 
+listed as redirected - `http://localhost:1323/auth/callback`). With the help of any oauth library, implement code 
+verification and exchange for access tokens.
+```
+import "golang.org/x/oauth2"
+
+ctx := context.Background()
+conf := &oauth2.Config{
+    ClientID:     "5cde2f3252ad75007610fa1e",
+    ClientSecret: "etpiPrVgzzL5yZg30zZZ69occgfcoZsQmINXz10oeitdkYPSVORAk7PaVtG6iSCJ",
+    Endpoint: oauth2.Endpoint{
+        AuthURL:  "http://localhost/oauth2/auth",
+        TokenURL: "http://localhost/oauth2/token",
+    },
+}
+
+// Use the authorization code that is pushed to the redirect
+// URL. Exchange will do the handshake to retrieve the
+// initial access token. The HTTP Client returned by
+// conf.Client will refresh the token as necessary.
+var code string
+if _, err := fmt.Scan(&code); err != nil {
+    log.Fatal(err)
+}
+tok, err := conf.Exchange(ctx, code)
+if err != nil {
+    log.Fatal(err)
+}
+```
+- Save the received token (if necessary) and request user information on the authorization server. 
+The resulting information can be used to display a profile or create a local account.
+```
+import (
+    "fmt"
+    "golang.org/x/net/context/ctxhttp"
+    "io/ioutil"
+    "net/http"
+)
+
+req, err := http.NewRequest("GET", "http://localhost/oauth2/userinfo", strings.NewReader(""))
+if err != nil {
+    log.Fatal(err)
+}
+
+req.Header.Set("Accept", "application/json")
+req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t))
+
+r, err := ctxhttp.Do(ctx, http.DefaultClient, req)
+if err != nil {
+    log.Fatal(err)
+}
+defer r.Body.Close()
+
+body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1<<20))
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(body)
+```
+- Is done. Open the site and go to the registration.
 
 ## API
 The application management API supports the following functionality:

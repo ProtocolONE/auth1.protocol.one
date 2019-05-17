@@ -79,10 +79,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
 								"url": {
 									"raw": "http://localhost/api/space/{{space_id}}",
 									"protocol": "http",
@@ -594,155 +590,86 @@
 			]
 		},
 		{
-			"name": "Authenticate",
+			"name": "LogIn and SignUp with OAuth",
 			"item": [
 				{
-					"name": "Login by social provider",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://localhost/authorize?client_id=5c221cde5ffa56fdd05257df&connection=facebook&redirect_uri=http://localhost/authorize/result&state",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"path": [
-								"authorize"
-							],
-							"query": [
-								{
-									"key": "client_id",
-									"value": "5c221cde5ffa56fdd05257df"
-								},
-								{
-									"key": "connection",
-									"value": "facebook"
-								},
-								{
-									"key": "redirect_uri",
-									"value": "http://localhost/authorize/result"
-								},
-								{
-									"key": "state",
-									"value": null
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login by social with link account",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://localhost/authorize/link?client_id=5c221cde5ffa56fdd05257df&code=f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e&action=link&password=Qwerty1-",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"path": [
-								"authorize",
-								"link"
-							],
-							"query": [
-								{
-									"key": "client_id",
-									"value": "5c221cde5ffa56fdd05257df"
-								},
-								{
-									"key": "code",
-									"value": "f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e"
-								},
-								{
-									"key": "action",
-									"value": "link"
-								},
-								{
-									"key": "password",
-									"value": "Qwerty1-"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "SignUp",
-			"item": [
-				{
-					"name": "SignUp",
+					"name": "LogIn and SignUp",
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "challenge",
-									"value": "5c1b434d4c1efd2c184d9561",
-									"type": "text"
-								},
-								{
-									"key": "email",
-									"value": "test@test.com",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "Qweqwe1@",
-									"type": "text"
-								},
-								{
-									"key": "remember",
-									"value": "false",
-									"type": "text"
-								}
-							]
+							"formdata": []
 						},
 						"url": {
-							"raw": "http://localhost/oauth2/signup",
+							"raw": "http://localhost/oauth2/auth?response_type=code&client_id={{app_id}}&scope=openid offline&redirect_uri=http%3A%2F%2Flocalhost%2Foauth2%2Fcallback&state=ly7ddc4i36o",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"path": [
 								"oauth2",
-								"signup"
+								"auth"
+							],
+							"query": [
+								{
+									"key": "response_type",
+									"value": "code",
+									"description": "Request the type \"code\" for the subsequent exchange for the access token."
+								},
+								{
+									"key": "client_id",
+									"value": "{{app_id}}",
+									"description": "Appliation ID"
+								},
+								{
+									"key": "scope",
+									"value": "openid offline",
+									"description": "Requested scopes"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "http%3A%2F%2Flocalhost%2Foauth2%2Fcallback",
+									"description": "The address of the page where the user will be moved."
+								},
+								{
+									"key": "state",
+									"value": "ly7ddc4i36o",
+									"description": "The temporary state of the user before authorization or registration (the parameter will be returned along with the redirection to the URL)."
+								}
 							]
-						}
+						},
+						"description": "This request is used to redirect to the registration and authorization form.<br/>\nfter the process is completed, it will be redirected to the specified redirect URL.<br/>\nMake sure that the URL is in the list of allowed for the application.<br/>\nThe form allows you to authorize using an account from a social network."
 					},
 					"response": []
+				}
+			],
+			"description": "Description of methods for registration and authorization.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0712edba-0597-43f7-bc43-8c9bc5d61c17",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "e8fbbc91-42a5-4d44-8ab7-eb629ba4456c",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
 		{
-			"name": "ChangePassword",
+			"name": "Change Password",
 			"item": [
 				{
 					"name": "Send action email",
@@ -761,7 +688,7 @@
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
@@ -781,7 +708,8 @@
 								"dbconnections",
 								"change_password"
 							]
-						}
+						},
+						"description": "Send a request to change the password.<br/>\nAn email will be sent with a one-time token to be specified on the form."
 					},
 					"response": []
 				},
@@ -793,8 +721,8 @@
 							{
 								"key": "Content-Type",
 								"name": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
 							}
 						],
 						"body": {
@@ -802,7 +730,7 @@
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
@@ -833,9 +761,67 @@
 								"change_password",
 								"verify"
 							]
-						}
+						},
+						"description": "Check one-time token and change password."
 					},
 					"response": []
+				},
+				{
+					"name": "User form",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "http://localhost/dbconnections/change_password/form?client_id={{app_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"dbconnections",
+								"change_password",
+								"form"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "{{app_id}}"
+								}
+							]
+						},
+						"description": "The form of the invitation to change the password."
+					},
+					"response": []
+				}
+			],
+			"description": "Methods for implementing the process for changing the user's password.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "7cf5e085-3858-47ce-b03b-edaf3e8368af",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "dcb12596-487b-453a-9c77-9f1f8c84b029",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -847,10 +833,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
 							"raw": "http://localhost/oauth2/logout?redirect_uri=test",
 							"protocol": "http",
@@ -867,9 +849,33 @@
 									"value": "test"
 								}
 							]
-						}
+						},
+						"description": "This method will clear the user authentication cookies on the authorization server, and then redirect the user to the specified URL.<br/>\nMake sure that the URL is in the list of allowed for the application."
 					},
 					"response": []
+				}
+			],
+			"description": "Termination of authorization.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0aadadc1-b669-4b28-8a8d-2846d6b0adcd",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "5407edfb-37fc-4e56-b7c0-b386989fd765",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -884,37 +890,37 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
+									"value": "{{access_token}}",
 									"type": "string"
 								}
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "X-CLIENT-ID",
-								"value": "5c1bbe8b4c1efd4428629bde",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "formdata",
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1bbe8b4c1efd4428629bde",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
 									"key": "provider_id",
-									"value": "5c4765944c1efd4194ec950f",
+									"value": "{{app_identity_id}}",
 									"type": "text"
 								},
 								{
-									"key": "authenticator_types",
-									"value": "auth1",
-									"type": "text",
-									"disabled": true
+									"key": "code",
+									"value": "",
+									"description": "Confirmation code (in case of using SMS provider).",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "",
+									"description": "Phone number (in case of using SMS provider).",
+									"type": "text"
 								}
 							]
 						},
@@ -928,7 +934,8 @@
 								"mfa",
 								"add"
 							]
-						}
+						},
+						"description": "Adding MFA provider for the user."
 					},
 					"response": []
 				},
@@ -946,34 +953,30 @@
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "X-CLIENT-ID",
-								"value": "5c1bbe8b4c1efd4428629bde",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "formdata",
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1bbe8b4c1efd4428629bde",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
 									"key": "provider_id",
-									"value": "5c4765944c1efd4194ec950f",
+									"value": "{{app_identity_id}}",
 									"type": "text"
 								},
 								{
-									"key": "mfa_token",
-									"value": "ZTNipCQuSNmJG9vFihRHAGq5DHy9adim9BFYa43AeJR5j5p0FsCDVCzYmeMqEVsY",
+									"key": "token",
+									"value": "",
+									"description": "One-time authorization token.",
 									"type": "text"
 								},
 								{
 									"key": "code",
-									"value": "778945",
+									"value": "",
+									"description": "Code from the application or SMS.",
 									"type": "text"
 								}
 							]
@@ -988,7 +991,8 @@
 								"mfa",
 								"verify"
 							]
-						}
+						},
+						"description": "Validation of the MFA code during authorization using a one-time token."
 					},
 					"response": []
 				}
@@ -1008,7 +1012,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI1YzQ2NGRkMDRjMWVmZDI0MjQ5YTFmYjUiLCJFbWFpbCI6InByMGhlYWRAbWFpbC5ydSIsIkVtYWlsQ29uZmlybWVkIjpmYWxzZSwiTmlja25hbWUiOiIiLCJleHAiOjM2MDAsImlzcyI6IlxcRk1cdWZmZmRMXHUwMDFlXHVmZmZkJCRcdWZmZmRcdTAwMWZcdWZmZmQifQ.cEqWUFty9NPbfNwgWdQtZXfEL_EdTFBjQET74dYf4vQ",
+									"value": "{{access_token}}",
 									"type": "string"
 								}
 							]
@@ -1029,9 +1033,33 @@
 								"oauth2",
 								"userinfo"
 							]
-						}
+						},
+						"description": "This endpoint returns the payload of the ID Token, including the idTokenExtra values, of the provided OAuth 2.0 access token. The endpoint implements http://openid.net/specs/openid-connect-core-1_0.html#UserInfo."
 					},
 					"response": []
+				}
+			],
+			"description": "Getting information about user by access token.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "d12c27bf-59c9-447e-8f17-3d933a3bb625",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "797f9c05-4c02-4296-a7ed-ec4e38f2bbbf",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		}
