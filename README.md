@@ -1,7 +1,6 @@
-# Authentication as service.
+# AuthOne Introduction
 
-# Introduction
-Auth1 is an open source authorization server that supports the OAuth 2.0 and OpenID 1.0 Connect paradigm, created on 
+AuthOne is an open source authorization server that supports the OAuth 2.0 and OpenID 1.0 Connect paradigm, created on 
 the basis of the [ORY Hydra](https://github.com/ory/hydra) open source protected and certified application. 
 The server is not integrated into your application, but is used as an external service according to OAuth authorization 
 standards.
