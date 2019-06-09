@@ -26,6 +26,9 @@ type MfaServiceInterface interface {
 
 	// GetUserProviders returns a list of available mfa providers for the user.
 	GetUserProviders(*models.User) ([]*models.MfaProvider, error)
+
+	// RemoveUserProvider removes the mfa provider by id for user.
+	RemoveUserProvider(*models.MfaUserProvider) error
 }
 
 // MfaApiInterface describes of methods for the mfa micro-service.
@@ -105,4 +108,12 @@ func (s *MfaService) GetUserProviders(u *models.User) (providers []*models.MfaPr
 	}
 
 	return providers, nil
+}
+
+func (s *MfaService) RemoveUserProvider(provider *models.MfaUserProvider) error {
+	if err := s.db.C(database.TableUserMfa).Remove(provider); err != nil {
+		return err
+	}
+
+	return nil
 }

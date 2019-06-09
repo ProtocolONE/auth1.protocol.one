@@ -107,3 +107,17 @@ func (_m *MfaServiceInterface) List(_a0 bson.ObjectId) ([]*models.MfaProvider, e
 
 	return r0, r1
 }
+
+// RemoveUserProvider provides a mock function with given fields: _a0
+func (_m *MfaServiceInterface) RemoveUserProvider(_a0 *models.MfaUserProvider) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*models.MfaUserProvider) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

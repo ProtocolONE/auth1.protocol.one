@@ -31,6 +31,8 @@ var (
 	ErrorMfaClientAdd             = "Unable to add MFA"
 	ErrorMfaCodeInvalid           = "Invalid MFA code"
 	ErrorLoginChallenge           = "Invalid login challenge"
+	ErrorAppIdIncorrect           = "Application ID is incorrect"
+	ErrorMfaClientRemove          = "Unable to remove MFA"
 )
 
 // ErrorInterface defines basic methods for application errors.

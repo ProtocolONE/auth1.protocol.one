@@ -23,8 +23,72 @@ func InitMFA(cfg *Server) error {
 	g.POST("/challenge", mfaChallenge)
 	g.POST("/verify", mfaVerify)
 	g.POST("/add", mfaAdd)
+	g.POST("/list", mfaList)
+	g.POST("/remove", mfaRemove)
 
 	return nil
+}
+
+func mfaList(ctx echo.Context) error {
+	form := new(models.MfaListForm)
+	m := ctx.Get("mfa_manager").(*manager.MFAManager)
+
+	if err := ctx.Bind(form); err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return ctx.JSON(http.StatusBadRequest, e)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return ctx.JSON(http.StatusBadRequest, e)
+	}
+
+	list, err := m.MFAList(ctx, form)
+	if err != nil {
+		ctx.Error(err.Err)
+		return ctx.JSON(http.StatusBadRequest, err)
+	}
+
+	return ctx.JSON(http.StatusOK, list)
+}
+
+func mfaRemove(ctx echo.Context) error {
+	form := new(models.MfaRemoveForm)
+	m := ctx.Get("mfa_manager").(*manager.MFAManager)
+
+	if err := ctx.Bind(form); err != nil {
+		e := &models.GeneralError{
+			Code:    BadRequiredCodeCommon,
+			Message: models.ErrorInvalidRequestParameters,
+		}
+		ctx.Error(err)
+		return ctx.JSON(http.StatusBadRequest, e)
+	}
+
+	if err := ctx.Validate(form); err != nil {
+		e := &models.GeneralError{
+			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+			Message: models.ErrorRequiredField,
+		}
+		ctx.Error(err)
+		return ctx.JSON(http.StatusBadRequest, e)
+	}
+
+	err := m.MFARemove(ctx, form)
+	if err != nil {
+		ctx.Error(err.Err)
+		return ctx.JSON(http.StatusBadRequest, err)
+	}
+
+	return ctx.NoContent(http.StatusOK)
 }
 
 func mfaChallenge(ctx echo.Context) error {
