@@ -299,6 +299,22 @@ func TestMFAManagerError_MFAList(t *testing.T) {
 	assert.Equal(t, models.ErrorAppIdIncorrect, err.Message)
 }
 
+
+func TestMFAManagerSuccess_MFAList(t *testing.T) {
+	mfa := &mocks.MfaServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	mfa.On("GetUserProviders", mock.Anything).Return([]*models.MfaProvider{}, nil)
+
+	m := &MFAManager{
+		r:          r,
+		mfaService: mfa,
+	}
+
+	_, err := m.MFAList(getContext(), &models.MfaListForm{ClientId: bson.NewObjectId().Hex()})
+	assert.Nil(t, err)
+}
+
 func TestMFAManagerProvidersMismatch_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
@@ -322,7 +338,6 @@ func TestMFAManagerProvidersMismatch_MFARemove(t *testing.T) {
 	assert.Equal(t, "provider_id", err.Code)
 	assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
 }
-
 
 func TestMFAManagerAppIdIncorrect_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
@@ -372,7 +387,6 @@ func TestMFAManagerErrorWithoutHeaders_MFARemove(t *testing.T) {
 	assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
 }
 
-
 func TestMFAManagerError_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
@@ -396,5 +410,28 @@ func TestMFAManagerError_MFARemove(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorMfaClientRemove, err.Message)
+}
+
+func TestMFAManagerSuccess_MFARemove(t *testing.T) {
+	app := &mocks.ApplicationServiceInterface{}
+	mfa := &mocks.MfaServiceInterface{}
+	mfaApi := &mocks.MfaApiInterface{}
+	r := &mocks.InternalRegistry{}
+
+	id := bson.NewObjectId()
+	app.On("Get", mock.Anything).Return(&models.Application{ID: id}, nil)
+	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId(), AppID: id}, nil)
+	mfa.On("RemoveUserProvider", mock.Anything).Return(nil)
+	r.On("ApplicationService").Return(app)
+	r.On("MfaService").Return(mfaApi)
+
+	m := &MFAManager{
+		r:          r,
+		mfaService: mfa,
+	}
+
+	headers := map[string]interface{}{"Authorization": "Bearer 123", "X-CLIENT-ID": bson.NewObjectId().Hex()}
+	err := m.MFARemove(getContext(map[string]interface{}{"headers": headers}), &models.MfaRemoveForm{ClientId: bson.NewObjectId().Hex(), ProviderId: bson.NewObjectId().Hex()})
+	assert.Nil(t, err)
 }
 
