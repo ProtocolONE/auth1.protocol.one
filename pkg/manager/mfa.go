@@ -91,12 +91,7 @@ func (m *MFAManager) MFARemove(ctx echo.Context, form *models.MfaRemoveForm) *mo
 }
 
 func (m *MFAManager) MFAList(ctx echo.Context, form *models.MfaListForm) ([]*models.MfaProvider, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientId))
-	if err != nil {
-		return nil, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
-	}
-
-	providers, err := m.mfaService.List(app.ID)
+	providers, err := m.mfaService.GetUserProviders(&models.User{ID: bson.ObjectIdHex(form.ClientId)})
 	if err != nil {
 		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAppIdIncorrect, Err: errors.Wrap(err, "Unable to list mfa providers")}
 	}
