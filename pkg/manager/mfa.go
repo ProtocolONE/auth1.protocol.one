@@ -25,6 +25,12 @@ type MFAManagerInterface interface {
 	// If successful, a secret key will be generated, a list of backup codes and a
 	// qr-code to add an authenticator to the program.
 	MFAAdd(echo.Context, *models.MfaAddForm) (*models.MfaAuthenticator, *models.GeneralError)
+
+	// MFARemove removes mfa provider for user
+	MFARemove(echo.Context, *models.MfaRemoveForm) *models.GeneralError
+
+	// MFAList returns list of mfa providers for user
+	MFAList(echo.Context, *models.MfaListForm) ([]*models.MfaProvider, *models.GeneralError)
 }
 
 // MFAManager is the mfa manager.
@@ -51,6 +57,46 @@ func (m *MFAManager) MFAChallenge(form *models.MfaChallengeForm) *models.General
 	//TODO: For OTP over SMS/Email. Undone
 
 	return nil
+}
+
+func (m *MFAManager) MFARemove(ctx echo.Context, form *models.MfaRemoveForm) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientId))
+	if err != nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+	}
+
+	p, err := m.mfaService.Get(bson.ObjectIdHex(form.ProviderId))
+	if err != nil || p == nil || p.AppID != app.ID {
+		if err == nil {
+			err = errors.New("Provider not equal application")
+		}
+		return &models.GeneralError{Code: "provider_id", Message: models.ErrorProviderIdIncorrect, Err: errors.WithStack(err)}
+	}
+
+	c, err := helper.GetTokenFromAuthHeader(ctx.Request().Header)
+	if err != nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to validate bearer token")}
+	}
+
+ 	err = m.mfaService.RemoveUserProvider(&models.MfaUserProvider{
+		UserID:     c.UserId,
+		ProviderID: p.ID,
+	})
+
+	if err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorMfaClientRemove, Err: errors.Wrap(err, "Unable to remove user provider")}
+	}
+
+ 	return nil
+}
+
+func (m *MFAManager) MFAList(ctx echo.Context, form *models.MfaListForm) ([]*models.MfaProvider, *models.GeneralError) {
+	providers, err := m.mfaService.GetUserProviders(&models.User{ID: bson.ObjectIdHex(form.ClientId)})
+	if err != nil {
+		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAppIdIncorrect, Err: errors.Wrap(err, "Unable to list mfa providers")}
+	}
+
+	return providers, nil
 }
 
 func (m *MFAManager) MFAVerify(ctx echo.Context, form *models.MfaVerifyForm) *models.GeneralError {
