@@ -24,9 +24,6 @@ type Config struct {
 	// Mailer contains settings for the postman service.
 	Mailer Mailer
 
-	// KubernetesHost specifies host to the Kubernetes service.
-	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
-
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }

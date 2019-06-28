@@ -69,7 +69,6 @@ To start the application, you can use the following configuration parameters in 
 | AUTHONE_MAILER_FROM              |                       | From value. Here is no default value, it may be provided.                                                                                  |
 | AUTHONE_MAILER_SKIP_VERIFY       | true                  | Skip validate TLS on mail server connection.                                                                                               |
 | AUTHONE_MIGRATION_DIRECT         |                       | Used to migrate a database. If not specified, no migration is used. Acceptable values of up and down.                                      |
-| AUTHONE_KUBERNETES_SERVICE_HOST  |                       | Address for connecting to the Kubernetes server.                                                                                           |
 
 ***Attention!*** Do not forget that ORY Hydra provides its configuration parameters that also need to be configured. 
 For more information on this, see the project website - https://github.com/ory/hydra.

@@ -9,7 +9,6 @@ import (
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
-	k8s "github.com/micro/kubernetes/go/micro"
 	"github.com/ory/hydra/sdk/go/hydra/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -54,15 +53,11 @@ func runServer(cmd *cobra.Command, args []string) {
 	})
 	defer redisClient.Close()
 
-	var service micro.Service
-	if cfg.KubernetesHost == "" {
-		service = micro.NewService()
-		zap.L().Info("Initialize micro service")
-	} else {
-		service = k8s.NewService()
-		zap.L().Info("Initialize k8s service")
-	}
+	zap.L().Info("Initialize micro service")
+
+	service := micro.NewService()
 	service.Init()
+
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
 	u, err := url.Parse(cfg.Hydra.AdminURL)
