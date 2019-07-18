@@ -43,6 +43,7 @@ type Database struct {
 	User           string `envconfig:"USER" required:"false"`
 	Password       string `envconfig:"PASSWORD" required:"false"`
 	MaxConnections int    `envconfig:"MAX_CONNECTIONS" required:"false" default:"100"`
+	Dsn            string `envconfig:"DSN" required:"false" default:""`
 }
 
 // Redis contains settings for connection to the Redis.
