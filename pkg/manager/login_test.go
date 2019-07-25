@@ -184,6 +184,27 @@ func TestAuthorizeResultReturnErrorWithUnableToGetSocialProfile(t *testing.T) {
 	assert.Equal(t, models.ErrorGetSocialData, err.Message)
 }
 
+func TestAuthorizeResultReturnErrorWithUnableToGetSocialProfile2(t *testing.T) {
+	ip := &mocks.AppIdentityProviderServiceInterface{}
+	app := &mocks.ApplicationServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypeSocial, mock.Anything).Return(&models.AppIdentityProvider{})
+	ip.On("GetSocialProfile", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	r.On("ApplicationService").Return(app)
+
+	m := &LoginManager{
+		r:                       r,
+		identityProviderService: ip,
+	}
+	form, _ := json.Marshal(&models.AuthorizeForm{ClientID: bson.NewObjectId().Hex()})
+	_, err := m.AuthorizeResult(getContext(), &models.AuthorizeResultForm{State: base64.StdEncoding.EncodeToString(form)})
+	assert.NotNil(t, err)
+	assert.Equal(t, "common", err.Code)
+	assert.Equal(t, models.ErrorGetSocialData, err.Message)
+}
+
 func TestAuthorizeResultReturnErrorWithUnableToGetExistedUserByExistedUserIdentity(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
@@ -357,6 +378,35 @@ func TestAuthorizeResultReturnErrorWithUnableToGetUserIdentityForDefaultIdentity
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
+func TestAuthorizeResultReturnErrorUserNotFoundAndUnableToCreate(t *testing.T) {
+	ip := &mocks.AppIdentityProviderServiceInterface{}
+	ui := &mocks.UserIdentityServiceInterface{}
+	app := &mocks.ApplicationServiceInterface{}
+	us := &mocks.UserServiceInterface{}
+	r := &mocks.InternalRegistry{}
+
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypeSocial, mock.Anything).Return(&models.AppIdentityProvider{})
+	ip.On("GetSocialProfile", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentitySocial{ID: "1", Email: "email"}, nil)
+	ui.On("Get", mock.Anything, mock.Anything, "1").Return(nil, nil)
+	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
+	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, nil)
+	us.On("Create", mock.Anything).Return(errors.New(""))
+	r.On("ApplicationService").Return(app)
+
+	m := &LoginManager{
+		r:                       r,
+		identityProviderService: ip,
+		userIdentityService:     ui,
+		userService:             us,
+	}
+	form, _ := json.Marshal(&models.AuthorizeForm{ClientID: bson.NewObjectId().Hex()})
+	_, err := m.AuthorizeResult(getContext(), &models.AuthorizeResultForm{State: base64.StdEncoding.EncodeToString(form)})
+	assert.NotNil(t, err)
+	assert.Equal(t, "common", err.Code)
+	assert.Equal(t, models.ErrorCreateUser, err.Message)
+}
+
 func TestAuthorizeResultReturnErrorWithUnableToLoadSocialSettingsForDefaultIdentityProvider(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
@@ -368,7 +418,7 @@ func TestAuthorizeResultReturnErrorWithUnableToLoadSocialSettingsForDefaultIdent
 	ip.On("GetSocialProfile", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentitySocial{ID: "1", Email: "email"}, nil)
 	ui.On("Get", mock.Anything, mock.Anything, "1").Return(nil, nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, nil)
+	ui.On("Get", mock.Anything, mock.Anything, "email").Return(&models.UserIdentity{}, nil)
 	app.On("LoadSocialSettings").Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
 

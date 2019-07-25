@@ -38,10 +38,25 @@ type MfaVerifyForm struct {
 	ProviderId string `json:"provider_id" form:"provider_id" validate:"required"`
 
 	// Token is the one-time token of mfa challenge.
-	Token string `json:"mfa_token" form:"mfa_token" validate:"required"`
+	Token string `json:"mfa_token" form:"token" validate:"required"`
 
 	// Code is the string of one-time code.
 	Code string `json:"code" form:"code"`
+}
+
+// MfaListForm contains form fields for requesting to list of mfa providers.
+type MfaListForm struct {
+	// ClientID is the application id
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+}
+
+// MfaRemoveForm contains form fields for requesting to remove of mfa provider.
+type MfaRemoveForm struct {
+	// ClientID is the application id
+	ClientId string `json:"client_id" form:"client_id" validate:"required"`
+
+	// ProviderId is the id of the mfa provider.
+	ProviderId string `json:"provider_id" form:"provider_id" validate:"required"`
 }
 
 // MfaVerifyForm contains form fields for requesting to link of mfa provider.

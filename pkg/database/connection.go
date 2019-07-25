@@ -1,10 +1,11 @@
 package database
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
-	"github.com/globalsign/mgo"
 	"net/url"
 	"time"
+
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/globalsign/mgo"
 )
 
 // Session is an interface to access to the Session struct.
@@ -34,6 +35,10 @@ func NewConnection(c *config.Database) (MgoSession, error) {
 
 // BuildConnString creates a database connection string based on configuration parameters.
 func BuildConnString(c *config.Database) string {
+	if c.Dsn != "" {
+		return c.Dsn
+	}
+
 	if c.Name == "" {
 		return ""
 	}

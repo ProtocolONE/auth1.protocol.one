@@ -115,7 +115,7 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 
 	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
 	cp, err := m.identityProviderService.GetSocialProfile(ctx.Request().Context(), domain, ctx.QueryParam("code"), ip)
-	if err != nil || cp.ID == "" {
+	if err != nil || cp == nil || cp.ID == "" {
 		if err == nil {
 			err = errors.New("Unable to load identity profile data")
 		}
@@ -155,27 +155,29 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 			return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 		}
 
-		ss, err := m.r.ApplicationService().LoadSocialSettings()
-		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialSettings, Err: errors.Wrap(err, "Unable to load social settings")}
-		}
+		if userIdentity != nil {
+			ss, err := m.r.ApplicationService().LoadSocialSettings()
+			if err != nil {
+				return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialSettings, Err: errors.Wrap(err, "Unable to load social settings")}
+			}
 
-		ottSettings := &models.OneTimeTokenSettings{
-			Length: ss.LinkedTokenLength,
-			TTL:    ss.LinkedTTL,
-		}
-		userIdentity.IdentityProviderID = ip.ID
-		userIdentity.ExternalID = cp.ID
-		userIdentity.Email = cp.Email
-		ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
-		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
-		}
+			ottSettings := &models.OneTimeTokenSettings{
+				Length: ss.LinkedTokenLength,
+				TTL:    ss.LinkedTTL,
+			}
+			userIdentity.IdentityProviderID = ip.ID
+			userIdentity.ExternalID = cp.ID
+			userIdentity.Email = cp.Email
+			ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
+			if err != nil {
+				return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
+			}
 
-		return &models.AuthorizeResultResponse{
-			Result:  SocialAccountCanLink,
-			Payload: map[string]interface{}{"token": ott.Token, "email": cp.Email},
-		}, nil
+			return &models.AuthorizeResultResponse{
+				Result:  SocialAccountCanLink,
+				Payload: map[string]interface{}{"token": ott.Token, "email": cp.Email},
+			}, nil
+		}
 	}
 
 	user := &models.User{

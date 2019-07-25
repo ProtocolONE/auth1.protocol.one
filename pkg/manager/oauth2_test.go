@@ -1301,3 +1301,9 @@ func TestLogoutReturnEmptyUrl(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", url)
 }
+
+func TestLoadRemoteScopesReturnNil(t *testing.T) {
+	m := &OauthManager{}
+	err := m.loadRemoteScopes([]string{"scope1"})
+	assert.Nil(t, err)
+}

@@ -9,13 +9,14 @@ import (
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
-	k8s "github.com/micro/kubernetes/go/micro"
+	"github.com/micro/go-plugins/selector/static"
 	"github.com/ory/hydra/sdk/go/hydra/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 var serverCmd = &cobra.Command{
@@ -54,15 +55,18 @@ func runServer(cmd *cobra.Command, args []string) {
 	})
 	defer redisClient.Close()
 
-	var service micro.Service
-	if cfg.KubernetesHost == "" {
-		service = micro.NewService()
-		zap.L().Info("Initialize micro service")
-	} else {
-		service = k8s.NewService()
-		zap.L().Info("Initialize k8s service")
+	var options []micro.Option
+
+	if os.Getenv("MICRO_SELECTOR") == "static" {
+		zap.L().Info("Use micro selector `static`")
+		options = append(options, micro.Selector(static.NewSelector()))
 	}
+
+	zap.L().Info("Initialize micro service")
+
+	service := micro.NewService(options...)
 	service.Init()
+
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
 	u, err := url.Parse(cfg.Hydra.AdminURL)

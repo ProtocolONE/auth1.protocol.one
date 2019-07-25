@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2f52d888-79f5-40e1-a485-91aa89fcf922",
+		"_postman_id": "9a328e9c-2fb8-4704-a26f-cc7e44d4b8d1",
 		"name": "AuthOne",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -19,7 +19,7 @@
 									{
 										"key": "Content-Type",
 										"name": "Content-Type",
-										"value": "application/json",
+										"value": "application/x-www-form-urlencoded",
 										"type": "text"
 									}
 								],
@@ -28,37 +28,17 @@
 									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\"\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space?",
+									"raw": "http://localhost/api/space",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"space"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
 									]
-								}
+								},
+								"description": "Description of request parameters:<br/>\n**name** - name of creating space<br/>\n**description** - description of space"
 							},
 							"response": []
 						},
@@ -79,96 +59,63 @@
 									"raw": "{\n    \"name\": \"Test\",\n    \"description\": \"Initial space\",\n    \"is_active\": true\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
+									"raw": "http://localhost/api/space/{{space_id}}",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"space",
-										"5c221b985ffa56fdd05257de"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
+										"{{space_id}}"
 									]
-								}
+								},
+								"description": "Description of request parameters:<br/>\n**name** - name of creating space<br/>\n**description** - description of space<br/>\n**is_active** - space is active or not the"
 							},
 							"response": []
 						},
 						{
 							"name": "Get space",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
 							"request": {
 								"method": "GET",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": ""
-								},
+								"header": [],
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/space/5c221b985ffa56fdd05257de?",
+									"raw": "http://localhost/api/space/{{space_id}}",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"space",
-										"5c221b985ffa56fdd05257de"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
+										"{{space_id}}"
 									]
 								}
 							},
 							"response": []
+						}
+					],
+					"description": "General settings for the space (add, update, get).",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "4fa0e0c6-6302-49d8-8976-1f8649f97af9",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "3fd30cb9-756e-4f92-a259-d02c108866d5",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
 						}
 					],
 					"_postman_isSubFolder": true
@@ -193,37 +140,17 @@
 									"raw": "{\n\t\"space_id\": \"5c4b6e3b02429c6fec249c99\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true,\n    \t\"auth_redirect_urls\": [\"https://storefront.tst.protocol.one/auth/callback\"]\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app?",
+									"raw": "http://localhost/api/app",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"app"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
 									]
-								}
+								},
+								"description": "Description of request parameters:<br/>\n**space_id** - is identifier of space<br/>\n**application** - contains an application parameters:<br/>\n&nbsp;&nbsp;**name** - name of creating application<br/>\n&nbsp;&nbsp;**description** - description of application<br/>\n&nbsp;&nbsp;**is_active** - space is active or not the<br/>\n&nbsp;&nbsp;**auth_redirect_urls** - list of approved urls after authorization or logout"
 							},
 							"response": []
 						},
@@ -244,38 +171,18 @@
 									"raw": "{\n\t\"space_id\": \"5c221b985ffa56fdd05257de\",\n\t\"application\": {\n    \t\"name\": \"Test\",\n    \t\"description\": \"Initial application\",\n    \t\"is_active\": true,\n    \t\"auth_redirect_urls\": [\"https://storefront.tst.protocol.one/auth/callback\"]\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
+									"raw": "http://localhost/api/app/{{app_id}}",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"app",
-										"5c221cde5ffa56fdd05257df"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
+										"{{app_id}}"
 									]
-								}
+								},
+								"description": "Description of request parameters:<br/>\n**space_id** - is identifier of space<br/>\n**application** - contains an application parameters:<br/>\n&nbsp;&nbsp;**name** - name of creating application<br/>\n&nbsp;&nbsp;**description** - description of application<br/>\n&nbsp;&nbsp;**is_active** - space is active or not the<br/>\n&nbsp;&nbsp;**auth_redirect_urls** - list of approved urls after authorization or logout"
 							},
 							"response": []
 						},
@@ -286,54 +193,48 @@
 							},
 							"request": {
 								"method": "GET",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json",
-										"disabled": true
-									}
-								],
+								"header": [],
 								"body": {
 									"mode": "raw",
 									"raw": ""
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/app/5c221cde5ffa56fdd05257df?",
+									"raw": "http://localhost/api/app/{{app_id}}",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"app",
-										"5c221cde5ffa56fdd05257df"
-									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
+										"{{app_id}}"
 									]
 								}
 							},
 							"response": []
+						}
+					],
+					"description": "General settings for the application (add, update, get).",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "949cabe1-241d-4a4c-b296-c15d135daa58",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "c523df92-7f68-4c4d-abf7-a0159a5abb91",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
 						}
 					],
 					"_postman_isSubFolder": true
@@ -358,260 +259,417 @@
 									"raw": "{\n\t\"app_id\": \"5c1bbe8b4c1efd4428629bde\",\n\t\"mfa_provider\": {\n    \t\"name\": \"Authy\",\n    \t\"channel\": \"auth1\",\n    \t\"type\": \"otp\"\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://127.0.0.1:8080/api/mfa?",
+									"raw": "http://localhost/api/mfa",
 									"protocol": "http",
 									"host": [
-										"127",
-										"0",
-										"0",
-										"1"
+										"localhost"
 									],
-									"port": "8080",
 									"path": [
 										"api",
 										"mfa"
+									]
+								},
+								"description": "Description of request parameters:<br/>\n**app_id** - is identifier of application<br/>\n**mfa_provider** - contains an mfa provider parameters:<br/>\n&nbsp;&nbsp;**name** - name of creating provider<br/>\n&nbsp;&nbsp;**channel** - channel name for custom settings<br/>\n&nbsp;&nbsp;**type** - type of provider (otp or sms)"
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "PasswordSettings",
+					"item": [
+						{
+							"name": "Set password settings",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"bcrypt_cost\": 8,\n\t\"min\": 4,\n\t\"max\": 32,\n\t\"require_number\": false,\n\t\"require_upper\": false,\n\t\"require_special\": false,\n\t\"token_length\": 12,\n\t\"token_ttl\": 600\n}"
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/password",
+									"protocol": "http",
+									"host": [
+										"localhost"
 									],
-									"query": [
-										{
-											"key": "name",
-											"value": "Test",
-											"disabled": true
-										},
-										{
-											"key": "description",
-											"value": "Initial space",
-											"disabled": true
-										},
-										{
-											"key": "is_active",
-											"value": "1",
-											"disabled": true
-										}
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"password"
+									]
+								},
+								"description": "Description of request parameters:<br/>\n**bcrypt_cost** - cost for encrypting password (from 4 to 32). 8 - is recommended for good perfomance and security<br/>\n**min** - minimum password length<br/>\n**max** - maximum password length<br/>\n**require_number** - require numbers in password<br/>\n**require_upper** - require uppercase letters in password<br/>\n**require_special** - require special characters in the password<br/>\n**token_length** - length of one-time token when changing password<br/>\n**token_ttl** - lifetime of a one-time token"
+							},
+							"response": []
+						},
+						{
+							"name": "Get password settings",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"password"
 									]
 								}
 							},
 							"response": []
 						}
 					],
+					"description": "Change and get password criteria settings for the application.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "b89d2c10-b2d4-476a-817f-5bf2f1d0fa7f",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "d3011cbe-33f8-481b-88c2-49e0392416b6",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
 					"_postman_isSubFolder": true
+				},
+				{
+					"name": "IdentityProvider",
+					"item": [
+						{
+							"name": "Add identity provider",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"application_id\": \"5c221cde5ffa56fdd05257df\",\n\t\"display_name\": \"VKontakte\",\n\t\"name\": \"vk\",\n\t\"type\": \"social\",\n\t\"client_id\": \"\",\n\t\"client_secret\": \"\",\n\t\"client_scopes\": \"\",\n\t\"endpoint_auth_url\": \"\",\n\t\"endpoint_token_url\": \"\",\n\t\"endpoint_userinfo_url\": \"\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/identity",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"identity"
+									]
+								},
+								"description": "Description of request parameters:<br/>\n**application_id** - is identity an application<br/>\n**display_name** - name of provider for display to user<br/>\n**name** - name of provider for requesting<br/>\n**type** - type of provider (password or social)<br/>\n**client_id** - identity of client for external network (for example, application id in the Facebook)<br/>\n**client_secret** - secret string for external application<br/>\n**client_scopes** - requesting scope of authorization in external network<br/>\n**endpoint_auth_url** - authorization endpoint for external network<br/>\n**endpoint_token_url** - token exchange endpoint for external network<br/>\n**endpoint_userinfo_url** - user information endpoint for external network"
+							},
+							"response": []
+						},
+						{
+							"name": "Update identity provider",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"id\": \"5c224cde5ffa56fdd05257ss\",\n\t\"application_id\": \"5c221cde5ffa56fdd05257df\",\n\t\"display_name\": \"VKontakte\",\n\t\"name\": \"vk\",\n\t\"type\": \"social\",\n\t\"client_id\": \"\",\n\t\"client_secret\": \"\",\n\t\"client_scopes\": \"\",\n\t\"endpoint_auth_url\": \"\",\n\t\"endpoint_token_url\": \"\",\n\t\"endpoint_userinfo_url\": \"\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/identity/{{app_identity_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"identity",
+										"{{app_identity_id}}"
+									]
+								},
+								"description": "Description of request parameters:<br/>\n**id** - identity of provider<br/>\n**application_id** - is identity an application<br/>\n**display_name** - name of provider for display to user<br/>\n**name** - name of provider for requesting<br/>\n**type** - type of provider (password or social)<br/>\n**client_id** - identity of client for external network (for example, application id in the Facebook)<br/>\n**client_secret** - secret string for external application<br/>\n**client_scopes** - requesting scope of authorization in external network<br/>\n**endpoint_auth_url** - authorization endpoint for external network<br/>\n**endpoint_token_url** - token exchange endpoint for external network<br/>\n**endpoint_userinfo_url** - user information endpoint for external network"
+							},
+							"response": []
+						},
+						{
+							"name": "Get identity provider",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/identity/{{app_identity_id}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"identity",
+										"{{app_identity_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get identity providers",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/identity",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"identity"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get identity providers template",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost/api/identity/templates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"identity",
+										"templates"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Adding, modifying, and obtaining identity providers for an application.",
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "OneTime tokens",
+					"item": [
+						{
+							"name": "Set one-time token settings",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"length\": 64,\n\t\"ttl\": 600\n}"
+								},
+								"url": {
+									"raw": "http://localhost/api/app/{{app_id}}/ott",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"path": [
+										"api",
+										"app",
+										"{{app_id}}",
+										"ott"
+									]
+								},
+								"description": "Description of request parameters:<br/>\n**length** - length of one-time token when changing password<br/>\n**ttl** - lifetime of a one-time token"
+							},
+							"response": []
+						}
+					],
+					"description": "Set settings for one-time tokens in application.",
+					"_postman_isSubFolder": true
+				}
+			],
+			"description": "Management and settings for spaces, applications and related configurations.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "30c1e156-7725-4ae0-9c1e-747ab530703a",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "f2ee1cea-670f-45da-81a2-63d066ab2673",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
 		{
-			"name": "Authenticate",
+			"name": "LogIn and SignUp with OAuth",
 			"item": [
 				{
-					"name": "Login by social provider",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
+					"name": "LogIn and SignUp",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": ""
+							"mode": "formdata",
+							"formdata": []
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/authorize?client_id=5c221cde5ffa56fdd05257df&connection=facebook&redirect_uri=https://auth1.eu.gamenet.ru/authorize/result&state",
+							"raw": "http://localhost/oauth2/auth?response_type=code&client_id={{app_id}}&scope=openid offline&redirect_uri=http%3A%2F%2Flocalhost%2Foauth2%2Fcallback&state=ly7ddc4i36o",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
-								"authorize"
+								"oauth2",
+								"auth"
 							],
 							"query": [
 								{
-									"key": "client_id",
-									"value": "5c221cde5ffa56fdd05257df"
+									"key": "response_type",
+									"value": "code",
+									"description": "Request the type \"code\" for the subsequent exchange for the access token."
 								},
 								{
-									"key": "connection",
-									"value": "facebook"
+									"key": "client_id",
+									"value": "{{app_id}}",
+									"description": "Appliation ID"
+								},
+								{
+									"key": "scope",
+									"value": "openid offline",
+									"description": "Requested scopes"
 								},
 								{
 									"key": "redirect_uri",
-									"value": "https://auth1.eu.gamenet.ru/authorize/result"
+									"value": "http%3A%2F%2Flocalhost%2Foauth2%2Fcallback",
+									"description": "The address of the page where the user will be moved."
 								},
 								{
 									"key": "state",
-									"value": null
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login by password",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
-									"type": "text"
-								},
-								{
-									"key": "connection",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "email",
-									"value": "test@test.com",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "Qwerty1#",
-									"type": "text"
+									"value": "ly7ddc4i36o",
+									"description": "The temporary state of the user before authorization or registration (the parameter will be returned along with the redirection to the URL)."
 								}
 							]
 						},
-						"url": {
-							"raw": "http://127.0.0.1:8080/login",
-							"protocol": "http",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"port": "8080",
-							"path": [
-								"login"
-							]
-						}
+						"description": "This request is used to redirect to the registration and authorization form.<br/>\nfter the process is completed, it will be redirected to the specified redirect URL.<br/>\nMake sure that the URL is in the list of allowed for the application.<br/>\nThe form allows you to authorize using an account from a social network."
 					},
 					"response": []
+				}
+			],
+			"description": "Description of methods for registration and authorization.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0712edba-0597-43f7-bc43-8c9bc5d61c17",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				},
 				{
-					"name": "Login by social with link account",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "http://127.0.0.1:8080/authorize/link?client_id=5c221cde5ffa56fdd05257df&code=f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e&action=link&password=Qwerty1-",
-							"protocol": "http",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"port": "8080",
-							"path": [
-								"authorize",
-								"link"
-							],
-							"query": [
-								{
-									"key": "client_id",
-									"value": "5c221cde5ffa56fdd05257df"
-								},
-								{
-									"key": "code",
-									"value": "f7NVsupy3heUjgupXeYBxialXfYmRGMv4vb0pYM2fBOHWUZx1qnSCkTp0ZXgC7c36FhuXO0dVFNGujN9jyaJIz37OYz4xBmoF3NUqQcc3RcMU4y9Q8mEnq0FOQCdgI8e"
-								},
-								{
-									"key": "action",
-									"value": "link"
-								},
-								{
-									"key": "password",
-									"value": "Qwerty1-"
-								}
-							]
-						}
-					},
-					"response": []
+					"listen": "test",
+					"script": {
+						"id": "e8fbbc91-42a5-4d44-8ab7-eb629ba4456c",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
 		{
-			"name": "SignUp",
-			"item": [
-				{
-					"name": "SignUp",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
-									"type": "text"
-								},
-								{
-									"key": "connection",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "email",
-									"value": "test@test.com",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "Qweqwe1@",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "http://127.0.0.1:8080/signup",
-							"protocol": "http",
-							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
-							],
-							"port": "8080",
-							"path": [
-								"signup"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "ChangePassword",
+			"name": "Change Password",
 			"item": [
 				{
 					"name": "Send action email",
@@ -630,12 +688,7 @@
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
-									"type": "text"
-								},
-								{
-									"key": "connection",
-									"value": "password",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
@@ -646,20 +699,17 @@
 							]
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/dbconnections/change_password",
+							"raw": "http://localhost/dbconnections/change_password",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
 								"dbconnections",
 								"change_password"
 							]
-						}
+						},
+						"description": "Send a request to change the password.<br/>\nAn email will be sent with a one-time token to be specified on the form."
 					},
 					"response": []
 				},
@@ -671,8 +721,8 @@
 							{
 								"key": "Content-Type",
 								"name": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
 							}
 						],
 						"body": {
@@ -680,12 +730,7 @@
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561",
-									"type": "text"
-								},
-								{
-									"key": "connection",
-									"value": "password",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
@@ -706,23 +751,77 @@
 							]
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/dbconnections/change_password/verify",
+							"raw": "http://localhost/dbconnections/change_password/verify",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
 								"dbconnections",
 								"change_password",
 								"verify"
 							]
-						}
+						},
+						"description": "Check one-time token and change password."
 					},
 					"response": []
+				},
+				{
+					"name": "User form",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "http://localhost/dbconnections/change_password/form?client_id={{app_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"dbconnections",
+								"change_password",
+								"form"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "{{app_id}}"
+								}
+							]
+						},
+						"description": "The form of the invitation to change the password."
+					},
+					"response": []
+				}
+			],
+			"description": "Methods for implementing the process for changing the user's password.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "7cf5e085-3858-47ce-b03b-edaf3e8368af",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "dcb12596-487b-453a-9c77-9f1f8c84b029",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -734,36 +833,49 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/logout?client_id=5c1b434d4c1efd2c184d9561&redirect_uri=test",
+							"raw": "http://localhost/oauth2/logout?redirect_uri=test",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
+								"oauth2",
 								"logout"
 							],
 							"query": [
-								{
-									"key": "client_id",
-									"value": "5c1b434d4c1efd2c184d9561"
-								},
 								{
 									"key": "redirect_uri",
 									"value": "test"
 								}
 							]
-						}
+						},
+						"description": "This method will clear the user authentication cookies on the authorization server, and then redirect the user to the specified URL.<br/>\nMake sure that the URL is in the list of allowed for the application."
 					},
 					"response": []
+				}
+			],
+			"description": "Termination of authorization.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0aadadc1-b669-4b28-8a8d-2846d6b0adcd",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "5407edfb-37fc-4e56-b7c0-b386989fd765",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -778,67 +890,52 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWM0NjRkZDA0YzFlZmQyNDI0OWExZmI1IiwiYXBwX2lkIjoiNWMxYmJlOGI0YzFlZmQ0NDI4NjI5YmRlIiwiZW1haWwiOiJwcjBoZWFkQG1haWwucnUiLCJlbWFpbF9jb25maXJtZWQiOmZhbHNlLCJuaWNrbmFtZSI6IiIsImV4cCI6MTU0ODIyNjk2NCwianRpIjoiXFxIXHUwMDAzXHVmZmZkTFx1MDAxZVx1ZmZmZEIoXHVmZmZkyYEiLCJpc3MiOiJcXEZNXHVmZmZkTFx1MDAxZVx1ZmZmZCQkXHVmZmZkXHUwMDFmXHVmZmZkIn0.dv3wEJXnge0Oi1oyUg_DG4LN34eU8Aw7C1y4YCRl0XM",
+									"value": "{{access_token}}",
 									"type": "string"
 								}
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "X-CLIENT-ID",
-								"value": "5c1bbe8b4c1efd4428629bde",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "formdata",
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1bbe8b4c1efd4428629bde",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
 									"key": "provider_id",
-									"value": "5c4765944c1efd4194ec950f",
+									"value": "{{app_identity_id}}",
 									"type": "text"
 								},
 								{
-									"key": "authenticator_types",
-									"value": "auth1",
-									"type": "text",
-									"disabled": true
+									"key": "code",
+									"value": "",
+									"description": "Confirmation code (in case of using SMS provider).",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "",
+									"description": "Phone number (in case of using SMS provider).",
+									"type": "text"
 								}
 							]
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/mfa/add?",
+							"raw": "http://localhost/mfa/add",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
 								"mfa",
 								"add"
-							],
-							"query": [
-								{
-									"key": "redirect_uri",
-									"value": "https://auth1.eu.gamenet.ru/authorize/result",
-									"disabled": true
-								},
-								{
-									"key": "state",
-									"value": null,
-									"disabled": true
-								}
 							]
-						}
+						},
+						"description": "Adding MFA provider for the user."
 					},
 					"response": []
 				},
@@ -856,65 +953,46 @@
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "X-CLIENT-ID",
-								"value": "5c1bbe8b4c1efd4428629bde",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "formdata",
 							"formdata": [
 								{
 									"key": "client_id",
-									"value": "5c1bbe8b4c1efd4428629bde",
+									"value": "{{app_id}}",
 									"type": "text"
 								},
 								{
 									"key": "provider_id",
-									"value": "5c4765944c1efd4194ec950f",
+									"value": "{{app_identity_id}}",
 									"type": "text"
 								},
 								{
-									"key": "mfa_token",
-									"value": "ZTNipCQuSNmJG9vFihRHAGq5DHy9adim9BFYa43AeJR5j5p0FsCDVCzYmeMqEVsY",
+									"key": "token",
+									"value": "",
+									"description": "One-time authorization token.",
 									"type": "text"
 								},
 								{
 									"key": "code",
-									"value": "778945",
+									"value": "",
+									"description": "Code from the application or SMS.",
 									"type": "text"
 								}
 							]
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/mfa/verify?",
+							"raw": "http://localhost/mfa/verify",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
 								"mfa",
 								"verify"
-							],
-							"query": [
-								{
-									"key": "redirect_uri",
-									"value": "https://auth1.eu.gamenet.ru/authorize/result",
-									"disabled": true
-								},
-								{
-									"key": "state",
-									"value": null,
-									"disabled": true
-								}
 							]
-						}
+						},
+						"description": "Validation of the MFA code during authorization using a one-time token."
 					},
 					"response": []
 				}
@@ -934,7 +1012,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI1YzQ2NGRkMDRjMWVmZDI0MjQ5YTFmYjUiLCJFbWFpbCI6InByMGhlYWRAbWFpbC5ydSIsIkVtYWlsQ29uZmlybWVkIjpmYWxzZSwiTmlja25hbWUiOiIiLCJleHAiOjM2MDAsImlzcyI6IlxcRk1cdWZmZmRMXHUwMDFlXHVmZmZkJCRcdWZmZmRcdTAwMWZcdWZmZmQifQ.cEqWUFty9NPbfNwgWdQtZXfEL_EdTFBjQET74dYf4vQ",
+									"value": "{{access_token}}",
 									"type": "string"
 								}
 							]
@@ -946,21 +1024,42 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/userinfo",
+							"raw": "http://localhost/oauth2/userinfo",
 							"protocol": "http",
 							"host": [
-								"127",
-								"0",
-								"0",
-								"1"
+								"localhost"
 							],
-							"port": "8080",
 							"path": [
+								"oauth2",
 								"userinfo"
 							]
-						}
+						},
+						"description": "This endpoint returns the payload of the ID Token, including the idTokenExtra values, of the provided OAuth 2.0 access token. The endpoint implements http://openid.net/specs/openid-connect-core-1_0.html#UserInfo."
 					},
 					"response": []
+				}
+			],
+			"description": "Getting information about user by access token.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "d12c27bf-59c9-447e-8f17-3d933a3bb625",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "797f9c05-4c02-4296-a7ed-ec4e38f2bbbf",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		}

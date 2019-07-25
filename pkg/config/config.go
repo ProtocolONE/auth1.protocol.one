@@ -24,9 +24,6 @@ type Config struct {
 	// Mailer contains settings for the postman service.
 	Mailer Mailer
 
-	// KubernetesHost specifies host to the Kubernetes service.
-	KubernetesHost string `envconfig:"KUBERNETES_SERVICE_HOST" required:"false"`
-
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
@@ -35,8 +32,6 @@ type Config struct {
 type Server struct {
 	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
 	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
-	TimeoutRead      int      `envconfig:"TIMEOUT_READ" required:"false" default:"15"`
-	TimeoutWrite     int      `envconfig:"TIMEOUT_WRITE" required:"false" default:"5"`
 	AllowOrigins     []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
 	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
 }
@@ -48,6 +43,7 @@ type Database struct {
 	User           string `envconfig:"USER" required:"false"`
 	Password       string `envconfig:"PASSWORD" required:"false"`
 	MaxConnections int    `envconfig:"MAX_CONNECTIONS" required:"false" default:"100"`
+	Dsn            string `envconfig:"DSN" required:"false" default:""`
 }
 
 // Redis contains settings for connection to the Redis.
