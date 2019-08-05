@@ -514,6 +514,7 @@ github.com/micro/go-log v0.0.0-20170512141327-cbfa9447f9b6 h1:Nz+rX1q6rJLAQcLBB6
 github.com/micro/go-log v0.0.0-20170512141327-cbfa9447f9b6/go.mod h1:QikSuviYcIE8V0CY4e0RRqVs3Oh8EuzX+qCEOnh9Qh8=
 github.com/micro/go-micro v0.22.1 h1:U4gZPakGOhG1ypJw+kgQ1+O0JkDePntGjcdc7WSoR0E=
 github.com/micro/go-micro v0.22.1/go.mod h1:3z3lfMkNU9Sr1L/CxL++8pVJmQapRo0N6kNjwYDtOVs=
+github.com/micro/go-plugins v0.21.0 h1:Tcd+BqBDad/vXsem9sBln+IfJv+GM5FHvDoL2Szp9p4=
 github.com/micro/go-plugins v0.21.0/go.mod h1:dNzFjp55RfRhGm7zC6tPPzbdnAPo8+Yq4DbgEWdx6gc=
 github.com/micro/go-rcache v0.0.0-20180418165751-a581a57b5133 h1:hA0jzfRMat31ugTTK3BQfxGSuh7zD4Or/lEo/4edJiE=
 github.com/micro/go-rcache v0.0.0-20180418165751-a581a57b5133/go.mod h1:CBzgfnsCYHcyLg1qeTShF0iDErQmcLmSt+SdwjLkckI=
@@ -819,6 +820,7 @@ golang.org/x/sys v0.0.0-20190213121743-983097b1a8a3/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190321052220-f7bb7a8bee54/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc h1:4gbWbmmPFp4ySWICouJl6emP0MyS31yy9SrTlAGFT+g=
 golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 h1:z99zHgr7hKfrUcX/KsoJk5FJfjTceCKIp96+biqP4To=

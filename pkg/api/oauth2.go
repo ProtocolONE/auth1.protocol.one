@@ -66,6 +66,7 @@ func oauthLogin(ctx echo.Context) error {
 
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
+		"AuthView":		 "login",
 		"Challenge":     form.Challenge,
 		"ClientID":      appID,
 		"PreviousLogin": previousLogin,
@@ -123,6 +124,7 @@ func oauthConsent(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
+		"AuthView":  "consent",
 		"Challenge": form.Challenge,
 		"Scopes":    scopes,
 	})

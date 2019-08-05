@@ -43,6 +43,7 @@ require (
 	github.com/micro/go-api v0.5.0 // indirect
 	github.com/micro/go-bot v0.0.0-20190110110712-d02abe15d72c // indirect
 	github.com/micro/go-micro v0.22.1
+	github.com/micro/go-plugins v0.21.0
 	github.com/micro/grpc-go v0.0.0-20180913204047-2c703400301b // indirect
 	github.com/micro/hipchat v0.0.0-20160328000638-4c67119ac956 // indirect
 	github.com/micro/micro v0.20.0 // indirect
