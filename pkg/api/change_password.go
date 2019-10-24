@@ -14,7 +14,7 @@ func InitChangePassword(cfg *Server) error {
 	g := cfg.Echo.Group("/dbconnections", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry))
+			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig))
 
 			return next(c)
 		}
@@ -89,6 +89,7 @@ func changePasswordVerify(ctx echo.Context) error {
 
 func changePasswordForm(ctx echo.Context) error {
 	form := new(models.ChangePasswordForm)
+	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 
 	if err := ctx.Bind(form); err != nil {
 		ctx.Error(err)
@@ -101,6 +102,7 @@ func changePasswordForm(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "change_password.html", map[string]interface{}{
-		"ClientID": form.ClientID,
+		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+		"ClientID":          form.ClientID,
 	})
 }

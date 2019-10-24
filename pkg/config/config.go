@@ -30,10 +30,11 @@ type Config struct {
 
 // Server contains settings for http application.
 type Server struct {
-	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
-	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
-	AllowOrigins     []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
-	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
+	Port              int      `envconfig:"PORT" required:"false" default:"8080"`
+	Debug             bool     `envconfig:"DEBUG" required:"false" default:"true"`
+	AllowOrigins      []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
+	AllowCredentials  bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
+	AuthWebFormSdkUrl string   `envconfig:"AUTH_WEB_FORM_SDK_URL" required:"false" default:"https://static.protocol.one/auth/form/dev/auth-web-form.js"`
 }
 
 // Database contains settings for connection to the database.

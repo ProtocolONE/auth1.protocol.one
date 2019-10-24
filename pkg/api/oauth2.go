@@ -14,7 +14,7 @@ func InitOauth2(cfg *Server) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
-			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig))
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig))
 
 			return next(c)
 		}
@@ -65,11 +65,12 @@ func oauthLogin(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
-		"AuthDomain":    ctx.Scheme() + "://" + ctx.Request().Host,
-		"Challenge":     form.Challenge,
-		"ClientID":      appID,
-		"PreviousLogin": previousLogin,
-		"SocProviders":  socProviders,
+		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+		"AuthDomain":        ctx.Scheme() + "://" + ctx.Request().Host,
+		"Challenge":         form.Challenge,
+		"ClientID":          appID,
+		"PreviousLogin":     previousLogin,
+		"SocProviders":      socProviders,
 	})
 }
 
@@ -123,8 +124,9 @@ func oauthConsent(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
-		"Challenge": form.Challenge,
-		"Scopes":    scopes,
+		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+		"Challenge":         form.Challenge,
+		"Scopes":            scopes,
 	})
 }
 
@@ -145,9 +147,10 @@ func oauthConsentSubmit(ctx echo.Context) error {
 	if err != nil {
 		scopes, _ := m.GetScopes()
 		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
-			"Challenge": form.Challenge,
-			"Scope":     scopes,
-			"Error":     err.Error(),
+			"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+			"Challenge":         form.Challenge,
+			"Scope":             scopes,
+			"Error":             err.Error(),
 		})
 	}
 
@@ -214,11 +217,12 @@ func oauthCallback(ctx echo.Context) error {
 		code = http.StatusBadRequest
 	}
 	return ctx.Render(code, "oauth_callback.html", map[string]interface{}{
-		"Success":      response.Success,
-		"ErrorMessage": response.ErrorMessage,
-		"AccessToken":  response.AccessToken,
-		"ExpiresIn":    response.ExpiresIn,
-		"IdToken":      response.IdToken,
+		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+		"Success":           response.Success,
+		"ErrorMessage":      response.ErrorMessage,
+		"AccessToken":       response.AccessToken,
+		"ExpiresIn":         response.ExpiresIn,
+		"IdToken":           response.IdToken,
 	})
 }
 
@@ -241,5 +245,7 @@ func oauthLogout(ctx echo.Context) error {
 		return ctx.Redirect(http.StatusFound, url)
 	}
 
-	return ctx.Render(http.StatusOK, "oauth_logout.html", map[string]interface{}{})
+	return ctx.Render(http.StatusOK, "oauth_logout.html", map[string]interface{}{
+		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
+	})
 }

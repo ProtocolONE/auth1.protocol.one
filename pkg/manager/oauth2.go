@@ -89,11 +89,13 @@ type OauthManager struct {
 	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 	session                 service.SessionService
+	ApiCfg                  *config.Server
 }
 
 // NewOauthManager return new oauth manager.
-func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *config.Session, h *config.Hydra) OauthManagerInterface {
+func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *config.Session, h *config.Hydra, apiCfg *config.Server) OauthManagerInterface {
 	m := &OauthManager{
+		ApiCfg:                  apiCfg,
 		hydraConfig:             h,
 		r:                       r,
 		userService:             service.NewUserService(db),
