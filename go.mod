@@ -3,7 +3,7 @@ module github.com/ProtocolONE/auth1.protocol.one
 require (
 	git.apache.org/thrift.git v0.12.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
-	github.com/ProtocolONE/mfa-service v0.1.0
+	github.com/ProtocolONE/mfa-service v0.1.1
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
@@ -40,7 +40,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.10.0
