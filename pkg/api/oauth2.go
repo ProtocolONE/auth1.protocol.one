@@ -123,7 +123,7 @@ func oauthConsent(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
-	if m.HasOnlyDefaultScopes(scopes) {
+	if len(scopes) == 0 || m.HasOnlyDefaultScopes(scopes) {
 		url, err := m.ConsentSubmit(ctx, &models.Oauth2ConsentSubmitForm{
 			Challenge: form.Challenge,
 			Scope:     scopes,
