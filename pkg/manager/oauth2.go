@@ -14,6 +14,7 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gopkg.in/tomb.v2"
 	"sort"
 	"time"
@@ -294,7 +295,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 
 func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 	var scopes []string
-
+	zap.L().Error("[GetScopes] requested get scopes: ", zap.Strings("list", requestedScopes))
 	if len(requestedScopes) > 0 {
 		for _, scope := range requestedScopes {
 			if sort.SearchStrings(scopes, scope) < len(scopes) {
@@ -309,15 +310,13 @@ func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 	/*if err := m.loadRemoteScopes(scopes); err != nil {
 		return nil, err
 	}*/
-
+	zap.L().Error("[GetScopes] get scopes: ", zap.Strings("list", scopes))
 	return scopes
 }
 
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 	var s int
-
-	sort.Strings(scopes)
-
+	zap.L().Error("[HasOnlyDefaultScopes] scopes: ", zap.Strings("list", scopes))
 	if sort.SearchStrings(scopes, scopeOffline) < len(scopes) {
 		s++
 	}
@@ -325,7 +324,7 @@ func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 	if sort.SearchStrings(scopes, scopeOpenId) < len(scopes) {
 		s++
 	}
-
+	zap.L().Error("[HasOnlyDefaultScopes] scopes find: ", zap.Int("len", s))
 	return s == len(scopes)
 }
 
