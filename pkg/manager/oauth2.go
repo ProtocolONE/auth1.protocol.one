@@ -302,6 +302,8 @@ func (m *OauthManager) GetScopes() (scopes []string, err error) {
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 	var s int
 
+	sort.Strings(scopes)
+
 	if sort.SearchStrings(scopes, scopeOffline) == len(scopes) {
 		s++
 	}
