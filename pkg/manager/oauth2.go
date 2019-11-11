@@ -58,7 +58,7 @@ type OauthManagerInterface interface {
 	ConsentSubmit(echo.Context, *models.Oauth2ConsentSubmitForm) (string, *models.GeneralError)
 
 	// GetScopes returns a list of available scope for the application.
-	GetScopes() ([]string, error)
+	GetScopes([]string) []string
 
 	// HasOnlyDefaultScopes returns true if the request contains only default scopes
 	HasOnlyDefaultScopes([]string) bool
@@ -235,11 +235,13 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 }
 
 func (m *OauthManager) Consent(ctx echo.Context, form *models.Oauth2ConsentForm) ([]string, *models.GeneralError) {
-	scopes, err := m.GetScopes()
 	reqGCR, err := m.r.HydraAdminApi().GetConsentRequest(&admin.GetConsentRequestParams{Context: ctx.Request().Context(), Challenge: form.Challenge})
+
 	if err != nil {
-		return scopes, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
+		return []string{}, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
+
+	scopes := m.GetScopes(reqGCR.Payload.RequestedScope)
 
 	if err := m.session.Set(ctx, clientIdSessionKey, reqGCR.Payload.Client.ClientID); err != nil {
 		return scopes, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
@@ -290,13 +292,25 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 	return reqACR.Payload.RedirectTo, nil
 }
 
-func (m *OauthManager) GetScopes() (scopes []string, err error) {
-	scopes = []string{scopeOpenId, scopeOffline}
+func (m *OauthManager) GetScopes(requestedScopes []string) []string {
+	var scopes []string
+
+	if len(requestedScopes) > 0 {
+		for _, scope := range requestedScopes {
+			if sort.SearchStrings(scopes, scope) < len(scopes) {
+				continue
+			}
+
+			scopes = append(scopes, scope)
+			sort.Strings(scopes)
+		}
+	}
+
 	/*if err := m.loadRemoteScopes(scopes); err != nil {
 		return nil, err
 	}*/
 
-	return scopes, nil
+	return scopes
 }
 
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
@@ -304,11 +318,11 @@ func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 
 	sort.Strings(scopes)
 
-	if sort.SearchStrings(scopes, scopeOffline) == len(scopes) {
+	if sort.SearchStrings(scopes, scopeOffline) < len(scopes) {
 		s++
 	}
 
-	if sort.SearchStrings(scopes, scopeOpenId) == len(scopes) {
+	if sort.SearchStrings(scopes, scopeOpenId) < len(scopes) {
 		s++
 	}
 

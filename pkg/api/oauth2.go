@@ -159,11 +159,10 @@ func oauthConsentSubmit(ctx echo.Context) error {
 
 	url, err := m.ConsentSubmit(ctx, form)
 	if err != nil {
-		scopes, _ := m.GetScopes()
 		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 			"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
 			"Challenge":         form.Challenge,
-			"Scope":             scopes,
+			"Scope":             m.GetScopes(form.Scope),
 			"Error":             err.Error(),
 		})
 	}

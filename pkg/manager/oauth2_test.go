@@ -567,9 +567,8 @@ func TestAuthReturnUrlToConsentRequest(t *testing.T) {
 
 func TestGetScopes(t *testing.T) {
 	m := &OauthManager{}
-	scopes, err := m.GetScopes()
-	assert.Nil(t, err)
-	assert.Equal(t, []string{"openid", "offline"}, scopes)
+	scopes := []string{"openid", "offline"}
+	assert.Equal(t, scopes, m.GetScopes(append(scopes, "offline")))
 }
 
 func TestConsentReturnErrorWithUnableToGetConsentRequest(t *testing.T) {
