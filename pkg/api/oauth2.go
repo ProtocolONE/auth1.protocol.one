@@ -123,6 +123,20 @@ func oauthConsent(ctx echo.Context) error {
 		return ctx.HTML(http.StatusBadRequest, err.Message)
 	}
 
+	if m.HasOnlyDefaultScopes(scopes) {
+		url, err := m.ConsentSubmit(ctx, &models.Oauth2ConsentSubmitForm{
+			Challenge: form.Challenge,
+			Scope:     scopes,
+		})
+
+		if err != nil {
+			ctx.Error(err.Err)
+			return ctx.HTML(http.StatusBadRequest, err.Message)
+		}
+
+		return ctx.Redirect(http.StatusFound, url)
+	}
+
 	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
 		"Challenge":         form.Challenge,

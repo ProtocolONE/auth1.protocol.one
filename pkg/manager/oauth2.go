@@ -15,7 +15,13 @@ import (
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
+	"sort"
 	"time"
+)
+
+const (
+	scopeOffline = "offline"
+	scopeOpenId  = "openid"
 )
 
 var (
@@ -53,6 +59,9 @@ type OauthManagerInterface interface {
 
 	// GetScopes returns a list of available scope for the application.
 	GetScopes() ([]string, error)
+
+	// HasOnlyDefaultScopes returns true if the request contains only default scopes
+	HasOnlyDefaultScopes([]string) bool
 
 	// Introspect checks the token and returns its contents.
 	//
@@ -282,12 +291,26 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 }
 
 func (m *OauthManager) GetScopes() (scopes []string, err error) {
-	scopes = []string{"openid", "offline"}
+	scopes = []string{scopeOpenId, scopeOffline}
 	/*if err := m.loadRemoteScopes(scopes); err != nil {
 		return nil, err
 	}*/
 
 	return scopes, nil
+}
+
+func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
+	var s int
+
+	if sort.SearchStrings(scopes, scopeOffline) == len(scopes) {
+		s++
+	}
+
+	if sort.SearchStrings(scopes, scopeOpenId) == len(scopes) {
+		s++
+	}
+
+	return s == len(scopes)
 }
 
 func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, *models.GeneralError) {
