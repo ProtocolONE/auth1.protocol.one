@@ -14,7 +14,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"gopkg.in/tomb.v2"
 	"sort"
 	"time"
@@ -295,25 +294,19 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 
 func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 	var scopes []string
-	zap.L().Error("[GetScopes] requested scopes: ", zap.Strings("list", requestedScopes))
-	if len(requestedScopes) > 0 {
-		for _, scope := range requestedScopes {
-			sort.Strings(scopes)
-			zap.L().Error("[GetScopes] scopes: ", zap.Strings("scopes", scopes))
-			zap.L().Error("[GetScopes] scope: ", zap.String("scope", scope))
-			zap.L().Error("[GetScopes] search index: ", zap.Int("idx", sort.SearchStrings(scopes, scope)))
-			if sort.SearchStrings(scopes, scope) < len(scopes) {
-				continue
-			}
+	keys := make(map[string]bool, len(requestedScopes))
 
-			scopes = append(scopes, scope)
+	for _, entry := range requestedScopes {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			scopes = append(scopes, entry)
 		}
 	}
 
 	/*if err := m.loadRemoteScopes(scopes); err != nil {
 		return nil, err
 	}*/
-	zap.L().Error("[GetScopes] scopes result: ", zap.Strings("scopes", scopes))
+
 	return scopes
 }
 
