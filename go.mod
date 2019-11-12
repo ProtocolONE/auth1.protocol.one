@@ -1,19 +1,14 @@
 module github.com/ProtocolONE/auth1.protocol.one
 
 require (
-	git.apache.org/thrift.git v0.12.0 // indirect
 	github.com/ProtocolONE/authone-jwt-verifier-golang v0.0.0-20190329122021-aa7178c82afb
 	github.com/ProtocolONE/mfa-service v0.1.1
-	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
-	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
-	github.com/apache/thrift v0.12.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elliotchance/redismock v1.5.1
-	github.com/fatih/structs v1.1.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-openapi/runtime v0.19.0
 	github.com/go-openapi/strfmt v0.19.0
@@ -34,7 +29,6 @@ require (
 	github.com/labstack/gommon v0.2.8
 	github.com/micro/go-micro v1.8.0
 	github.com/micro/go-plugins v1.2.0
-	github.com/openzipkin/zipkin-go v0.1.6 // indirect
 	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.2
@@ -44,7 +38,6 @@ require (
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/build v0.0.0-20190314133821-5284462c4bec // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	gopkg.in/go-playground/validator.v9 v9.29.1
@@ -56,3 +49,5 @@ require (
 )
 
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
+
+go 1.13
