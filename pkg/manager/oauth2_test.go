@@ -609,7 +609,7 @@ func TestConsentReturnScopes(t *testing.T) {
 	s := &mocks.SessionService{}
 	r := &mocks.InternalRegistry{}
 
-	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}, RequestedScope: []string{"openid", "offline"}}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
 	r.On("HydraAdminApi").Return(h)
 

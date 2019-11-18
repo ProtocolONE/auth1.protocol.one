@@ -9,6 +9,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"strings"
 )
 
 // ChangePasswordManagerInterface describes of methods for the manager.
@@ -71,7 +73,10 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
-	if err := m.r.Mailer().Send(form.Email, "Change password token", fmt.Sprintf("Token: %s", token.Token)); err != nil {
+	b, err := ioutil.ReadFile("./public/templates/email/change_password.html")
+	body := strings.ReplaceAll(string(b), "{{code}}", token.Token)
+	fmt.Println(body)
+	if err := m.r.Mailer().Send(form.Email, "Change password token", body); err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to send mail with change password token")}
 	}
 
