@@ -1309,14 +1309,14 @@ func TestLoadRemoteScopesReturnNil(t *testing.T) {
 }
 
 func TestHasOnlyDefaultScopes(t *testing.T) {
-	assert.True(t, oldHasOnlyDefaultScopes([]string{}))
-	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOpenId})) // fail
-	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOffline}))
-	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline}))
-	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOffline, scopeOpenId}))
-	assert.False(t, oldHasOnlyDefaultScopes([]string{"other"}))
-	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, "other"}))  // fail
-	assert.False(t, oldHasOnlyDefaultScopes([]string{"other", scopeOffline})) // fail
-	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline, "other"}))
-	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOffline, "other", scopeOpenId}))
+	assert.True(t, hasOnlyDefaultScopes([]string{}))
+	assert.True(t, hasOnlyDefaultScopes([]string{scopeOpenId})) // fail
+	assert.True(t, hasOnlyDefaultScopes([]string{scopeOffline}))
+	assert.True(t, hasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline}))
+	assert.True(t, hasOnlyDefaultScopes([]string{scopeOffline, scopeOpenId}))
+	assert.False(t, hasOnlyDefaultScopes([]string{"other"}))
+	assert.False(t, hasOnlyDefaultScopes([]string{scopeOpenId, "other"}))  // fail
+	assert.False(t, hasOnlyDefaultScopes([]string{"other", scopeOffline})) // fail
+	assert.False(t, hasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline, "other"}))
+	assert.False(t, hasOnlyDefaultScopes([]string{scopeOffline, "other", scopeOpenId}))
 }

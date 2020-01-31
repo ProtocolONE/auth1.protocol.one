@@ -15,7 +15,6 @@ import (
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
-	"sort"
 	"time"
 )
 
@@ -312,21 +311,6 @@ func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 	return hasOnlyDefaultScopes(scopes)
-}
-
-func oldHasOnlyDefaultScopes(scopes []string) bool {
-	s := 0
-	defaultScopes := []string{scopeOffline, scopeOpenId}
-
-	sort.Strings(scopes)
-
-	for _, scope := range defaultScopes {
-		if sort.SearchStrings(scopes, scope) < len(scopes) {
-			s++
-		}
-	}
-
-	return s == len(scopes)
 }
 
 func hasOnlyDefaultScopes(scopes []string) bool {
