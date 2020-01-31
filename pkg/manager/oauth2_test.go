@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"testing"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestOauthManager(t *testing.T) {
@@ -1305,4 +1306,17 @@ func TestLoadRemoteScopesReturnNil(t *testing.T) {
 	m := &OauthManager{}
 	err := m.loadRemoteScopes([]string{"scope1"})
 	assert.Nil(t, err)
+}
+
+func TestHasOnlyDefaultScopes(t *testing.T) {
+	assert.True(t, oldHasOnlyDefaultScopes([]string{}))
+	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOpenId})) // fail
+	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOffline}))
+	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline}))
+	assert.True(t, oldHasOnlyDefaultScopes([]string{scopeOffline, scopeOpenId}))
+	assert.False(t, oldHasOnlyDefaultScopes([]string{"other"}))
+	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, "other"}))  // fail
+	assert.False(t, oldHasOnlyDefaultScopes([]string{"other", scopeOffline})) // fail
+	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline, "other"}))
+	assert.False(t, oldHasOnlyDefaultScopes([]string{scopeOffline, "other", scopeOpenId}))
 }

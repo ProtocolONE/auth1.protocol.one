@@ -50,4 +50,6 @@ require (
 
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
 
+replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.0
+
 go 1.13

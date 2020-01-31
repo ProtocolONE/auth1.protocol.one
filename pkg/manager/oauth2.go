@@ -311,6 +311,10 @@ func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 }
 
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
+	return hasOnlyDefaultScopes(scopes)
+}
+
+func oldHasOnlyDefaultScopes(scopes []string) bool {
 	s := 0
 	defaultScopes := []string{scopeOffline, scopeOpenId}
 
@@ -323,6 +327,17 @@ func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
 	}
 
 	return s == len(scopes)
+}
+
+func hasOnlyDefaultScopes(scopes []string) bool {
+	for _, s := range scopes {
+		switch s {
+		case scopeOffline, scopeOpenId:
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, *models.GeneralError) {
