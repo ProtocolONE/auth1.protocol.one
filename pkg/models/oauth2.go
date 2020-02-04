@@ -156,6 +156,9 @@ type Oauth2SignUpForm struct {
 	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 
+	// Username represent user nickname, optional.
+	Username string `query:"username" form:"username"`
+
 	// Email is the email address of user for the registration.
 	Email string `query:"email" form:"email" validate:"required"`
 
@@ -168,6 +171,7 @@ type Oauth2SignUpForm struct {
 
 func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("Username", a.Username)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")
 

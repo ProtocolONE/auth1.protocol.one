@@ -73,6 +73,9 @@ type OauthManagerInterface interface {
 	// After successful registration, the URL for the redirect will be returned to pass the agreement consent process.
 	SignUp(echo.Context, *models.Oauth2SignUpForm) (string, *models.GeneralError)
 
+	// IsUsernameFree checks if username is available for signup
+	IsUsernameFree(ctx echo.Context, username string) (bool, error)
+
 	// CallBack verifies the result of oauth2 authorization.
 	//
 	// The method is implemented for applications that do not have their own backend,
@@ -347,6 +350,29 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 	return token, nil
 }
 
+func (m *OauthManager) IsUsernameFree(ctx echo.Context, username string) (bool, error) {
+	clientId, err := m.session.Get(ctx, clientIdSessionKey)
+	if err != nil {
+		return false, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get session")}
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId.(string)))
+	if err != nil {
+		return false, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+	}
+
+	if app.UniqueUsernames == false {
+		return true, nil
+	}
+
+	ok, err := m.userService.IsUsernameFree(username, app.ID)
+	if err != nil {
+		return false, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "unable check username availability")}
+	}
+
+	return ok, nil
+}
+
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, *models.GeneralError) {
 	if err := m.session.Set(ctx, loginRememberKey, form.Remember); err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
@@ -361,6 +387,18 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	if err != nil {
 		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
+
+	if app.UniqueUsernames {
+
+		free, err :=  m.userService.IsUsernameFree(form.Username, app.ID)
+		if err != nil {
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to check username availability")}
+		}
+		if  !free  {
+			return "", &models.GeneralError{Code: "username_taken", Message: models.ErrorUsernameTaken, Err: errors.New(models.ErrorUsernameTaken)}
+		}
+	}
+
 	if false == validator.IsPasswordValid(app, form.Password) {
 		return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 	}
@@ -398,6 +436,8 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	user := &models.User{
 		ID:            bson.NewObjectId(),
 		AppID:         app.ID,
+		Username:	   form.Username,
+		UniqUsername:  app.UniqueUsernames,
 		Email:         form.Email,
 		EmailVerified: false,
 		Blocked:       false,
