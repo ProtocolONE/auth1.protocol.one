@@ -3,6 +3,10 @@ sudo: false
 go:
   - 1.12.x
 
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
 stages:
   - test
   - name: deploy
@@ -18,7 +22,6 @@ jobs:
       env:
         - AUTHONE_DATABASE_USER=travis
         - AUTHONE_DATABASE_PASSWORD=test
-        - GO111MODULE=on
       before_script:
         - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
       script:
