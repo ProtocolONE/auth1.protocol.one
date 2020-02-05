@@ -31,25 +31,25 @@ spec:
               servicePort: {{ $endpoint.service.port }}
           - path: /userinfo
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444
           - path: /oauth2/auth
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444
           - path: /oauth2/token
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444
           - path: /oauth2/revoke
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444
           - path: /oauth2/userinfo
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444
           - path: /.well-known/jwks.json
             backend:
-              serviceName: hydra
+              serviceName: hydra-external
               servicePort: 4444              
