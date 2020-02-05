@@ -1,10 +1,13 @@
+// +build integration
+
 package service
 
 import (
+	"testing"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestOneTimeTokenSuccessCreate(t *testing.T) {

@@ -22,7 +22,7 @@ jobs:
       before_script:
         - mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
       script:
-        - go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
+        - go test --tags=integration ./... -coverprofile=coverage.out -covermode=atomic -p=1
       after_success:
         - bash <(curl -s https://codecov.io/bash)
     - stage: deploy
