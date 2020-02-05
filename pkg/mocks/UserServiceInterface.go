@@ -52,18 +52,18 @@ func (_m *UserServiceInterface) Get(_a0 bson.ObjectId) (*models.User, error) {
 }
 
 // IsUsernameFree provides a mock function with given fields: username, appID
-func (_m *UserServiceInterface) IsUsernameFree(username string, appID string) (bool, error) {
+func (_m *UserServiceInterface) IsUsernameFree(username string, appID bson.ObjectId) (bool, error) {
 	ret := _m.Called(username, appID)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, bson.ObjectId) bool); ok {
 		r0 = rf(username, appID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(string, bson.ObjectId) error); ok {
 		r1 = rf(username, appID)
 	} else {
 		r1 = ret.Error(1)
