@@ -35,25 +35,25 @@ spec:
               servicePort: {{ $endpoint.service.port }}
           - path: /userinfo
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/auth
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/token
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/revoke
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/userinfo
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /.well-known/jwks.json
             backend:
-              serviceName: $hydraSvc
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
