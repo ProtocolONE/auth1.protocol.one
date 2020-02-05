@@ -1,4 +1,8 @@
 {{- $endpoint := .Values.backend -}}
+{{- $hydraSvc := "hydra-external"}}
+{{- if eq .Release.Name "qilin-p1auth1" }}
+{{- $hydraSvc := "hydra-external-qilin"}}
+{{-end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -31,25 +35,25 @@ spec:
               servicePort: {{ $endpoint.service.port }}
           - path: /userinfo
             backend:
-              serviceName: hydra
+              serviceName: $hydraSvc
               servicePort: 4444
           - path: /oauth2/auth
             backend:
-              serviceName: hydra
+              serviceName: $hydraSvc
               servicePort: 4444
           - path: /oauth2/token
             backend:
-              serviceName: hydra
+              serviceName: $hydraSvc
               servicePort: 4444
           - path: /oauth2/revoke
             backend:
-              serviceName: hydra
+              serviceName: $hydraSvc
               servicePort: 4444
           - path: /oauth2/userinfo
             backend:
-              serviceName: hydra
+              serviceName: $hydraSvc
               servicePort: 4444
           - path: /.well-known/jwks.json
             backend:
-              serviceName: hydra
-              servicePort: 4444              
+              serviceName: $hydraSvc
+              servicePort: 4444
