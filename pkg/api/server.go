@@ -2,6 +2,17 @@ package api
 
 import (
 	"context"
+	"html/template"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"reflect"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
@@ -16,16 +27,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
-	"html/template"
-	"io"
-	"net/http"
-	"os"
-	"os/signal"
-	"reflect"
-	"strconv"
-	"strings"
-	"syscall"
-	"time"
 )
 
 // ServerConfig contains common configuration parameters for start application server
@@ -200,6 +201,7 @@ func (s *Server) setupRoutes() error {
 		InitManage,
 		InitOauth2,
 		InitHealth,
+		InitCaptcha,
 	}
 
 	for _, r := range routes {
