@@ -1,37 +1,50 @@
 package api
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"context"
 	"net/http"
-	"net/url"
 
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 )
 
 func InitCaptcha(cfg *Server) error {
-	g := cfg.Echo.Group("/captcha", func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			db := c.Get("database").(database.MgoSession)
-			c.Set("mfa_manager", manager.NewMFAManager(db, cfg.Registry))
-
-			return next(c)
-		}
-	})
-
-	g.POST("/re3", captchaVerify)
+	c := &Captcha{
+		recaptcha: cfg.Recaptcha,
+		session:   service.NewSessionService(cfg.SessionConfig.Name),
+	}
+	cfg.Echo.Group("/captcha").
+		POST("/re3", c.verify)
 
 	return nil
 }
 
-func captchaVerify(ctx echo.Context) error {
-	var r struct {
-		Token string `json:"token"`
+var captchaKey = "captcha"
+
+type Captcha struct {
+	recaptcha *service.Recaptcha
+	session   service.SessionService
+}
+
+func CaptchaCompleted(ctx echo.Context, s service.SessionService) (bool, error) {
+	v, err := s.Get(ctx, captchaKey)
+	if err != nil {
+		return false, err
 	}
-	// m := ctx.Get("mfa_manager").(*manager.MFAManager)
+	if v != nil {
+		if done, ok := v.(bool); ok {
+			return done, nil
+		}
+	}
+	return false, nil
+}
+
+func (ctl *Captcha) verify(ctx echo.Context) error {
+	var r struct {
+		Token  string `json:"token"`
+		Action string `json:"action"`
+	}
 
 	if err := ctx.Bind(&r); err != nil {
 		e := &models.GeneralError{
@@ -42,7 +55,7 @@ func captchaVerify(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, e)
 	}
 
-	result, err := verifyRecaptcha3(r.Token)
+	result, err := ctl.recaptcha.Verify(context.TODO(), r.Token, r.Action, "") // TODO ip
 	if err != nil {
 		ctx.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, &models.GeneralError{
@@ -51,40 +64,9 @@ func captchaVerify(ctx echo.Context) error {
 		})
 	}
 
+	ctl.session.Set(ctx, captchaKey, result)
+
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"success": result,
 	})
-}
-
-func verifyRecaptcha3(token string) (bool, error) {
-	resp, err := http.PostForm("https://www.google.com/recaptcha/api/siteverify", url.Values{
-		"secret":   {"6Lea_dUUAAAAAK294XwQmOIujxW8ssNRk_zWU5AB"},
-		"response": {token},
-		// "remoteip"
-	})
-	if err != nil {
-		return false, err
-	}
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, err
-	}
-
-	var res struct {
-		Success     bool     `json:"success"`      //: true,
-		ChallengeTs string   `json:"challenge_ts"` //: "2020-02-05T15:26:33Z",
-		Hostname    string   `json:"hostname"`     //: "localhost",
-		Score       float64  `json:"score"`        //: 0.9,
-		Action      string   `json:"action"`       //: "homepage"
-		ErrorCodes  []string `json:"error_codes"`
-	}
-
-	if err := json.Unmarshal(data, &res); err != nil {
-		return false, err
-	}
-
-	if res.Success && res.Score > 0.5 {
-		return true, nil
-	}
-	return false, nil
 }

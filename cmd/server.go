@@ -89,6 +89,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		RedisClient:   redisClient,
 		HydraAdminApi: hydraSDK.Admin,
 		Mailer:        &cfg.Mailer,
+		Recaptcha:     &cfg.Recaptcha,
 	}
 
 	server, err := api.NewServer(&serverConfig)

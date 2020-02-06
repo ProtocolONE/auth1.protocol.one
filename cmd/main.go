@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"os"
 )
 
 var (
@@ -16,7 +17,11 @@ var (
 func Execute() {
 	var err error
 
-	logger, _ = zap.NewProduction()
+	if _, ok := os.LookupEnv("AUTHONE_LOGGING_DEV"); ok {
+		logger, _ = zap.NewDevelopment()
+	} else {
+		logger, _ = zap.NewProduction()
+	}
 	zap.ReplaceGlobals(logger)
 	defer logger.Sync() // flushes buffer, if any
 

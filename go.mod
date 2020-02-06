@@ -22,11 +22,12 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3
 	github.com/juju/mgosession v1.0.0 // indirect
+	github.com/juju/zaputil v0.0.0-20190326175239-ef53049637ac
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kidstuff/mongostore v0.0.0-20181113001930-e650cd85ee4b
 	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
-	github.com/labstack/echo/v4 v4.0.0
-	github.com/labstack/gommon v0.2.8
+	github.com/labstack/echo/v4 v4.1.14
+	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro v1.8.0
 	github.com/micro/go-plugins v1.2.0
 	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
@@ -38,7 +39,7 @@ require (
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df

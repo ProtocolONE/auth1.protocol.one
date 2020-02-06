@@ -24,6 +24,9 @@ type Config struct {
 	// Mailer contains settings for the postman service.
 	Mailer Mailer
 
+	// Recaptcha contains settings for recaptcha integration.
+	Recaptcha Recaptcha
+
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
@@ -78,6 +81,12 @@ type Mailer struct {
 	ReplyTo            string `envconfig:"REPLY_TO" required:"false" default:""`
 	From               string `envconfig:"FROM" required:"false" default:""`
 	InsecureSkipVerify bool   `envconfig:"SKIP_VERIFY" required:"false" default:"true"`
+}
+
+type Recaptcha struct {
+	Key      string `envconfig:"KEY" required:"false" default:""`
+	Secret   string `envconfig:"SECRET" required:"false" default:""`
+	Hostname string `envconfig:"HOSTNAME" required:"false" default:""`
 }
 
 func Load() (*Config, error) {

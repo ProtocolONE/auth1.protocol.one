@@ -57,6 +57,9 @@ type ServerConfig struct {
 
 	// Mailer contains settings for the postman service
 	Mailer *config.Mailer
+
+	// Recaptcha contains settings for recaptcha integration
+	Recaptcha *config.Recaptcha
 }
 
 // Server is the instance of the application
@@ -78,6 +81,9 @@ type Server struct {
 
 	// Registry is the registry service
 	Registry service.InternalRegistry
+
+	// Recaptcha is recaptcha integration
+	Recaptcha *service.Recaptcha
 }
 
 // Template is used to display HTML pages.
@@ -101,6 +107,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		SessionConfig: c.SessionConfig,
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
+		Recaptcha:     service.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
 	}
 
 	t := &Template{
