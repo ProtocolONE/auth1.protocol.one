@@ -361,7 +361,7 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, username string) (bool, 
 		return false, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	if app.UniqueUsernames == false {
+	if !app.UniqueUsernames {
 		return true, nil
 	}
 
@@ -437,7 +437,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		ID:            bson.NewObjectId(),
 		AppID:         app.ID,
 		Username:	   form.Username,
-		UniqUsername:  app.UniqueUsernames,
+		UniqueUsername:  app.UniqueUsernames,
 		Email:         form.Email,
 		EmailVerified: false,
 		Blocked:       false,
