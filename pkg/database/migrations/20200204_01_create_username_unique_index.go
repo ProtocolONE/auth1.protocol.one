@@ -16,7 +16,7 @@ func init() {
 			db.C(database.TableUser).EnsureIndex(mgo.Index{
 				Name: "Idx-Username-AppId",
 				Key: []string{"username", "app_id"},
-				PartialFilter: bson.M{"uniq_username": true},
+				PartialFilter: bson.M{"unique_username": true},
 				Unique: true,
 				Background: true,
 				Sparse: false,
