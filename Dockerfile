@@ -4,7 +4,8 @@ RUN apk add bash ca-certificates git
 
 WORKDIR /application
 
-ENV GO111MODULE=on
+COPY go.mod.cache go.mod
+RUN go mod download
 
 COPY go.mod go.sum ./
 RUN go mod download

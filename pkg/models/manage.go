@@ -24,6 +24,7 @@ type ApplicationFormApp struct {
 	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
 	HasSharedUsers   bool     `bson:"has_shared_users" json:"has_shared_users"`
 	UniqueUsernames  bool     `bson:"unique_usernames" json:"unique_usernames"`
+	RequiresCaptcha  bool     `bson:"requires_captcha" json:"requires_captcha"`
 }
 
 func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {

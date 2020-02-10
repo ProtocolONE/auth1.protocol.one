@@ -70,6 +70,9 @@ type Application struct {
 	// UniqueUsernames determines whether app users must have unique usernames
 	UniqueUsernames bool `bson:"unique_usernames" json:"unique_usernames"`
 
+	// RequiresCaptcha determines whether app users must have complete captcha verification
+	RequiresCaptcha bool `bson:"requires_captcha" json:"requires_captcha"`
+
 	// PasswordSettings contains settings for valid password criteria.
 	PasswordSettings *PasswordSettings `bson:"password_settings" json:"password_settings"`
 

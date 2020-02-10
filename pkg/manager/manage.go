@@ -98,6 +98,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		AuthRedirectUrls: form.Application.AuthRedirectUrls,
 		HasSharedUsers:   form.Application.HasSharedUsers,
 		UniqueUsernames:  form.Application.UniqueUsernames,
+		RequiresCaptcha:  form.Application.RequiresCaptcha,
 		PasswordSettings: &models.PasswordSettings{
 			BcryptCost:     models.PasswordBcryptCostDefault,
 			Min:            models.PasswordMinDefault,
@@ -170,6 +171,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 	a.HasSharedUsers = form.Application.HasSharedUsers
 	a.UniqueUsernames = form.Application.UniqueUsernames
+	a.RequiresCaptcha = form.Application.RequiresCaptcha
 
 	if err := m.r.ApplicationService().Update(a); err != nil {
 		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}

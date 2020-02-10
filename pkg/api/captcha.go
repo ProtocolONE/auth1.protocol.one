@@ -27,19 +27,6 @@ type Captcha struct {
 	session   service.SessionService
 }
 
-func CaptchaCompleted(ctx echo.Context, s service.SessionService) (bool, error) {
-	v, err := s.Get(ctx, captchaKey)
-	if err != nil {
-		return false, err
-	}
-	if v != nil {
-		if done, ok := v.(bool); ok {
-			return done, nil
-		}
-	}
-	return false, nil
-}
-
 func (ctl *Captcha) verify(ctx echo.Context) error {
 	var r struct {
 		Token  string `json:"token"`
