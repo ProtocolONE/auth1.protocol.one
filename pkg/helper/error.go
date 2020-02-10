@@ -2,13 +2,14 @@ package helper
 
 import (
 	"bytes"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/go-playground/validator.v9"
-	"io/ioutil"
-	"net/http"
 )
 
 // GetSingleError returns the first error from the list of validation errors.

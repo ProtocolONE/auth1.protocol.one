@@ -1,9 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
@@ -81,26 +81,29 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
+		return apierror.InvalidRequest(err)
+		// e := &models.GeneralError{
+		// 	Code:    BadRequiredCodeCommon,
+		// 	Message: models.ErrorInvalidRequestParameters,
+		// }
+		// ctx.Error(err)
+		// return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
+		return apierror.InvalidParameters(err)
+		// e := &models.GeneralError{
+		// 	Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
+		// 	Message: models.ErrorRequiredField,
+		// }
+		// ctx.Error(err)
+		// return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
-		ctx.Error(err.Err)
-		return helper.JsonError(ctx, err)
+		return err
+		// ctx.Error(err.Err)
+		// return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})

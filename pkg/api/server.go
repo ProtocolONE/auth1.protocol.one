@@ -13,11 +13,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
@@ -113,44 +114,47 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	t := &Template{
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
-	server.Echo.Renderer = t
-	server.Echo.HTTPErrorHandler = helper.ErrorHandler
-	server.Echo.Use(ZapLogger(zap.L()))
-	server.Echo.Use(middleware.Recover())
-	// TODO: Validate origins for each application by settings
-	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowHeaders:     []string{"authorization", "content-type"},
-		AllowOrigins:     c.ApiConfig.AllowOrigins,
-		AllowCredentials: c.ApiConfig.AllowCredentials,
-		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
-	}))
-	server.Echo.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-		TokenLookup: "header:X-XSRF-TOKEN",
-		CookieName:  "_csrf",
-		Skipper:     csrfSkipper,
-	}))
-	server.Echo.Use(session.Middleware(c.SessionStore))
-	server.Echo.Use(middleware.RequestID())
-	server.Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	s := server.Echo
+	s.Renderer = t
+	s.HTTPErrorHandler = apierror.Handler //helper.ErrorHandler
+	s.Use(ZapLogger(zap.L()))
+	s.Use(middleware.Recover())
+	s.Use(middleware.RequestID())
+	s.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			db := c.MgoSession.Copy()
-			defer db.Close()
-
-			ctx.Set("database", db)
-
-			logger := zap.L().With(
-				zap.String(
-					echo.HeaderXRequestID,
-					ctx.Response().Header().Get(echo.HeaderXRequestID),
-				),
+			var logger = zap.L().With(
+				zap.String("request_id", ctx.Response().Header().Get(echo.HeaderXRequestID)),
 			)
 			ctx.Set("logger", logger)
 
 			return next(ctx)
 		}
 	})
+	// TODO: Validate origins for each application by settings
+	s.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowHeaders:     []string{"authorization", "content-type"},
+		AllowOrigins:     c.ApiConfig.AllowOrigins,
+		AllowCredentials: c.ApiConfig.AllowCredentials,
+		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
+	}))
+	s.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+		TokenLookup: "header:X-XSRF-TOKEN",
+		CookieName:  "_csrf",
+		Skipper:     csrfSkipper,
+	}))
+	s.Use(session.Middleware(c.SessionStore))
+	s.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			db := c.MgoSession.Copy()
+			defer db.Close()
 
-	registerCustomValidator(server.Echo)
+			ctx.Set("database", db)
+
+			return next(ctx)
+		}
+	})
+
+	registerCustomValidator(s)
 
 	if err := server.setupRoutes(); err != nil {
 		zap.L().Fatal("Setup routes failed", zap.Error(err))
