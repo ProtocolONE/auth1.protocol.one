@@ -1,4 +1,4 @@
-FROM golang:1.12.5-alpine AS builder
+FROM golang:1.13-alpine AS builder
 
 RUN apk add bash ca-certificates git
 
@@ -16,6 +16,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -o ./bin/auth1_auth .
 FROM alpine:3.9
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 WORKDIR /application
-COPY --from=builder /application /application
+COPY --from=builder /application .
 
 ENTRYPOINT /application/bin/auth1_auth migration && /application/bin/auth1_auth server

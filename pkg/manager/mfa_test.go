@@ -299,7 +299,6 @@ func TestMFAManagerError_MFAList(t *testing.T) {
 	assert.Equal(t, models.ErrorAppIdIncorrect, err.Message)
 }
 
-
 func TestMFAManagerSuccess_MFAList(t *testing.T) {
 	mfa := &mocks.MfaServiceInterface{}
 	r := &mocks.InternalRegistry{}
@@ -370,7 +369,7 @@ func TestMFAManagerErrorWithoutHeaders_MFARemove(t *testing.T) {
 	r := &mocks.InternalRegistry{}
 
 	id := bson.NewObjectId()
-	app.On("Get", mock.Anything).Return(&models.Application{ID: id }, nil)
+	app.On("Get", mock.Anything).Return(&models.Application{ID: id}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId(), AppID: id}, nil)
 	mfa.On("RemoveUserProvider", mock.Anything).Return(nil)
 	r.On("ApplicationService").Return(app)
@@ -434,4 +433,3 @@ func TestMFAManagerSuccess_MFARemove(t *testing.T) {
 	err := m.MFARemove(getContext(map[string]interface{}{"headers": headers}), &models.MfaRemoveForm{ClientId: bson.NewObjectId().Hex(), ProviderId: bson.NewObjectId().Hex()})
 	assert.Nil(t, err)
 }
-

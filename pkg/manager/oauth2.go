@@ -390,11 +390,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	if app.UniqueUsernames {
 
-		free, err :=  m.userService.IsUsernameFree(form.Username, app.ID)
+		free, err := m.userService.IsUsernameFree(form.Username, app.ID)
 		if err != nil {
 			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to check username availability")}
 		}
-		if  !free  {
+		if !free {
 			return "", &models.GeneralError{Code: "username_taken", Message: models.ErrorUsernameTaken, Err: errors.New(models.ErrorUsernameTaken)}
 		}
 	}
@@ -434,18 +434,18 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	user := &models.User{
-		ID:            bson.NewObjectId(),
-		AppID:         app.ID,
-		Username:	   form.Username,
-		UniqueUsername:  app.UniqueUsernames,
-		Email:         form.Email,
-		EmailVerified: false,
-		Blocked:       false,
-		LastIp:        ctx.RealIP(),
-		LastLogin:     time.Now(),
-		LoginsCount:   1,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		ID:             bson.NewObjectId(),
+		AppID:          app.ID,
+		Username:       form.Username,
+		UniqueUsername: app.UniqueUsernames,
+		Email:          form.Email,
+		EmailVerified:  false,
+		Blocked:        false,
+		LastIp:         ctx.RealIP(),
+		LastLogin:      time.Now(),
+		LoginsCount:    1,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	if err := m.userService.Create(user); err != nil {

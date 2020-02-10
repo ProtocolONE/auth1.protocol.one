@@ -97,7 +97,7 @@ services:
       - auth1-redis:/data/redis
 
   auth1:
-    image: golang:1.11.5-stretch
+    build: .
     container_name: auth1
     restart: unless-stopped
     depends_on:
@@ -106,11 +106,6 @@ services:
       - hydra
     networks:
       - subnet
-    volumes:
-      - .:/go/src/auth-one
-      - $GOPATH/pkg/mod:/go/pkg/mod
-    working_dir: /go/src/auth-one
-    command: bash -c "go run main.go migration && go run main.go server"
     environment:
       - GO111MODULE=on
       - AUTHONE_SERVER_PORT=8080
@@ -125,12 +120,8 @@ services:
 
 volumes:
   auth1-mongo:
-    external: true
   auth1-redis:
-    external: true
   auth1-postgres:
-    external: true
 
 networks:
   subnet:
-    external: true

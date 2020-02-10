@@ -3,9 +3,9 @@ package migrations
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"github.com/xakep666/mongo-migrate"
-	"github.com/globalsign/mgo/bson"	
 )
 
 func init() {
@@ -14,12 +14,12 @@ func init() {
 			var err error
 
 			db.C(database.TableUser).EnsureIndex(mgo.Index{
-				Name: "Idx-Username-AppId",
-				Key: []string{"username", "app_id"},
-				PartialFilter: bson.M{"unique_username": true},
-				Unique: true,
-				Background: true,
-				Sparse: false,
+				Name:          "Idx-Username-AppId",
+				Key:           []string{"username", "app_id"},
+				PartialFilter: bson.M{"uniq_username": true},
+				Unique:        true,
+				Background:    true,
+				Sparse:        false,
 			})
 
 			if err != nil {
