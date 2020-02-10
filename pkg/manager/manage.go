@@ -2,6 +2,8 @@ package manager
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -11,7 +13,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	hydra_models "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type ManageManager struct {
@@ -96,6 +97,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		AuthSecret:       helper.GetRandString(64),
 		AuthRedirectUrls: form.Application.AuthRedirectUrls,
 		HasSharedUsers:   form.Application.HasSharedUsers,
+		UniqueUsernames:  form.Application.UniqueUsernames,
 		PasswordSettings: &models.PasswordSettings{
 			BcryptCost:     models.PasswordBcryptCostDefault,
 			Min:            models.PasswordMinDefault,
@@ -167,6 +169,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.UpdatedAt = time.Now()
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 	a.HasSharedUsers = form.Application.HasSharedUsers
+	a.UniqueUsernames = form.Application.UniqueUsernames
 
 	if err := m.r.ApplicationService().Update(a); err != nil {
 		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}

@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 func InitOauth2(cfg *Server) error {
@@ -25,6 +26,7 @@ func InitOauth2(cfg *Server) error {
 	g.GET("/consent", oauthConsent)
 	g.POST("/consent", oauthConsentSubmit)
 	g.POST("/signup", oauthSignUp)
+	g.POST("/checkUsername", oauthCheckUsername)
 	g.POST("/introspect", oauthIntrospect)
 	g.GET("/callback", oauthCallback)
 	g.GET("/logout", oauthLogout)
@@ -212,6 +214,31 @@ func oauthSignUp(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+}
+
+func oauthCheckUsername(ctx echo.Context) error {
+	var r struct {
+		Username string `json:"username"`
+	}
+
+	if err := ctx.Bind(&r); err != nil {
+		ctx.Error(err)
+		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+	}
+
+	m := ctx.Get("oauth_manager").(*manager.OauthManager)
+
+	ok, err := m.IsUsernameFree(ctx, r.Username)
+	if err != nil {
+		ctx.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, err)
+	}
+
+	if ok {
+		return ctx.JSON(http.StatusOK, map[string]interface{}{})
+	}
+
+	return ctx.JSON(http.StatusForbidden, map[string]interface{}{})
 }
 
 func oauthCallback(ctx echo.Context) error {

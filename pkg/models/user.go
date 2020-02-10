@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 // User describes a table for storing the basic properties of the user.
@@ -28,6 +29,9 @@ type User struct {
 
 	// Username is the nickname of the user.
 	Username string `bson:"username" json:"username"`
+
+	// UniqueUsername is index flag that username must be unique within app.
+	UniqueUsername bool `bson:"unique_username" json:"-"`
 
 	// Name is the name of the user. Contains first anf last name.
 	Name string `bson:"name" json:"name"`

@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 var (
@@ -65,6 +66,9 @@ type Application struct {
 	// HasSharedUsers determines whether users are shared across the entire space or only within the application.
 	// If this option is set, then users from other applications (in space) will be able to log in to this application.
 	HasSharedUsers bool `bson:"has_shared_users" json:"has_shared_users"`
+
+	// UniqueUsernames determines whether app users must have unique usernames
+	UniqueUsernames bool `bson:"unique_usernames" json:"unique_usernames"`
 
 	// PasswordSettings contains settings for valid password criteria.
 	PasswordSettings *PasswordSettings `bson:"password_settings" json:"password_settings"`
