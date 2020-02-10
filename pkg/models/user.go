@@ -30,8 +30,8 @@ type User struct {
 	// Username is the nickname of the user.
 	Username string `bson:"username" json:"username"`
 
-	// UniqUsername is index flag that username must be unique within app.
-	UniqUsername bool `bson:"uniq_username" json:"-"`
+	// UniqueUsername is index flag that username must be unique within app.
+	UniqueUsername bool `bson:"unique_username" json:"-"`
 
 	// Name is the name of the user. Contains first anf last name.
 	Name string `bson:"name" json:"name"`
