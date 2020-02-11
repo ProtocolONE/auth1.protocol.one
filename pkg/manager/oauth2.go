@@ -417,7 +417,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", apierror.InvalidChallenge
 	}
 	if req.Payload.Client.ClientID != clientId.(string) {
-		return "", errors.Wrap(err, "client ID is incorrect")
+		return "", errors.New("client ID is incorrect")
 	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
