@@ -82,28 +82,14 @@ func oauthLoginSubmit(ctx echo.Context) error {
 
 	if err := ctx.Bind(form); err != nil {
 		return apierror.InvalidRequest(err)
-		// e := &models.GeneralError{
-		// 	Code:    BadRequiredCodeCommon,
-		// 	Message: models.ErrorInvalidRequestParameters,
-		// }
-		// ctx.Error(err)
-		// return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
 		return apierror.InvalidParameters(err)
-		// e := &models.GeneralError{
-		// 	Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-		// 	Message: models.ErrorRequiredField,
-		// }
-		// ctx.Error(err)
-		// return helper.JsonError(ctx, e)
 	}
 
 	url, err := m.Auth(ctx, form)
 	if err != nil {
 		return err
-		// ctx.Error(err.Err)
-		// return helper.JsonError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -202,18 +188,12 @@ func oauthSignUp(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
+		return apierror.InvalidRequest(err)
 	}
 
 	url, err := m.SignUp(ctx, form)
 	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
@@ -225,23 +205,19 @@ func oauthCheckUsername(ctx echo.Context) error {
 	}
 
 	if err := ctx.Bind(&r); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
+		return apierror.InvalidRequest(err)
 	}
 
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	ok, err := m.IsUsernameFree(ctx, r.Username)
 	if err != nil {
-		ctx.Error(err)
-		return ctx.JSON(http.StatusInternalServerError, err)
+		return err
 	}
 
-	if ok {
-		return ctx.JSON(http.StatusOK, map[string]interface{}{})
-	}
-
-	return ctx.JSON(http.StatusForbidden, map[string]interface{}{})
+	return ctx.JSON(http.StatusOK, map[string]interface{}{
+		"available": ok,
+	})
 }
 
 func oauthCallback(ctx echo.Context) error {
