@@ -2,6 +2,17 @@ package api
 
 import (
 	"context"
+	"html/template"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"reflect"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
@@ -16,16 +27,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
-	"html/template"
-	"io"
-	"net/http"
-	"os"
-	"os/signal"
-	"reflect"
-	"strconv"
-	"strings"
-	"syscall"
-	"time"
 )
 
 // ServerConfig contains common configuration parameters for start application server
@@ -56,6 +57,9 @@ type ServerConfig struct {
 
 	// Mailer contains settings for the postman service
 	Mailer *config.Mailer
+
+	// Recaptcha contains settings for recaptcha integration
+	Recaptcha *config.Recaptcha
 }
 
 // Server is the instance of the application
@@ -77,6 +81,9 @@ type Server struct {
 
 	// Registry is the registry service
 	Registry service.InternalRegistry
+
+	// Recaptcha is recaptcha integration
+	Recaptcha *service.Recaptcha
 }
 
 // Template is used to display HTML pages.
@@ -100,6 +107,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		SessionConfig: c.SessionConfig,
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
+		Recaptcha:     service.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
 	}
 
 	t := &Template{
@@ -200,6 +208,7 @@ func (s *Server) setupRoutes() error {
 		InitManage,
 		InitOauth2,
 		InitHealth,
+		InitCaptcha,
 	}
 
 	for _, r := range routes {
