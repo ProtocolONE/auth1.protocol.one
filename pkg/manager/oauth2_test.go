@@ -1310,13 +1310,13 @@ func TestLoadRemoteScopesReturnNil(t *testing.T) {
 
 func TestHasOnlyDefaultScopes(t *testing.T) {
 	assert.True(t, hasOnlyDefaultScopes([]string{}))
-	assert.True(t, hasOnlyDefaultScopes([]string{scopeOpenId})) // fail
+	assert.True(t, hasOnlyDefaultScopes([]string{scopeOpenId}))
 	assert.True(t, hasOnlyDefaultScopes([]string{scopeOffline}))
 	assert.True(t, hasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline}))
 	assert.True(t, hasOnlyDefaultScopes([]string{scopeOffline, scopeOpenId}))
 	assert.False(t, hasOnlyDefaultScopes([]string{"other"}))
-	assert.False(t, hasOnlyDefaultScopes([]string{scopeOpenId, "other"}))  // fail
-	assert.False(t, hasOnlyDefaultScopes([]string{"other", scopeOffline})) // fail
+	assert.False(t, hasOnlyDefaultScopes([]string{scopeOpenId, "other"}))
+	assert.False(t, hasOnlyDefaultScopes([]string{"other", scopeOffline}))
 	assert.False(t, hasOnlyDefaultScopes([]string{scopeOpenId, scopeOffline, "other"}))
 	assert.False(t, hasOnlyDefaultScopes([]string{scopeOffline, "other", scopeOpenId}))
 }
