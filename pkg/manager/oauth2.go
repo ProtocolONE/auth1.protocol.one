@@ -15,7 +15,6 @@ import (
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
-	"sort"
 	"time"
 )
 
@@ -311,18 +310,18 @@ func (m *OauthManager) GetScopes(requestedScopes []string) []string {
 }
 
 func (m *OauthManager) HasOnlyDefaultScopes(scopes []string) bool {
-	s := 0
-	defaultScopes := []string{scopeOffline, scopeOpenId}
+	return hasOnlyDefaultScopes(scopes)
+}
 
-	sort.Strings(scopes)
-
-	for _, scope := range defaultScopes {
-		if sort.SearchStrings(scopes, scope) < len(scopes) {
-			s++
+func hasOnlyDefaultScopes(scopes []string) bool {
+	for _, s := range scopes {
+		switch s {
+		case scopeOffline, scopeOpenId:
+		default:
+			return false
 		}
 	}
-
-	return s == len(scopes)
+	return true
 }
 
 func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2IntrospectForm) (*models.Oauth2TokenIntrospection, *models.GeneralError) {
