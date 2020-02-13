@@ -27,8 +27,8 @@ var (
 	InvalidChallenge = Error{1003, "invalid_challenge", http.StatusBadRequest}
 	InvalidToken     = Error{1004, "invalid_token", http.StatusBadRequest}
 	InvalidClient    = Error{1005, "invalid_client", http.StatusBadRequest}
-	InvalidEmail     = Error{1006, "invalid_credentials", http.StatusBadRequest}
-	InvalidPassword  = Error{1007, "invalid_credentials", http.StatusBadRequest}
+	InvalidEmail     = Error{1006, "invalid_email", http.StatusBadRequest}
+	InvalidPassword  = Error{1007, "invalid_password", http.StatusBadRequest}
 	UsernameTaken    = Error{1008, "username_already_exists", http.StatusBadRequest}
 	WeakPassword     = Error{1009, "password_does_not_meet_policy", http.StatusBadRequest}
 	EmailRegistered  = Error{1010, "email_already_registered", http.StatusBadRequest}
