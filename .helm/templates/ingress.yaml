@@ -54,3 +54,7 @@ spec:
             backend:
               serviceName: {{ $hydraSvc }}
               servicePort: 4444
+          - path: /.well-known/openid-configuration
+            backend:
+              serviceName: {{ $hydraSvc }}
+              servicePort: 4444
