@@ -374,6 +374,19 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, username string) (bool, 
 	return ok, nil
 }
 
+func CaptchaCompleted(ctx echo.Context, s service.SessionService) (bool, error) {
+	v, err := s.Get(ctx, "captcha")
+	if err != nil {
+		return false, err
+	}
+	if v != nil {
+		if done, ok := v.(bool); ok {
+			return done, nil
+		}
+	}
+	return false, nil
+}
+
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, error) {
 	if err := m.session.Set(ctx, loginRememberKey, form.Remember); err != nil {
 		return "", errors.Wrap(err, "error saving session")
@@ -387,6 +400,16 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId.(string)))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to load application")
+	}
+
+	if app.RequiresCaptcha {
+		ok, err := CaptchaCompleted(ctx, m.session)
+		if err != nil {
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error validate captcha")}
+		}
+		if !ok {
+			return "", &models.GeneralError{Code: "captcha", Message: models.ErrorCaptchaRequired}
+		}
 	}
 
 	if app.UniqueUsernames {
