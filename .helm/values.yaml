@@ -2,8 +2,8 @@
 # Declare variables to be passed into your templates.
 
 enableRedis: true
-enableMongo: true
-enableHydra: true
+enableMongo: false
+enableHydra: false
 enableCertIssuer: true
 enableHydraDebug: false
 

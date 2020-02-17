@@ -1,4 +1,5 @@
 {{- $endpoint := .Values.backend -}}
+{{- $hydraSvc := printf "hydra-external-%s" .Release.Name}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -31,25 +32,25 @@ spec:
               servicePort: {{ $endpoint.service.port }}
           - path: /userinfo
             backend:
-              serviceName: hydra
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/auth
             backend:
-              serviceName: hydra
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/token
             backend:
-              serviceName: hydra
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/revoke
             backend:
-              serviceName: hydra
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /oauth2/userinfo
             backend:
-              serviceName: hydra
+              serviceName: {{ $hydraSvc }}
               servicePort: 4444
           - path: /.well-known/jwks.json
             backend:
-              serviceName: hydra
-              servicePort: 4444              
+              serviceName: {{ $hydraSvc }}
+              servicePort: 4444
