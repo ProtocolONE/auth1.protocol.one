@@ -137,7 +137,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		AllowCredentials: c.ApiConfig.AllowCredentials,
 		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
-	s.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+	s.Use(CSRFWithConfig(CSRFConfig{
 		TokenLookup: "header:X-XSRF-TOKEN",
 		CookieName:  "_csrf",
 		Skipper:     csrfSkipper,

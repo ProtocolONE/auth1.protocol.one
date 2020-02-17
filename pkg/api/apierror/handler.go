@@ -23,8 +23,15 @@ func Handler(err error, ctx echo.Context) {
 
 	var e *APIError
 	if !errors.As(err, &e) {
-		ctx.Logger().Error(err)
-		e = unknown
+		switch err {
+		case echo.ErrMethodNotAllowed:
+			e = MethodNotAllowed
+		case echo.ErrNotFound:
+			e = NotFound
+		default:
+			ctx.Logger().Error(err)
+			e = Unknown(err)
+		}
 	}
 
 	if err := resp(ctx, e); err != nil {

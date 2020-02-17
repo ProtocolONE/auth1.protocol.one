@@ -15,6 +15,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
 	github.com/labstack/echo/v4 v4.1.14
+	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro v1.8.0
 	github.com/micro/go-plugins v1.2.0
 	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
