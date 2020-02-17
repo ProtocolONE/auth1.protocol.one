@@ -10,7 +10,7 @@ cache:
 stages:
   - test
   - name: deploy
-    if: branch IN (master, develop)
+    if: branch IN (master, develop) AND type != pull_request
 
 jobs:
   include:
