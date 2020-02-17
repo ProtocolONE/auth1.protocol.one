@@ -15,7 +15,7 @@ func InitCaptcha(cfg *Server) error {
 		recaptcha: cfg.Recaptcha,
 		session:   service.NewSessionService(cfg.SessionConfig.Name),
 	}
-	cfg.Echo.Group("/captcha").
+	cfg.Echo.Group("/api/captcha").
 		POST("/re3", c.verify)
 
 	return nil
