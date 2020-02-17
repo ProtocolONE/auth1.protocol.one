@@ -11,6 +11,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHandleNotFoundError(t *testing.T) {
+	// Arrange
+	var errorJSON = `{"code":"AU-1014","error":"errors.one.protocol.auth1.not_found"}
+`
+	e, rec := echo.New(), httptest.NewRecorder()
+	e.HTTPErrorHandler = Handler
+	c := e.NewContext(httptest.NewRequest(http.MethodPost, "/", nil), rec)
+
+	// Act
+	c.Error(echo.ErrNotFound)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.Equal(t, errorJSON, rec.Body.String())
+}
+
+func TestHandleNotAllowedError(t *testing.T) {
+	// Arrange
+	var errorJSON = `{"code":"AU-1013","error":"errors.one.protocol.auth1.method_not_allowed"}
+`
+	e, rec := echo.New(), httptest.NewRecorder()
+	e.HTTPErrorHandler = Handler
+	c := e.NewContext(httptest.NewRequest(http.MethodPost, "/", nil), rec)
+
+	// Act
+	c.Error(echo.ErrMethodNotAllowed)
+
+	// Assert
+	assert.Equal(t, http.StatusMethodNotAllowed, rec.Code)
+	assert.Equal(t, errorJSON, rec.Body.String())
+}
+
 func TestHandleUnknownError(t *testing.T) {
 	// Arrange
 	var unkErrorJSON = `{"code":"AU-1000","error":"errors.one.protocol.auth1.unknown"}

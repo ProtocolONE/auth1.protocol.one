@@ -23,7 +23,7 @@ var (
 	WeakPassword       = New(1009, "password_does_not_meet_policy", http.StatusBadRequest).WithParam("password")
 	EmailRegistered    = New(1010, "email_already_registered", http.StatusBadRequest).WithParam("email")
 	MissingCSRFToken   = New(1011, "missing_csrf_token", http.StatusBadRequest).WithParam("x-xsrf-token")
-	InvalidCSRFToken   = New(1012, "missing_csrf_token", http.StatusForbidden).WithParam("x-xsrf-token")
+	InvalidCSRFToken   = New(1012, "invalid_csrf_token", http.StatusForbidden).WithParam("x-xsrf-token")
 	MethodNotAllowed   = New(1013, "method_not_allowed", http.StatusMethodNotAllowed)
 	NotFound           = New(1014, "not_found", http.StatusNotFound)
 )
