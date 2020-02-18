@@ -405,10 +405,10 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	if app.RequiresCaptcha {
 		ok, err := CaptchaCompleted(ctx, m.session)
 		if err != nil {
-			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error validate captcha")}
+			return "", errors.Wrap(err, "can't check captcha state")
 		}
 		if !ok {
-			return "", &models.GeneralError{Code: "captcha", Message: models.ErrorCaptchaRequired}
+			return "", apierror.CaptchaRequired
 		}
 	}
 

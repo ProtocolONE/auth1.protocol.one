@@ -26,6 +26,7 @@ var (
 	InvalidCSRFToken   = New(1012, "invalid_csrf_token", http.StatusForbidden).WithParam("x-xsrf-token")
 	MethodNotAllowed   = New(1013, "method_not_allowed", http.StatusMethodNotAllowed)
 	NotFound           = New(1014, "not_found", http.StatusNotFound)
+	CaptchaRequired    = New(1015, "captcha_required", http.StatusForbidden)
 )
 
 func New(code int, message string, status int) *APIError {
