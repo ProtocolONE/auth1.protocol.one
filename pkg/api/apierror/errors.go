@@ -22,20 +22,24 @@ var (
 	UsernameTaken      = New(1008, "username_already_exists", http.StatusBadRequest).WithParam("username")
 	WeakPassword       = New(1009, "password_does_not_meet_policy", http.StatusBadRequest).WithParam("password")
 	EmailRegistered    = New(1010, "email_already_registered", http.StatusBadRequest).WithParam("email")
+	MissingCSRFToken   = New(1011, "missing_csrf_token", http.StatusBadRequest).WithParam("x-xsrf-token")
+	InvalidCSRFToken   = New(1012, "invalid_csrf_token", http.StatusForbidden).WithParam("x-xsrf-token")
+	MethodNotAllowed   = New(1013, "method_not_allowed", http.StatusMethodNotAllowed)
+	NotFound           = New(1014, "not_found", http.StatusNotFound)
 )
 
 func New(code int, message string, status int) *APIError {
 	return NewAPIError(fmt.Sprintf("%s-%d", ServicePrefix, code), ErrorPrefix+message, status)
 }
 
-func Unknown(err error) error {
+func Unknown(err error) *APIError {
 	return unknown
 }
 
-func InvalidRequest(err error) error {
+func InvalidRequest(err error) *APIError {
 	return invalidRequest
 }
 
-func InvalidParameters(err error) error {
+func InvalidParameters(err error) *APIError {
 	return invalidParameters
 }
