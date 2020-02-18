@@ -201,7 +201,8 @@ func oauthSignUp(ctx echo.Context) error {
 
 func oauthCheckUsername(ctx echo.Context) error {
 	var r struct {
-		Username string `json:"username"`
+		Challenge string `json:"challenge"`
+		Username  string `json:"username"`
 	}
 
 	if err := ctx.Bind(&r); err != nil {
@@ -210,7 +211,7 @@ func oauthCheckUsername(ctx echo.Context) error {
 
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
-	ok, err := m.IsUsernameFree(ctx, r.Username)
+	ok, err := m.IsUsernameFree(ctx, r.Challenge, r.Username)
 	if err != nil {
 		return err
 	}

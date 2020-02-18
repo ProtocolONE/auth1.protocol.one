@@ -75,7 +75,7 @@ type OauthManagerInterface interface {
 	SignUp(echo.Context, *models.Oauth2SignUpForm) (string, error)
 
 	// IsUsernameFree checks if username is available for signup
-	IsUsernameFree(ctx echo.Context, username string) (bool, error)
+	IsUsernameFree(ctx echo.Context, challenge, username string) (bool, error)
 
 	// CallBack verifies the result of oauth2 authorization.
 	//
@@ -352,12 +352,12 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 }
 
 func (m *OauthManager) IsUsernameFree(ctx echo.Context, username string) (bool, error) {
-	clientId, err := m.session.Get(ctx, clientIdSessionKey)
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: form.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
-		return false, errors.Wrap(err, "unable to get session")
+		return false, apierror.InvalidChallenge
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId.(string)))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
 	if err != nil {
 		return false, errors.Wrap(err, "unable to load application")
 	}
