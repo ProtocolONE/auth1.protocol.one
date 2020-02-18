@@ -351,8 +351,8 @@ func (m *OauthManager) Introspect(ctx echo.Context, form *models.Oauth2Introspec
 	return token, nil
 }
 
-func (m *OauthManager) IsUsernameFree(ctx echo.Context, username string) (bool, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: form.Challenge, Context: ctx.Request().Context()})
+func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username string) (bool, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: ctx.Request().Context()})
 	if err != nil {
 		return false, apierror.InvalidChallenge
 	}
