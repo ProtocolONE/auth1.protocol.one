@@ -2,15 +2,31 @@ server {
     listen ${NGINX_PORT};
     server_name ${NGINX_HOST};
 
-    location ~* ^/oauth2/auth/sessions/login/revoke(.*)$ {
+    location /oauth2/auth {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location ~* ^/oauth2/(auth|token|revoke)(.*)$ {
+    location /oauth2/token {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/revoke {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/fallbacks/concent {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/fallbacks/error {
         proxy_pass ${HYDRA_SERVER};
     }
 
     location /.well-known/jwks.json {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /.well-known/openid-configuration {
         proxy_pass ${HYDRA_SERVER};
     }
 
@@ -19,11 +35,19 @@ server {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location / {
+    location /oauth2 {
         proxy_pass ${AUTHONE_SERVER};
-        proxy_set_header Host localhost;
+    }
+
+    location /api {
+        proxy_pass ${AUTHONE_SERVER};
+    }
+
+    location / {
+        proxy_pass ${WEB_SERVER};
     }
 }
+
 server {
     listen ${DEBUG_PORT};
     server_name ${NGINX_HOST};

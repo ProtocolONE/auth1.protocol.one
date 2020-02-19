@@ -1,8 +1,8 @@
 version: "3.6"
 
 services:
-  web:
-    image: nginx
+  entry:
+    image: nginx:1.17.8
     container_name: auth1-nginx
     networks:
       - subnet
@@ -10,7 +10,7 @@ services:
       - hydra
       - auth1
     ports:
-      - "80:80"
+      - "7001:80"
       - "6060:6060"
     environment:
       - NGINX_HOST=localhost
@@ -19,10 +19,17 @@ services:
       - AUTHONE_SERVER=http://auth1:8080
       - AUTHONE_DEBUG=http://auth1:6060
       - HYDRA_SERVER=http://hydra:4444
+      - WEB_SERVER=http://auth1-web:80
       - DOLLAR=$$
     volumes:
       - ./etc/nginx/default.template:/etc/nginx/conf.d/default.template
     command: bin/bash -c " envsubst < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+
+  web:
+    image: p1hub/store-auth-web:master-35
+    container_name: auth1-web
+    networks:
+      - subnet
 
   hydra-migrate:
     image: oryd/hydra:v1.0.0-rc.9_oryOS.10
@@ -48,11 +55,12 @@ services:
       - subnet
     environment:
       - DSN=postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable
-      - URLS_SELF_ISSUER=http://localhost
-      - URLS_SELF_PUBLIC=http://localhost
-      - URLS_CONSENT=http://localhost/oauth2/consent
-      - URLS_LOGIN=http://localhost/oauth2/login
-      - URLS_POST_LOGOUT_REDIRECT=http://localhost/oauth2/logout
+      - URLS_SELF_ISSUER=http://localhost:7001
+      - URLS_SELF_PUBLIC=http://localhost:7001
+      - URLS_CONSENT=http://localhost:7001/oauth2/consent
+      - URLS_LOGIN=http://localhost:7001/sign-in
+      - URLS_ERROR=http://localhost:7001/error
+      - URLS_POST_LOGOUT_REDIRECT=http://localhost:7001/oauth2/logout
       - LOG_LEVEL=debug
       - OAUTH2_HASHERS_BCRYPT_COST=8
       - SECRETS_SYSTEM=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
