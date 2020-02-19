@@ -4,6 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
@@ -14,8 +17,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 var (

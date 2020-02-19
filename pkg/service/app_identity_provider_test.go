@@ -2,11 +2,12 @@ package service
 
 import (
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/stretchr/testify/assert"
-	"regexp"
-	"testing"
 )
 
 func TestIdentityProviderGetReturnProvider(t *testing.T) {
@@ -168,6 +169,6 @@ func TestIdentityProvidersGetAuthUrl(t *testing.T) {
 	ipc := &models.AppIdentityProvider{EndpointAuthURL: "http://localhost/", ClientID: "1"}
 	url, _ := ip.GetAuthUrl("http://localhost", ipc, "")
 
-	expected := "http://localhost/?client_id=1&redirect_uri=http%3A%2F%2Flocalhost%2Fauthorize%2Fresult&response_type=code&state=IiI%3D"
+	expected := "http://localhost/?client_id=1&redirect_uri=http%3A%2F%2Flocalhost%2Fapi%2Fauthorize%2Fresult&response_type=code&state=IiI%3D"
 	assert.Equal(t, expected, url, "Invalid social auth url")
 }
