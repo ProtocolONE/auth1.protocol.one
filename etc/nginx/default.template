@@ -14,14 +14,6 @@ server {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location /oauth2/fallbacks/concent {
-        proxy_pass ${HYDRA_SERVER};
-    }
-
-    location /oauth2/fallbacks/error {
-        proxy_pass ${HYDRA_SERVER};
-    }
-
     location /.well-known/jwks.json {
         proxy_pass ${HYDRA_SERVER};
     }

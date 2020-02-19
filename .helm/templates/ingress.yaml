@@ -26,10 +26,6 @@ spec:
     - host: {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.hostname }}
       http:
         paths:
-          - path: {{ .Values.ingress.path }}
-            backend:
-              serviceName: {{ .Release.Name }}
-              servicePort: {{ $endpoint.service.port }}
           - path: /userinfo
             backend:
               serviceName: {{ $hydraSvc }}
@@ -58,3 +54,15 @@ spec:
             backend:
               serviceName: {{ $hydraSvc }}
               servicePort: 4444
+          - path: /oauth2
+            backend:
+              serviceName: {{ .Release.Name }}
+              servicePort: {{ $endpoint.service.port }}
+          - path: /api
+            backend:
+              serviceName: {{ .Release.Name }}
+              servicePort: {{ $endpoint.service.port }}
+          - path: /
+            backend:
+              serviceName: store-auth-web
+              servicePort: 80
