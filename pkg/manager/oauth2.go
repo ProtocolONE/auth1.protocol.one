@@ -392,12 +392,12 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "error saving session")
 	}
 
-	clientId, err := m.session.Get(ctx, clientIdSessionKey)
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: form.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get session")
+		return "", apierror.InvalidChallenge
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientId.(string)))
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to load application")
 	}
@@ -434,14 +434,6 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		encryptedPassword, err = encryptor.Digest(form.Password)
 		return err
 	})
-
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: ctx.Request().Context(), Challenge: form.Challenge})
-	if err != nil {
-		return "", apierror.InvalidChallenge
-	}
-	if req.Payload.Client.ClientID != clientId.(string) {
-		return "", errors.New("client ID is incorrect")
-	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if ipc == nil {

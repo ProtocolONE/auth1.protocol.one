@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
@@ -801,55 +800,60 @@ func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-func TestSignUpReturnErrorWithUnableToGetClientFromSession(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+// GET APP FROM HYDRA NOT SESSION
+// func TestSignUpReturnErrorWithUnableToGetClientFromSession(t *testing.T) {
+// 	s := &mocks.SessionService{}
+// 	app := &mocks.ApplicationServiceInterface{}
+// 	r := &mocks.InternalRegistry{}
 
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(nil, errors.New(""))
-	r.On("ApplicationService").Return(app)
+// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
+// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(nil, errors.New(""))
+// 	r.On("ApplicationService").Return(app)
 
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
-	assert.NotNil(t, err)
-	// assert.Equal(t, "common", err.Code)
-	// assert.Equal(t, models.ErrorUnknownError, err.Message)
-}
+// 	m := &OauthManager{
+// 		r:       r,
+// 		session: s,
+// 	}
+// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
+// 	assert.NotNil(t, err)
+// 	// assert.Equal(t, "common", err.Code)
+// 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
+// }
 
-func TestSignUpReturnErrorWithUnableToGetApplication(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+// GET APP FROM HYDRA NOT SESSION
+// func TestSignUpReturnErrorWithUnableToGetApplication(t *testing.T) {
+// 	s := &mocks.SessionService{}
+// 	app := &mocks.ApplicationServiceInterface{}
+// 	r := &mocks.InternalRegistry{}
 
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-	app.On("Get", mock.Anything).Return(nil, errors.New(""))
-	r.On("ApplicationService").Return(app)
+// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
+// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
+// 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
+// 	r.On("ApplicationService").Return(app)
 
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
-	assert.NotNil(t, err)
-	// assert.Equal(t, "client_id", err.Code)
-	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-}
+// 	m := &OauthManager{
+// 		r:       r,
+// 		session: s,
+// 	}
+// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
+// 	assert.NotNil(t, err)
+// 	// assert.Equal(t, "client_id", err.Code)
+// 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
+// }
 
 func TestSignUpReturnErrorWithInvalidPassword(t *testing.T) {
 	s := &mocks.SessionService{}
 	app := &mocks.ApplicationServiceInterface{}
 	r := &mocks.InternalRegistry{}
+	h := &mocks.HydraAdminApi{}
 
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
 	r.On("ApplicationService").Return(app)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+	r.On("HydraAdminApi").Return(h)
 
 	m := &OauthManager{
 		r:       r,
@@ -885,31 +889,32 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 	// assert.Equal(t, models.ErrorLoginChallenge, err.Message)
 }
 
-func TestSignUpReturnErrorWithDifferentClientId(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+// NOT POSSIBLE ANY MORE
+// func TestSignUpReturnErrorWithDifferentClientId(t *testing.T) {
+// 	s := &mocks.SessionService{}
+// 	app := &mocks.ApplicationServiceInterface{}
+// 	h := &mocks.HydraAdminApi{}
+// 	r := &mocks.InternalRegistry{}
 
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
+// 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
+// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
+// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
+// 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
+// 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+// 	r.On("ApplicationService").Return(app)
+// 	r.On("HydraAdminApi").Return(h)
 
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
+// 	m := &OauthManager{
+// 		r:       r,
+// 		session: s,
+// 	}
+// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
 
-	fmt.Println(err)
-	assert.NotNil(t, err)
-	// assert.Equal(t, "client_id", err.Code)
-	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-}
+// 	fmt.Println(err)
+// 	assert.NotNil(t, err)
+// 	// assert.Equal(t, "client_id", err.Code)
+// 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
+// }
 
 func TestSignUpReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
 	s := &mocks.SessionService{}
