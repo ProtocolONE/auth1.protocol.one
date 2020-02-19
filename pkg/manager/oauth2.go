@@ -192,7 +192,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			userIdentity, err = m.userIdentityService.Get(app, ipc, form.Email)
 			if err != nil {
-				return "", apierror.EmailNotFound
+				return "", apierror.InvalidCredentials
 			}
 
 			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
