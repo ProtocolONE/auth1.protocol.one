@@ -18,7 +18,7 @@ import (
 func TestOauthManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewOauthManager(s, &mocks.InternalRegistry{}, &config.Session{Name: ""}, &config.Hydra{}, nil)
+	m := NewOauthManager(s, &mocks.InternalRegistry{}, &config.Session{Name: ""}, &config.Hydra{}, nil, nil)
 	assert.Implements(t, (*OauthManagerInterface)(nil), m)
 }
 

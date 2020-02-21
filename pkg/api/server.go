@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -84,7 +85,7 @@ type Server struct {
 	Registry service.InternalRegistry
 
 	// Recaptcha is recaptcha integration
-	Recaptcha *service.Recaptcha
+	Recaptcha *captcha.Recaptcha
 }
 
 // Template is used to display HTML pages.
@@ -108,7 +109,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		SessionConfig: c.SessionConfig,
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
-		Recaptcha:     service.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
+		Recaptcha:     captcha.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
 	}
 
 	t := &Template{

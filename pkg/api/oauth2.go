@@ -15,7 +15,7 @@ func InitOauth2(cfg *Server) error {
 	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
-			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig))
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig, cfg.Recaptcha))
 
 			return next(c)
 		}

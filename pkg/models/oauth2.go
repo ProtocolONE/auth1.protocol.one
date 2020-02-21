@@ -167,6 +167,9 @@ type Oauth2SignUpForm struct {
 
 	// Remember is the option for the save user session in the cookie.
 	Remember bool `query:"remember" form:"remember"`
+
+	// Captcha is optional captcha token for real user validation
+	Captcha string `query:"captcha" form:"captcha"`
 }
 
 func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {

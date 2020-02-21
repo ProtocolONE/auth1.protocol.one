@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -22,10 +23,8 @@ func InitCaptcha(cfg *Server) error {
 	return nil
 }
 
-var captchaKey = "captcha"
-
 type Captcha struct {
-	recaptcha *service.Recaptcha
+	recaptcha *captcha.Recaptcha
 	session   service.SessionService
 }
 
@@ -44,7 +43,7 @@ func (ctl *Captcha) verify(ctx echo.Context) error {
 		return errors.Wrap(err, "unable to verify captcha")
 	}
 
-	ctl.session.Set(ctx, captchaKey, result)
+	captcha.StoreCompletedStatus(ctx, ctl.session, result)
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"success": result,
