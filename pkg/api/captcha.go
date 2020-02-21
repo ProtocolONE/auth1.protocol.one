@@ -15,8 +15,9 @@ func InitCaptcha(cfg *Server) error {
 		recaptcha: cfg.Recaptcha,
 		session:   service.NewSessionService(cfg.SessionConfig.Name),
 	}
-	cfg.Echo.Group("/api/captcha").
-		POST("/re3", c.verify)
+	g := cfg.Echo.Group("/api/captcha")
+	g.POST("/re3", c.verify)
+	g.GET("/key", c.key)
 
 	return nil
 }
@@ -48,4 +49,17 @@ func (ctl *Captcha) verify(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"success": result,
 	})
+}
+
+func (ctl *Captcha) key(ctx echo.Context) error {
+	tp := ctx.QueryParam("type")
+
+	switch tp {
+	case "re3":
+		return ctx.JSON(http.StatusOK, map[string]interface{}{
+			"key": ctl.recaptcha.Key(),
+		})
+	default:
+		return apierror.UnknownCaptchaType
+	}
 }
