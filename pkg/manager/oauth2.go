@@ -401,8 +401,8 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	if app.RequiresCaptcha {
-		if form.Captcha != "" {
-			ok, err := m.recaptcha.Verify(context.TODO(), form.Captcha, "", "") // TODO ip, action
+		if form.CaptchaToken != "" {
+			ok, err := m.recaptcha.Verify(context.TODO(), form.CaptchaToken, form.CaptchaAction, "") // TODO ip
 			if err != nil {
 				return "", errors.Wrap(err, "can't verify captcha token")
 			}
