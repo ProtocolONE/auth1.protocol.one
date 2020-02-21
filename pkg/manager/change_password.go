@@ -1,7 +1,11 @@
 package manager
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"text/template"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -9,8 +13,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 // ChangePasswordManagerInterface describes of methods for the manager.
@@ -73,10 +75,30 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
+	// user_name, platform_name, reset_link, support_portal_url
 	b, err := ioutil.ReadFile("./public/templates/email/change_password.html")
-	body := strings.ReplaceAll(string(b), "{{code}}", token.Token)
-	fmt.Println(body)
-	if err := m.r.Mailer().Send(form.Email, "Change password token", body); err != nil {
+	tmpl, err := template.New("mail").Parse(string(b))
+	if err != nil {
+		// todo: fix params
+		return &models.GeneralError{Code: "internal"}
+	}
+	w := bytes.Buffer{}
+	err = tmpl.Execute(&w, struct {
+		UserName         string
+		PlatformName     string
+		Token            string
+		SupportPortalUrl string
+	}{
+		UserName:         "",
+		PlatformName:     "",
+		Token:            token.Token,
+		SupportPortalUrl: "",
+	})
+	if err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to build reset password mail")}
+	}
+	fmt.Println(w.String())
+	if err := m.r.Mailer().Send(form.Email, "Change password token", w.String()); err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to send mail with change password token")}
 	}
 
@@ -123,6 +145,23 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 
 	if err = m.userIdentityService.Update(ui); err != nil {
 		return &models.GeneralError{Code: "password", Message: models.ErrorUnableChangePassword, Err: errors.Wrap(err, "Unable to update password")}
+	}
+
+	return nil
+}
+
+func (m *ChangePasswordManager) ChangePasswordCheck(clientID, token string) *models.GeneralError {
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientID))
+	if err != nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+	}
+
+	ottSettings := &models.OneTimeTokenSettings{
+		Length: app.PasswordSettings.TokenLength,
+		TTL:    app.PasswordSettings.TokenTTL,
+	}
+	if err := m.r.OneTimeTokenService().Get(token, ottSettings); err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
 	return nil
