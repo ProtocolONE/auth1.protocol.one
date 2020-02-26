@@ -143,6 +143,8 @@ services:
       - AUTHONE_RECAPTCHA_HOSTNAME=localhost
       - AUTHONE_MAILER_HOST=auth1-mailtrap
       - AUTHONE_MAILER_PORT=25
+      - AUTHONE_MAILER_REPLY_TO=noreply@example.com
+      - AUTHONE_MAILER_FROM=noreply@example.com
 
 volumes:
   auth1-mongo:

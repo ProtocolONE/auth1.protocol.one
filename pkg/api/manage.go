@@ -20,7 +20,7 @@ func InitManage(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
-			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig))
+			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig, cfg.MailTemplates))
 			c.Set("recaptcha", cfg.Recaptcha)
 			c.Set("registry", cfg.Registry)
 

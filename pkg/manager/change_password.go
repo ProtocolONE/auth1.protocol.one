@@ -23,6 +23,9 @@ type ChangePasswordManagerInterface interface {
 
 	// ChangePasswordVerify validates a one-time token sent by email and, if successful, changes the user's password.
 	ChangePasswordVerify(*models.ChangePasswordVerifyForm) *models.GeneralError
+
+	// ChangePasswordCheck verifies the token and returns user's email from token
+	ChangePasswordCheck(token string) (string, *models.GeneralError)
 }
 
 // ChangePasswordManager is the change password manager.
@@ -31,12 +34,14 @@ type ChangePasswordManager struct {
 	userIdentityService     service.UserIdentityServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 	ApiCfg                  *config.Server
+	TplCfg                  *config.MailTemplates
 }
 
 // NewChangePasswordManager return new change password manager.
-func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry, apiCfg *config.Server) ChangePasswordManagerInterface {
+func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry, apiCfg *config.Server, tplCfg *config.MailTemplates) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
 		ApiCfg:                  apiCfg,
+		TplCfg:                  tplCfg,
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
@@ -76,8 +81,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
-	// user_name, platform_name, reset_link, support_portal_url
-	b, err := ioutil.ReadFile("./public/templates/email/change_password.html")
+	b, err := ioutil.ReadFile(m.TplCfg.ChangePasswordTpl)
 	tmpl, err := template.New("mail").Parse(string(b))
 	if err != nil {
 		// todo: fix params
@@ -86,15 +90,16 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	w := bytes.Buffer{}
 	err = tmpl.Execute(&w, struct {
 		UserName         string
+		PlatformUrl      string
 		PlatformName     string
 		Token            string
-		Challenge        string
 		SupportPortalUrl string
 	}{
-		UserName:         "",
-		PlatformName:     "",
+		UserName:         ui.Username,
+		PlatformUrl:      m.TplCfg.PlatformUrl,
+		PlatformName:     m.TplCfg.PlatformName,
 		Token:            token.Token,
-		SupportPortalUrl: "",
+		SupportPortalUrl: m.TplCfg.SupportPortalUrl,
 	})
 	if err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to build reset password mail")}

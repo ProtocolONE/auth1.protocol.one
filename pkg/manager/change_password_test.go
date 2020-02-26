@@ -15,7 +15,7 @@ import (
 func TestChangePasswordManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewChangePasswordManager(s, &mocks.InternalRegistry{}, nil)
+	m := NewChangePasswordManager(s, &mocks.InternalRegistry{}, nil, nil)
 	assert.Implements(t, (*ChangePasswordManagerInterface)(nil), m)
 }
 
