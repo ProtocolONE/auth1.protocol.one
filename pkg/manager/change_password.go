@@ -94,7 +94,6 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		UserName:         "",
 		PlatformName:     "",
 		Token:            token.Token,
-		Challenge:        form.ClientID,
 		SupportPortalUrl: "",
 	})
 	if err != nil {

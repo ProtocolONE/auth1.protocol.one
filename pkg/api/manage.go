@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
@@ -28,8 +29,8 @@ func InitManage(cfg *Server) error {
 	})
 
 	g.POST("/password/reset", passwordReset)
-	g.GET("/password/reset/link", passwordResetCheck)
-	g.GET("/password/reset/set", passwordResetSet)
+	g.POST("/password/reset/link", passwordResetCheck)
+	g.POST("/password/reset/set", passwordResetSet)
 
 	g.POST("/space", createSpace)
 	g.PUT("/space/:id", updateSpace)
@@ -67,31 +68,36 @@ func passwordReset(ctx echo.Context) error {
 		return apierror.InvalidParameters(err)
 	}
 
-	//recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
-	//ok, err := recaptcha.Verify(ctx.Request().Context(), r.Token, r.Action, "")
-	//if err != nil {
-	//	return apierror.Unknown(err)
-	//}
-	//if !ok {
-	//	return apierror.CaptchaRequired
-	//}
+	recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
+	ok, err := recaptcha.Verify(ctx.Request().Context(), r.Token, r.Action, "")
+	if err != nil {
+		return apierror.Unknown(err)
+	}
+	if !ok {
+		return apierror.CaptchaRequired
+	}
 
 	registry, ok := ctx.Get("registry").(service.InternalRegistry)
 	if !ok {
-		println("Cannot cast to registry")
 		return apierror.Unknown(nil)
 	}
+
 	req, err := registry.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: r.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
 		return apierror.InvalidChallenge
 	}
 
-	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	m, ok := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	if !ok {
+		return apierror.Unknown(nil)
+	}
+
 	form := &models.ChangePasswordStartForm{
 		ClientID: req.Payload.Client.ClientID,
 		Email:    r.Email,
 	}
 	if err := m.ChangePasswordStart(form); err != nil {
+		ctx.Logger().Error(err.Error())
 		ctx.Error(err.Err)
 		return apierror.Unknown(err)
 	}
@@ -101,8 +107,7 @@ func passwordReset(ctx echo.Context) error {
 
 func passwordResetCheck(ctx echo.Context) error {
 	var form struct {
-		Token     string `query:"token" form:"token" validate:"required" json:"token"`
-		Challenge string `query:"challenge" form:"challenge" validate:"required" json:"challenge"`
+		Token string `query:"token" form:"token" validate:"required" json:"token"`
 	}
 
 	if err := ctx.Bind(&form); err != nil {
@@ -126,9 +131,8 @@ func passwordResetCheck(ctx echo.Context) error {
 
 func passwordResetSet(ctx echo.Context) error {
 	var form struct {
-		Challenge string `query:"challenge" form:"challenge" validate:"required" json:"challenge"`
-		Token     string `query:"token" form:"token" validate:"required" json:"token"`
-		Password  string `query:"password" form:"password" validate:"required" json:"password"`
+		Token    string `query:"token" form:"token" validate:"required" json:"token"`
+		Password string `query:"password" form:"password" validate:"required" json:"password"`
 	}
 
 	if err := ctx.Bind(&form); err != nil {
