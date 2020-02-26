@@ -93,7 +93,7 @@ type AuthorizeResultResponse struct {
 }
 
 type AuthorizeLinkForm struct {
-	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" json:"challenge" validate:"required"`
 
 	// ClientID is the id of the application.

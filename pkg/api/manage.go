@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 )
 
 func InitManage(cfg *Server) error {
@@ -20,6 +21,7 @@ func InitManage(cfg *Server) error {
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig))
 			c.Set("recaptcha", cfg.Recaptcha)
+			c.Set("registry", cfg.Registry)
 
 			return next(c)
 		}
@@ -65,18 +67,28 @@ func passwordReset(ctx echo.Context) error {
 		return apierror.InvalidParameters(err)
 	}
 
-	recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
-	ok, err := recaptcha.Verify(ctx.Request().Context(), r.Token, r.Action, "")
-	if err != nil {
-		return apierror.Unknown(err)
-	}
+	//recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
+	//ok, err := recaptcha.Verify(ctx.Request().Context(), r.Token, r.Action, "")
+	//if err != nil {
+	//	return apierror.Unknown(err)
+	//}
+	//if !ok {
+	//	return apierror.CaptchaRequired
+	//}
+
+	registry, ok := ctx.Get("registry").(service.InternalRegistry)
 	if !ok {
-		return apierror.CaptchaRequired
+		println("Cannot cast to registry")
+		return apierror.Unknown(nil)
+	}
+	req, err := registry.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: r.Challenge, Context: ctx.Request().Context()})
+	if err != nil {
+		return apierror.InvalidChallenge
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	form := &models.ChangePasswordStartForm{
-		ClientID: r.Challenge,
+		ClientID: req.Payload.Client.ClientID,
 		Email:    r.Email,
 	}
 	if err := m.ChangePasswordStart(form); err != nil {
@@ -101,11 +113,15 @@ func passwordResetCheck(ctx echo.Context) error {
 	}
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
-	if err := m.ChangePasswordCheck(form.Challenge, form.Token); err != nil {
+
+	email, err := m.ChangePasswordCheck(form.Token)
+	if err != nil {
 		return apierror.TokenOutdated
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"email": email,
+	})
 }
 
 func passwordResetSet(ctx echo.Context) error {
@@ -124,7 +140,6 @@ func passwordResetSet(ctx echo.Context) error {
 
 	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	f := &models.ChangePasswordVerifyForm{
-		ClientID:       form.Challenge,
 		Token:          form.Token,
 		Password:       form.Password,
 		PasswordRepeat: form.Password,

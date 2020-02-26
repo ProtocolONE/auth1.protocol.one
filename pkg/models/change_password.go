@@ -25,6 +25,7 @@ type ChangePasswordStartForm struct {
 
 // ChangePasswordVerifyForm contains form fields for completing a password change.
 type ChangePasswordVerifyForm struct {
+	//todo: remove field? used in dbconnections/password-change and unused in /api/password/reset
 	// ClientID is the application id
 	ClientID string `form:"client_id" json:"client_id" validate:"required"`
 
@@ -39,7 +40,8 @@ type ChangePasswordVerifyForm struct {
 }
 
 type ChangePasswordTokenSource struct {
-	Email string
+	Email    string
+	ClientID string
 }
 
 func (a *ChangePasswordStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {

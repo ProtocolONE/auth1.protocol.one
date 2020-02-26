@@ -46,6 +46,7 @@ func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistr
 }
 
 func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.GeneralError {
+
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
@@ -70,7 +71,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		Length: app.PasswordSettings.TokenLength,
 		TTL:    app.PasswordSettings.TokenTTL,
 	}
-	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email}, ottSettings)
+	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email, ClientID: form.ClientID}, ottSettings)
 	if err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
@@ -87,11 +88,13 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		UserName         string
 		PlatformName     string
 		Token            string
+		Challenge        string
 		SupportPortalUrl string
 	}{
 		UserName:         "",
 		PlatformName:     "",
 		Token:            token.Token,
+		Challenge:        form.ClientID,
 		SupportPortalUrl: "",
 	})
 	if err != nil {
@@ -110,18 +113,18 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "password_repeat", Message: models.ErrorPasswordRepeat, Err: errors.New(models.ErrorPasswordRepeat)}
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
+	ts := &models.ChangePasswordTokenSource{}
+	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(ts.ClientID))
 	if err != nil {
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
 	if false == validator.IsPasswordValid(app, form.Password) {
 		return &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
-	}
-
-	ts := &models.ChangePasswordTokenSource{}
-	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
-		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
@@ -150,19 +153,11 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	return nil
 }
 
-func (m *ChangePasswordManager) ChangePasswordCheck(clientID, token string) *models.GeneralError {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(clientID))
-	if err != nil {
-		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+func (m *ChangePasswordManager) ChangePasswordCheck(token string) (string, *models.GeneralError) {
+	ts := &models.ChangePasswordTokenSource{}
+	if err := m.r.OneTimeTokenService().Get(token, ts); err != nil {
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
-	ottSettings := &models.OneTimeTokenSettings{
-		Length: app.PasswordSettings.TokenLength,
-		TTL:    app.PasswordSettings.TokenTTL,
-	}
-	if err := m.r.OneTimeTokenService().Get(token, ottSettings); err != nil {
-		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
-	}
-
-	return nil
+	return ts.Email, nil
 }

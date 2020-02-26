@@ -184,7 +184,7 @@ func (m *MfaApplicationProviderForm) MarshalLogObject(enc zapcore.ObjectEncoder)
 }
 
 func (m *MfaChallengeForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("ClientId", m.ClientId)
+	enc.AddString("ClientID", m.ClientId)
 	enc.AddString("Name", m.Connection)
 	enc.AddString("Type", m.Type)
 	enc.AddString("Token", m.Token)

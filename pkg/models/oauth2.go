@@ -6,19 +6,19 @@ import (
 
 // Oauth2LoginForm contains form fields for requesting a login form.
 type Oauth2LoginForm struct {
-	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"login_challenge" form:"login_challenge" validate:"required"`
 }
 
 func (a *Oauth2LoginForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("ClientID", a.Challenge)
 
 	return nil
 }
 
 // Oauth2LoginSubmitForm contains form fields for submit login form.
 type Oauth2LoginSubmitForm struct {
-	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 
 	// Email is the email address of user for login request.
@@ -40,19 +40,19 @@ type Oauth2LoginSubmitForm struct {
 
 // Oauth2ConsentForm contains form fields for request of consent.
 type Oauth2ConsentForm struct {
-	// Challenge is the code of the oauth2 consent challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 consent challenge. This code to generates of the Hydra service.
 	Challenge string `query:"consent_challenge" form:"consent_challenge" validate:"required"`
 }
 
 func (a *Oauth2ConsentForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("ClientID", a.Challenge)
 
 	return nil
 }
 
 // Oauth2ConsentSubmitForm contains form fields for submit consent form.
 type Oauth2ConsentSubmitForm struct {
-	// Challenge is the code of the oauth2 consent challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 consent challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 
 	// Scope is a list of scopes that the user has taken.
@@ -60,7 +60,7 @@ type Oauth2ConsentSubmitForm struct {
 }
 
 func (a *Oauth2LoginSubmitForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("ClientID", a.Challenge)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")
 
@@ -153,7 +153,7 @@ type Oauth2TokenIntrospection struct {
 
 // Oauth2SignUpForm contains form fields for request signup form.
 type Oauth2SignUpForm struct {
-	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
+	// ClientID is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 
 	// Username represent user nickname, optional.
@@ -176,7 +176,7 @@ type Oauth2SignUpForm struct {
 }
 
 func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("ClientID", a.Challenge)
 	enc.AddString("Username", a.Username)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")

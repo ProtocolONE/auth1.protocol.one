@@ -16,7 +16,7 @@
 <script>
     window.AUTH_API_URL = "{{index . "AuthDomain"}}";
     window.AUTH_FORM_DATA = {
-        challenge: {{index . "Challenge"}},
+        challenge: {{index . "ClientID"}},
         clientId: {{index . "ClientID"}},
         previousLogin: {{index . "PreviousLogin"}},
         socialProviders: [{{ range $value := index . "SocProviders" }}
