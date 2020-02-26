@@ -30,8 +30,8 @@ func InitLogin(cfg *Server) error {
 	// g.GET("", authorize)
 
 	s := NewSocial(cfg.Registry)
-	cfg.Echo.GET("/api/provider/:name/forward", s.Forward)
-	cfg.Echo.GET("/api/provider/:name/callback", s.Callback)
+	cfg.Echo.GET("/api/provider/:name/forward", s.Forward, apierror.Redirect("/error"))
+	cfg.Echo.GET("/api/provider/:name/callback", s.Callback, apierror.Redirect("/error"))
 
 	return nil
 }

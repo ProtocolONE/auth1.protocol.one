@@ -2,6 +2,7 @@ package apierror
 
 import (
 	"net/http"
+	"net/url"
 
 	"errors"
 
@@ -52,4 +53,32 @@ func resp(ctx echo.Context, e *APIError) error {
 		APIError:  e,
 	}
 	return ctx.JSON(code, resp)
+}
+
+func Redirect(path string) echo.MiddlewareFunc {
+	u, err := url.Parse(path)
+	if err != nil {
+		panic(err)
+	}
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			err := next(ctx)
+			if err == nil {
+				return nil
+			}
+
+			var e *APIError
+			if !errors.As(err, &e) {
+				ctx.Logger().Error(err)
+				e = Unknown(err)
+			}
+
+			v := u.Query()
+			v.Add("error", e.Message)
+			v.Add("code", e.Code)
+			u.RawQuery = v.Encode()
+			return ctx.Redirect(http.StatusTemporaryRedirect, u.String())
+
+		}
+	}
 }
