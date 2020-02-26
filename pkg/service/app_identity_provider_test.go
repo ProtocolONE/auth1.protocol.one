@@ -166,9 +166,9 @@ func TestIdentityProvidersGetAuthUrlReturnImplodedUrlParameters(t *testing.T) {
 
 func TestIdentityProvidersGetAuthUrl(t *testing.T) {
 	ip := NewAppIdentityProviderService()
-	ipc := &models.AppIdentityProvider{EndpointAuthURL: "http://localhost/", ClientID: "1"}
+	ipc := &models.AppIdentityProvider{EndpointAuthURL: "http://localhost/", ClientID: "1", Name: "google"}
 	url, _ := ip.GetAuthUrl("http://localhost", ipc, "")
 
-	expected := "http://localhost/?client_id=1&redirect_uri=http%3A%2F%2Flocalhost%2Fapi%2Fauthorize%2Fresult&response_type=code&state=IiI%3D"
+	expected := "http://localhost/?client_id=1&redirect_uri=http%3A%2F%2Flocalhost%2Fapi%2Fprovider%2Fgoogle%2Fcallback&response_type=code&state=IiI%3D"
 	assert.Equal(t, expected, url, "Invalid social auth url")
 }

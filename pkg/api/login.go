@@ -16,22 +16,22 @@ import (
 func InitLogin(cfg *Server) error {
 	// cfg.Echo.GET("/login/form", loginPage)
 
-	g := cfg.Echo.Group("/api/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			db := c.Get("database").(database.MgoSession)
-			c.Set("login_manager", manager.NewLoginManager(db, cfg.Registry))
+	// g := cfg.Echo.Group("/api/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
+	// 	return func(c echo.Context) error {
+	// 		db := c.Get("database").(database.MgoSession)
+	// 		c.Set("login_manager", manager.NewLoginManager(db, cfg.Registry))
 
-			return next(c)
-		}
-	})
+	// 		return next(c)
+	// 	}
+	// })
 
-	g.GET("/link", authorizeLink)
+	// g.GET("/link", authorizeLink)
 	// g.GET("/result", authorizeResult)
-	g.GET("", authorize)
+	// g.GET("", authorize)
 
 	s := NewSocial(cfg.Registry)
-	g.GET("/result", s.Callback)
 	cfg.Echo.GET("/api/provider/:name/forward", s.Forward)
+	cfg.Echo.GET("/api/provider/:name/callback", s.Callback)
 
 	return nil
 }
@@ -64,7 +64,8 @@ func (s *Social) Forward(ctx echo.Context) error {
 
 func (s *Social) Callback(ctx echo.Context) error {
 	var (
-		req struct {
+		name = ctx.Param("name")
+		req  struct {
 			Code  string `query:"code"`
 			State string `query:"state"`
 		}
@@ -78,7 +79,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 		return apierror.InvalidRequest(err)
 	}
 
-	url, err := m.Callback("facebook", req.Code, req.State, domain)
+	url, err := m.Callback(name, req.Code, req.State, domain)
 	if err != nil {
 		return err
 	}
