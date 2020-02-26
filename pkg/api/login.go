@@ -9,6 +9,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,10 +26,64 @@ func InitLogin(cfg *Server) error {
 	})
 
 	g.GET("/link", authorizeLink)
-	g.GET("/result", authorizeResult)
+	// g.GET("/result", authorizeResult)
 	g.GET("", authorize)
 
+	s := NewSocial(cfg.Registry)
+	g.GET("/result", s.Callback)
+	cfg.Echo.GET("/api/provider/:name/forward", s.Forward)
+
 	return nil
+}
+
+type Social struct {
+	registry service.InternalRegistry
+}
+
+func NewSocial(r service.InternalRegistry) *Social {
+	return &Social{r}
+}
+
+func (s *Social) Forward(ctx echo.Context) error {
+	var (
+		name      = ctx.Param("name")
+		challenge = ctx.QueryParam("login_challenge")
+		domain    = fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
+	)
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	url, err := m.ForwardUrl(challenge, name, domain)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Redirect(http.StatusPermanentRedirect, url)
+}
+
+func (s *Social) Callback(ctx echo.Context) error {
+	var (
+		req struct {
+			Code  string `query:"code"`
+			State string `query:"state"`
+		}
+		domain = fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
+	)
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	if err := ctx.Bind(&req); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+
+	url, err := m.Callback("facebook", req.Code, req.State, domain)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func authorize(ctx echo.Context) error {
