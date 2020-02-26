@@ -230,7 +230,7 @@ func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIde
 }
 
 func (s *AppIdentityProviderService) callbackUrl(domain, provider string) string {
-	return fmt.Sprintf("%s/api/provider/%s/callback", domain, provider)
+	return fmt.Sprintf("%s/api/providers/%s/callback", domain, provider)
 }
 
 func (s *AppIdentityProviderService) GetSocialProfile(ctx context.Context, domain string, code string, ip *models.AppIdentityProvider) (*models.UserIdentitySocial, error) {

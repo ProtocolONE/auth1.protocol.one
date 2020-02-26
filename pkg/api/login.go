@@ -30,8 +30,10 @@ func InitLogin(cfg *Server) error {
 	// g.GET("", authorize)
 
 	s := NewSocial(cfg.Registry)
-	cfg.Echo.GET("/api/provider/:name/forward", s.Forward, apierror.Redirect("/error"))
-	cfg.Echo.GET("/api/provider/:name/callback", s.Callback, apierror.Redirect("/error"))
+
+	cfg.Echo.GET("/api/providers", s.List)
+	cfg.Echo.GET("/api/providers/:name/forward", s.Forward, apierror.Redirect("/error"))
+	cfg.Echo.GET("/api/providers/:name/callback", s.Callback, apierror.Redirect("/error"))
 
 	return nil
 }
@@ -42,6 +44,33 @@ type Social struct {
 
 func NewSocial(r service.InternalRegistry) *Social {
 	return &Social{r}
+}
+
+type ProviderInfo struct {
+	Name string `json:"name"`
+	// Url  string `json:"url"`
+}
+
+func (s *Social) List(ctx echo.Context) error {
+	var challenge = ctx.QueryParam("login_challenge")
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	ips, err := m.Providers(challenge)
+	if err != nil {
+		return err
+	}
+
+	var res []ProviderInfo
+	for i := range ips {
+		res = append(res, ProviderInfo{
+			Name: ips[i].Name,
+			// Url:  "",
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, res)
 }
 
 func (s *Social) Forward(ctx echo.Context) error {

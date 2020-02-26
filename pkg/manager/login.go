@@ -51,6 +51,8 @@ type LoginManagerInterface interface {
 	ForwardUrl(challenge, provider, domain string) (string, error)
 
 	Callback(provider, code, state, domain string) (string, error)
+
+	Providers(challenge string) ([]*models.AppIdentityProvider, error)
 }
 
 // LoginManager is the login manager.
@@ -79,6 +81,21 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 
 type State struct {
 	Challenge string `json:"challenge`
+}
+
+func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get app data")
+	}
+
+	ips := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	return ips, nil
 }
 
 func (m *LoginManager) Callback(provider, code, state, domain string) (string, error) {
