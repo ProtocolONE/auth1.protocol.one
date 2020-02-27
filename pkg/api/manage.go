@@ -55,8 +55,8 @@ func InitManage(cfg *Server) error {
 
 func passwordReset(ctx echo.Context) error {
 	var r struct {
-		CaptchaToken  string `query:"captcha_token" r:"token" validate:"required" json:"token"`
-		CaptchaAction string `query:"captcha_action" r:"action" validate:"required" json:"action"`
+		CaptchaToken  string `query:"captchaToken" r:"token" validate:"required" json:"token"`
+		CaptchaAction string `query:"captchaAction" r:"action" validate:"required" json:"action"`
 		Challenge     string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
 		Email         string `query:"email" r:"email" validate:"required" json:"email"`
 	}
