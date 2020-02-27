@@ -53,6 +53,8 @@ type LoginManagerInterface interface {
 	Callback(provider, code, state, domain string) (string, error)
 
 	Providers(challenge string) ([]*models.AppIdentityProvider, error)
+
+	Profile(token string) (*models.UserIdentitySocial, error)
 }
 
 // LoginManager is the login manager.
@@ -81,6 +83,21 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 
 type State struct {
 	Challenge string `json:"challenge`
+}
+
+type SocialToken struct {
+	UserIdentityID string                     `json:"user_ident"`
+	Profile        *models.UserIdentitySocial `json:"profile"`
+	Provider       string                     `json:"provider"`
+}
+
+func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error) {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Get(token, &t); err != nil {
+		return nil, errors.Wrap(err, "can't get token data")
+	}
+
+	return t.Profile, nil
 }
 
 func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
@@ -165,13 +182,28 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 		}
 
 		if userIdentity != nil && err != mgo.ErrNotFound {
-			// TODO user context
-			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+			ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+				UserIdentityID: userIdentity.ID.Hex(),
+				Profile:        clientProfile,
+				Provider:       provider,
+			}, app.OneTimeTokenSettings)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to create one time link token")
+			}
+
+			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
 		}
 	}
 
-	// TODO store profile in context
-	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+	ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+		Profile:  clientProfile,
+		Provider: provider,
+	}, app.OneTimeTokenSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create one time link token")
+	}
+
+	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
 }
 
 func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {

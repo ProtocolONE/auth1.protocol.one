@@ -32,6 +32,8 @@ func InitLogin(cfg *Server) error {
 	s := NewSocial(cfg.Registry)
 
 	cfg.Echo.GET("/api/providers", s.List)
+	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
+	// redirect based apis
 	cfg.Echo.GET("/api/providers/:name/forward", s.Forward, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/providers/:name/callback", s.Callback, apierror.Redirect("/error"))
 
@@ -114,6 +116,23 @@ func (s *Social) Callback(ctx echo.Context) error {
 	}
 
 	return ctx.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+func (s *Social) Profile(ctx echo.Context) error {
+	var token = ctx.QueryParam("token")
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	profile, err := m.Profile(token)
+	if err != nil {
+		return err
+	}
+
+	profile.HideSensitive()
+
+	return ctx.JSON(http.StatusOK, profile)
+
 }
 
 func authorize(ctx echo.Context) error {
