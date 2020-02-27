@@ -55,10 +55,10 @@ func InitManage(cfg *Server) error {
 
 func passwordReset(ctx echo.Context) error {
 	var r struct {
-		Token     string `query:"token" r:"token" validate:"required" json:"token"`
-		Action    string `query:"action" r:"action" validate:"required" json:"action"`
-		Challenge string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
-		Email     string `query:"email" r:"email" validate:"required" json:"email"`
+		CaptchaToken  string `query:"captcha_token" r:"token" validate:"required" json:"token"`
+		CaptchaAction string `query:"captcha_action" r:"action" validate:"required" json:"action"`
+		Challenge     string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
+		Email         string `query:"email" r:"email" validate:"required" json:"email"`
 	}
 
 	if err := ctx.Bind(&r); err != nil {
@@ -69,7 +69,7 @@ func passwordReset(ctx echo.Context) error {
 	}
 
 	recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
-	ok, err := recaptcha.Verify(ctx.Request().Context(), r.Token, r.Action, "")
+	ok, err := recaptcha.Verify(ctx.Request().Context(), r.CaptchaToken, r.CaptchaAction, "")
 	if err != nil {
 		return apierror.Unknown(err)
 	}
@@ -102,7 +102,9 @@ func passwordReset(ctx echo.Context) error {
 		return apierror.Unknown(err)
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	return ctx.JSON(http.StatusNoContent, map[string]string{
+		"status": "ok",
+	})
 }
 
 func passwordResetCheck(ctx echo.Context) error {
