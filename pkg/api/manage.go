@@ -11,6 +11,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 )
@@ -68,15 +69,6 @@ func passwordReset(ctx echo.Context) error {
 		return apierror.InvalidParameters(err)
 	}
 
-	recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
-	ok, err := recaptcha.Verify(ctx.Request().Context(), r.CaptchaToken, r.CaptchaAction, "")
-	if err != nil {
-		return apierror.Unknown(err)
-	}
-	if !ok {
-		return apierror.CaptchaRequired
-	}
-
 	registry, ok := ctx.Get("registry").(service.InternalRegistry)
 	if !ok {
 		return apierror.Unknown(nil)
@@ -85,6 +77,21 @@ func passwordReset(ctx echo.Context) error {
 	req, err := registry.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: r.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
 		return apierror.InvalidChallenge
+	}
+	app, err := registry.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return err
+	}
+
+	if app.RequiresCaptcha {
+		recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
+		ok, err := recaptcha.Verify(ctx.Request().Context(), r.CaptchaToken, r.CaptchaAction, "")
+		if err != nil {
+			return apierror.Unknown(err)
+		}
+		if !ok {
+			return apierror.CaptchaRequired
+		}
 	}
 
 	m, ok := ctx.Get("password_manager").(*manager.ChangePasswordManager)
