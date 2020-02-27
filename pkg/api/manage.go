@@ -106,7 +106,7 @@ func passwordReset(ctx echo.Context) error {
 		return apierror.Unknown(err)
 	}
 
-	return ctx.JSON(http.StatusNoContent, map[string]string{
+	return ctx.JSON(http.StatusOK, map[string]string{
 		"status": "ok",
 	})
 }
