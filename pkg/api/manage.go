@@ -99,6 +99,10 @@ func passwordReset(ctx echo.Context) error {
 	if err := m.ChangePasswordStart(form); err != nil {
 		ctx.Logger().Error(err.Error())
 		ctx.Error(err.Err)
+		if err.Code == "email" {
+			// email not found
+			return apierror.EmailNotFound
+		}
 		return apierror.Unknown(err)
 	}
 
