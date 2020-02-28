@@ -1,9 +1,13 @@
 package manager
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
@@ -14,8 +18,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 var (
@@ -45,6 +47,12 @@ type LoginManagerInterface interface {
 	//
 	// If the user refused to link, then a new account will be created.
 	AuthorizeLink(echo.Context, *models.AuthorizeLinkForm) (string, *models.GeneralError)
+
+	ForwardUrl(challenge, provider, domain string) (string, error)
+
+	Callback(provider, code, state, domain string) (string, error)
+
+	Providers(challenge string) ([]*models.AppIdentityProvider, error)
 }
 
 // LoginManager is the login manager.
@@ -69,6 +77,120 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 	}
 
 	return m
+}
+
+type State struct {
+	Challenge string `json:"challenge`
+}
+
+func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get app data")
+	}
+
+	ips := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	return ips, nil
+}
+
+func (m *LoginManager) Callback(provider, code, state, domain string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(state)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to decode state param")
+	}
+
+	var s State
+	if err := json.Unmarshal(data, &s); err != nil {
+		return "", errors.Wrap(err, "unable to unmarshal state")
+	}
+
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: s.Challenge, Context: context.TODO()})
+	if err != nil {
+		return "", errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return "", errors.New("identity provider not found")
+	}
+
+	clientProfile, err := m.identityProviderService.GetSocialProfile(context.TODO(), domain, code, ip)
+	if err != nil || clientProfile == nil || clientProfile.ID == "" {
+		if err == nil {
+			err = errors.New("unable to load identity profile data")
+		}
+		return "", err
+	}
+
+	userIdentity, err := m.userIdentityService.Get(app, ip, clientProfile.ID)
+	if err != nil && err != mgo.ErrNotFound {
+		return "", errors.Wrap(err, "can't get user data")
+	}
+
+	if userIdentity != nil && err != mgo.ErrNotFound {
+
+		id := userIdentity.UserID.Hex()
+		// TODO sucessfully login
+		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
+			Context:   context.TODO(),
+			Challenge: s.Challenge,
+			Body:      &models2.HandledLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
+		})
+		if err != nil {
+			return "", errors.Wrap(err, "unable to accept login challenge")
+		}
+
+		return reqACL.Payload.RedirectTo, nil
+	}
+
+	if clientProfile.Email != "" {
+		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+		if ipPass == nil {
+			return "", errors.New("default identity provider not found")
+		}
+
+		userIdentity, err := m.userIdentityService.Get(app, ipPass, clientProfile.Email)
+		if err != nil && err != mgo.ErrNotFound {
+			return "", errors.Wrap(err, "unable to get user identity")
+		}
+
+		if userIdentity != nil && err != mgo.ErrNotFound {
+			// TODO user context
+			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+		}
+	}
+
+	// TODO store profile in context
+	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+}
+
+func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return "", errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return "", errors.New("identity provider not found")
+	}
+
+	return m.identityProviderService.GetAuthUrl(domain, ip, &State{Challenge: challenge})
 }
 
 func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, *models.GeneralError) {

@@ -6,6 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"reflect"
+	"regexp"
+	"strings"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -14,12 +21,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/twitch"
 	"golang.org/x/oauth2/vk"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 // AppIdentityProviderServiceInterface describes of methods for the AppIdentityProviderService.
@@ -209,7 +210,7 @@ func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIde
 	v := url.Values{
 		"response_type": {"code"},
 		"client_id":     {ip.ClientID},
-		"redirect_uri":  {fmt.Sprintf("%s/authorize/result", domain)},
+		"redirect_uri":  {s.callbackUrl(domain, ip.Name)},
 	}
 	if len(ip.ClientScopes) > 0 {
 		v.Set("scope", strings.Join(ip.ClientScopes, " "))
@@ -228,8 +229,12 @@ func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIde
 	return buf.String(), nil
 }
 
+func (s *AppIdentityProviderService) callbackUrl(domain, provider string) string {
+	return fmt.Sprintf("%s/api/providers/%s/callback", domain, provider)
+}
+
 func (s *AppIdentityProviderService) GetSocialProfile(ctx context.Context, domain string, code string, ip *models.AppIdentityProvider) (*models.UserIdentitySocial, error) {
-	rUrl := fmt.Sprintf("%s/authorize/result", domain)
+	rUrl := s.callbackUrl(domain, ip.Name)
 	conf := &oauth2.Config{
 		ClientID:     ip.ClientID,
 		ClientSecret: ip.ClientSecret,
