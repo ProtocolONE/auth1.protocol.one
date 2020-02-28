@@ -27,6 +27,7 @@ var (
 	MethodNotAllowed   = New(1013, "method_not_allowed", http.StatusMethodNotAllowed)
 	NotFound           = New(1014, "not_found", http.StatusNotFound)
 	CaptchaRequired    = New(1015, "captcha_required", http.StatusForbidden)
+	UnknownCaptchaType = New(1016, "unknown_captcha_type", http.StatusBadRequest)
 )
 
 func New(code int, message string, status int) *APIError {

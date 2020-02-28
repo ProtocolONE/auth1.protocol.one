@@ -1,8 +1,12 @@
 package manager
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -16,7 +20,6 @@ import (
 	models2 "github.com/ory/hydra/sdk/go/hydra/models"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
-	"time"
 )
 
 const (
@@ -102,11 +105,18 @@ type OauthManager struct {
 	r                       service.InternalRegistry
 	session                 service.SessionService
 	ApiCfg                  *config.Server
+	recaptcha               *captcha.Recaptcha
 	lm LoginManagerInterface
 }
 
 // NewOauthManager return new oauth manager.
-func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *config.Session, h *config.Hydra, apiCfg *config.Server) OauthManagerInterface {
+func NewOauthManager(
+	db database.MgoSession,
+	r service.InternalRegistry,
+	s *config.Session,
+	h *config.Hydra,
+	apiCfg *config.Server,
+	recaptcha *captcha.Recaptcha) OauthManagerInterface {
 	m := &OauthManager{
 		ApiCfg:                  apiCfg,
 		hydraConfig:             h,
@@ -116,6 +126,7 @@ func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *conf
 		authLogService:          service.NewAuthLogService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 		session:                 service.NewSessionService(s.Name),
+		recaptcha:               recaptcha,
 		lm: NewLoginManager(db, r),
 	}
 
@@ -194,7 +205,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			userIdentity, err = m.userIdentityService.Get(app, ipc, form.Email)
 			if err != nil {
-				return "", apierror.EmailNotFound
+				return "", apierror.InvalidCredentials
 			}
 
 			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
@@ -384,19 +395,6 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 	return ok, nil
 }
 
-func CaptchaCompleted(ctx echo.Context, s service.SessionService) (bool, error) {
-	v, err := s.Get(ctx, "captcha")
-	if err != nil {
-		return false, err
-	}
-	if v != nil {
-		if done, ok := v.(bool); ok {
-			return done, nil
-		}
-	}
-	return false, nil
-}
-
 func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, error) {
 	if err := m.session.Set(ctx, loginRememberKey, form.Remember); err != nil {
 		return "", errors.Wrap(err, "error saving session")
@@ -413,12 +411,22 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	if app.RequiresCaptcha {
-		ok, err := CaptchaCompleted(ctx, m.session)
-		if err != nil {
-			return "", errors.Wrap(err, "can't check captcha state")
-		}
-		if !ok {
-			return "", apierror.CaptchaRequired
+		if form.CaptchaToken != "" {
+			ok, err := m.recaptcha.Verify(context.TODO(), form.CaptchaToken, form.CaptchaAction, "") // TODO ip
+			if err != nil {
+				return "", errors.Wrap(err, "can't verify captcha token")
+			}
+			if !ok {
+				return "", apierror.CaptchaRequired
+			}
+		} else {
+			ok, err := captcha.IsCompleted(ctx, m.session)
+			if err != nil {
+				return "", errors.Wrap(err, "can't check captcha state")
+			}
+			if !ok {
+				return "", apierror.CaptchaRequired
+			}
 		}
 	}
 

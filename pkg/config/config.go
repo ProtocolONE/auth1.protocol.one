@@ -86,7 +86,7 @@ type Mailer struct {
 type Recaptcha struct {
 	Key      string `envconfig:"KEY" required:"false" default:""`
 	Secret   string `envconfig:"SECRET" required:"false" default:""`
-	Hostname string `envconfig:"HOSTNAME" required:"false" default:""`
+	Hostname string `required:"false" default:""`
 }
 
 func Load() (*Config, error) {

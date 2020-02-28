@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
@@ -49,6 +50,7 @@ type Social struct {
 	HydraConfig   *config.Hydra
 	SessionConfig *config.Session
 	ServerConfig  *config.Server
+	Recaptcha     *captcha.Recaptcha
 }
 
 func NewSocial(cfg *Server) *Social {
@@ -68,7 +70,7 @@ type ProviderInfo struct {
 func (s *Social) Link(ctx echo.Context) error {
 	var (
 		db = ctx.Get("database").(database.MgoSession)
-		m  = manager.NewOauthManager(db, s.registry, s.SessionConfig, s.HydraConfig, s.ServerConfig)
+		m  = manager.NewOauthManager(db, s.registry, s.SessionConfig, s.HydraConfig, s.ServerConfig, s.Recaptcha)
 	)
 
 	var form = new(models.Oauth2LoginSubmitForm)

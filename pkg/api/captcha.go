@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -15,16 +16,15 @@ func InitCaptcha(cfg *Server) error {
 		recaptcha: cfg.Recaptcha,
 		session:   service.NewSessionService(cfg.SessionConfig.Name),
 	}
-	cfg.Echo.Group("/api/captcha").
-		POST("/re3", c.verify)
+	g := cfg.Echo.Group("/api/captcha")
+	g.POST("/re3", c.verify)
+	g.GET("/key", c.key)
 
 	return nil
 }
 
-var captchaKey = "captcha"
-
 type Captcha struct {
-	recaptcha *service.Recaptcha
+	recaptcha *captcha.Recaptcha
 	session   service.SessionService
 }
 
@@ -43,9 +43,22 @@ func (ctl *Captcha) verify(ctx echo.Context) error {
 		return errors.Wrap(err, "unable to verify captcha")
 	}
 
-	ctl.session.Set(ctx, captchaKey, result)
+	captcha.StoreCompletedStatus(ctx, ctl.session, result)
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"success": result,
 	})
+}
+
+func (ctl *Captcha) key(ctx echo.Context) error {
+	tp := ctx.QueryParam("type")
+
+	switch tp {
+	case "re3":
+		return ctx.JSON(http.StatusOK, map[string]interface{}{
+			"key": ctl.recaptcha.Key(),
+		})
+	default:
+		return apierror.UnknownCaptchaType
+	}
 }
