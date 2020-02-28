@@ -36,7 +36,7 @@ func InitLogin(cfg *Server) error {
 	cfg.Echo.GET("/api/providers", s.List)
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
-	// cfg.Echo.GET("/api/providers/:name/signup", s.Signup)
+	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
 	cfg.Echo.GET("/api/providers/:name/forward", s.Forward, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/providers/:name/callback", s.Callback, apierror.Redirect("/error"))
@@ -65,6 +65,25 @@ func NewSocial(cfg *Server) *Social {
 type ProviderInfo struct {
 	Name string `json:"name"`
 	// Url  string `json:"url"`
+}
+
+func (s *Social) Signup(ctx echo.Context) error {
+	form := new(models.Oauth2SignUpForm)
+	var (
+		db = ctx.Get("database").(database.MgoSession)
+		m  = manager.NewOauthManager(db, s.registry, s.SessionConfig, s.HydraConfig, s.ServerConfig, s.Recaptcha)
+	)
+
+	if err := ctx.Bind(form); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+
+	url, err := m.SignUp(ctx, form)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
 func (s *Social) Link(ctx echo.Context) error {

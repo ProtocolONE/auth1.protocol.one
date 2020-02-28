@@ -501,6 +501,12 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to create user identity")
 	}
 
+		if form.Social != "" {
+			if err := m.lm.AuthLink(form.Social, userIdentity.UserID, app); err != nil {
+				return "",errors.Wrap(err, "can't link social account")
+			}
+		}
+
 	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 		return "", errors.Wrap(err, "unable to add auth log")
 	}

@@ -171,6 +171,8 @@ type Oauth2SignUpForm struct {
 	// Remember is the option for the save user session in the cookie.
 	Remember bool `query:"remember" form:"remember"`
 
+	Social string `query:"social" form:"social"`
+
 	// CaptchaToken is optional captcha token for real user validation
 	CaptchaToken string `query:"captchaToken" form:"captchaToken"`
 
