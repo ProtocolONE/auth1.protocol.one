@@ -55,6 +55,8 @@ type LoginManagerInterface interface {
 	Providers(challenge string) ([]*models.AppIdentityProvider, error)
 
 	Profile(token string) (*models.UserIdentitySocial, error)
+
+	AuthLink(token string, userID bson.ObjectId, app *models.Application) error
 }
 
 // LoginManager is the login manager.
@@ -379,6 +381,33 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		Result:  SocialAccountSuccess,
 		Payload: map[string]interface{}{"token": ott.Token},
 	}, nil
+}
+
+func (m *LoginManager) AuthLink(token string, userID bson.ObjectId, app *models.Application) error {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Use(token, &t); err != nil {
+		return errors.Wrap(err, "can't get token data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, t.Provider)
+	if ip == nil {
+		return errors.New("identity provider not found")
+	}
+
+	userIdentity := &models.UserIdentity{
+		ID:                 bson.NewObjectId(),
+		UserID:             userID,
+		ApplicationID:      app.ID,
+		IdentityProviderID: ip.ID,
+		Email:              t.Profile.Email,
+		ExternalID:         t.Profile.ID,
+		Name:               t.Profile.Name,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+		Credential:         t.Profile.Token,
+	}
+
+	return m.userIdentityService.Create(userIdentity)
 }
 
 func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, *models.GeneralError) {

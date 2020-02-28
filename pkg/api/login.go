@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
@@ -29,10 +30,12 @@ func InitLogin(cfg *Server) error {
 	// g.GET("/result", authorizeResult)
 	// g.GET("", authorize)
 
-	s := NewSocial(cfg.Registry)
+	s := NewSocial(cfg)
 
 	cfg.Echo.GET("/api/providers", s.List)
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
+	cfg.Echo.POST("/api/providers/:name/link", s.Link)
+	// cfg.Echo.GET("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
 	cfg.Echo.GET("/api/providers/:name/forward", s.Forward, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/providers/:name/callback", s.Callback, apierror.Redirect("/error"))
@@ -42,15 +45,47 @@ func InitLogin(cfg *Server) error {
 
 type Social struct {
 	registry service.InternalRegistry
+
+	HydraConfig   *config.Hydra
+	SessionConfig *config.Session
+	ServerConfig  *config.Server
 }
 
-func NewSocial(r service.InternalRegistry) *Social {
-	return &Social{r}
+func NewSocial(cfg *Server) *Social {
+	return &Social{
+		registry:      cfg.Registry,
+		HydraConfig:   cfg.HydraConfig,
+		SessionConfig: cfg.SessionConfig,
+		ServerConfig:  cfg.ServerConfig,
+	}
 }
 
 type ProviderInfo struct {
 	Name string `json:"name"`
 	// Url  string `json:"url"`
+}
+
+func (s *Social) Link(ctx echo.Context) error {
+	var (
+		db = ctx.Get("database").(database.MgoSession)
+		m  = manager.NewOauthManager(db, s.registry, s.SessionConfig, s.HydraConfig, s.ServerConfig)
+	)
+
+	var form = new(models.Oauth2LoginSubmitForm)
+	if err := ctx.Bind(form); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+	if err := ctx.Validate(form); err != nil {
+		return apierror.InvalidParameters(err)
+	}
+
+	url, err := m.Auth(ctx, form)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+
 }
 
 func (s *Social) List(ctx echo.Context) error {

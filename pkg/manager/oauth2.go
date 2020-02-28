@@ -102,6 +102,7 @@ type OauthManager struct {
 	r                       service.InternalRegistry
 	session                 service.SessionService
 	ApiCfg                  *config.Server
+	lm LoginManagerInterface
 }
 
 // NewOauthManager return new oauth manager.
@@ -115,6 +116,7 @@ func NewOauthManager(db database.MgoSession, r service.InternalRegistry, s *conf
 		authLogService:          service.NewAuthLogService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
 		session:                 service.NewSessionService(s.Name),
+		lm: NewLoginManager(db, r),
 	}
 
 	return m
@@ -199,7 +201,13 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			if err := encryptor.Compare(userIdentity.Credential, form.Password); err != nil {
 				return "", apierror.InvalidCredentials
 			}
+
+		if form.Social != "" {
+			if err := m.lm.AuthLink(form.Social, userIdentity.UserID, app); err != nil {
+				return "",errors.Wrap(err, "can't link social account")
+			}
 		}
+	}
 
 		user, err := m.userService.Get(userIdentity.UserID)
 		if err != nil {
@@ -215,6 +223,8 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", errors.Wrap(err, "unable to add auth log")
 		}
 		userId = user.ID.Hex()
+
+
 	} else {
 		form.Remember = true
 	}

@@ -38,6 +38,7 @@ func Unknown(err error) *APIError {
 }
 
 func InvalidRequest(err error) *APIError {
+	fmt.Println(err)
 	return invalidRequest
 }
 
