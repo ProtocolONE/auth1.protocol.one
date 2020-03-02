@@ -21,6 +21,9 @@ type ChangePasswordStartForm struct {
 
 	// Email is the email address of the user to which the account is registered.
 	Email string `json:"email" form:"email" validate:"required,email"`
+
+	//
+	Challenge string `json:"challenge" form:"challenge" validate:""`
 }
 
 // ChangePasswordVerifyForm contains form fields for completing a password change.
@@ -40,8 +43,9 @@ type ChangePasswordVerifyForm struct {
 }
 
 type ChangePasswordTokenSource struct {
-	Email    string
-	ClientID string
+	Email     string
+	ClientID  string
+	Challenge string
 }
 
 func (a *ChangePasswordStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {

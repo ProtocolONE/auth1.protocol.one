@@ -21,6 +21,7 @@ func InitManage(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
+			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig, cfg.Recaptcha))
 			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig, cfg.MailTemplates))
 			c.Set("recaptcha", cfg.Recaptcha)
 			c.Set("registry", cfg.Registry)
@@ -100,8 +101,9 @@ func passwordReset(ctx echo.Context) error {
 	}
 
 	form := &models.ChangePasswordStartForm{
-		ClientID: req.Payload.Client.ClientID,
-		Email:    r.Email,
+		ClientID:  req.Payload.Client.ClientID,
+		Email:     r.Email,
+		Challenge: r.Challenge,
 	}
 	if err := m.ChangePasswordStart(form); err != nil {
 		ctx.Logger().Error(err.Error())
@@ -155,8 +157,28 @@ func passwordResetSet(ctx echo.Context) error {
 		return apierror.InvalidParameters(err)
 	}
 
-	m := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	registry, ok := ctx.Get("registry").(service.InternalRegistry)
+	if !ok {
+		return apierror.Unknown(nil)
+	}
+
+	m, ok := ctx.Get("password_manager").(*manager.ChangePasswordManager)
+	if !ok {
+		return apierror.Unknown(nil)
+	}
+
+	oauthManager, ok := ctx.Get("oauth_manager").(*manager.OauthManager)
+	if !ok {
+		return apierror.Unknown(nil)
+	}
+
+	ts := &models.ChangePasswordTokenSource{}
+	if err := registry.OneTimeTokenService().Get(form.Token, ts); err != nil {
+		return apierror.InvalidToken
+	}
+
 	f := &models.ChangePasswordVerifyForm{
+		ClientID:       ts.ClientID,
 		Token:          form.Token,
 		Password:       form.Password,
 		PasswordRepeat: form.Password,
@@ -167,10 +189,18 @@ func passwordResetSet(ctx echo.Context) error {
 
 	// todo: logout & drop sessions
 
-	// return URL to login
-	return ctx.JSON(http.StatusOK, map[string]interface{}{
-		"url": "",
-	})
+	// login
+	loginForm := new(models.Oauth2LoginSubmitForm)
+	loginForm.Challenge = ts.Challenge
+	loginForm.Email = ts.Email
+	loginForm.Password = form.Password
+
+	url, err := oauthManager.Auth(ctx, loginForm)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
 // Manage
