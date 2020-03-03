@@ -215,7 +215,6 @@ func (s *Server) setupRoutes() error {
 	routes := []func(c *Server) error{
 		InitLogin,
 		InitPasswordLess,
-		InitChangePassword,
 		InitMFA,
 		InitManage,
 		InitOauth2,
