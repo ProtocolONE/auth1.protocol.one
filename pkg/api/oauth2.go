@@ -129,7 +129,7 @@ func oauthConsent(ctx echo.Context) error {
 
 	return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
-		"ClientID":          form.Challenge,
+		"Challenge":         form.Challenge,
 		"Scopes":            scopes,
 	})
 }
@@ -151,7 +151,7 @@ func oauthConsentSubmit(ctx echo.Context) error {
 	if err != nil {
 		return ctx.Render(http.StatusOK, "oauth_consent.html", map[string]interface{}{
 			"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
-			"ClientID":          form.Challenge,
+			"Challenge":         form.Challenge,
 			"Scope":             m.GetScopes(form.Scope),
 			"Error":             err.Error(),
 		})

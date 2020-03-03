@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
@@ -54,7 +55,7 @@ func passwordReset(ctx echo.Context) error {
 
 	registry, ok := ctx.Get("registry").(service.InternalRegistry)
 	if !ok {
-		return apierror.Unknown(nil)
+		return errors.New("can't get some manager")
 	}
 
 	req, err := registry.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: r.Challenge, Context: ctx.Request().Context()})
@@ -70,7 +71,7 @@ func passwordReset(ctx echo.Context) error {
 		recaptcha := ctx.Get("recaptcha").(*captcha.Recaptcha)
 		ok, err := recaptcha.Verify(ctx.Request().Context(), r.CaptchaToken, r.CaptchaAction, "")
 		if err != nil {
-			return apierror.Unknown(err)
+			return err
 		}
 		if !ok {
 			return apierror.CaptchaRequired
@@ -79,7 +80,7 @@ func passwordReset(ctx echo.Context) error {
 
 	m, ok := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	if !ok {
-		return apierror.Unknown(nil)
+		return errors.New("can't get some manager")
 	}
 
 	form := &models.ChangePasswordStartForm{
@@ -94,7 +95,7 @@ func passwordReset(ctx echo.Context) error {
 			// email not found
 			return apierror.EmailNotFound
 		}
-		return apierror.Unknown(err)
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]string{
@@ -141,17 +142,17 @@ func passwordResetSet(ctx echo.Context) error {
 
 	registry, ok := ctx.Get("registry").(service.InternalRegistry)
 	if !ok {
-		return apierror.Unknown(nil)
+		return errors.New("can't get some manager")
 	}
 
 	m, ok := ctx.Get("password_manager").(*manager.ChangePasswordManager)
 	if !ok {
-		return apierror.Unknown(nil)
+		return errors.New("can't get some manager")
 	}
 
 	oauthManager, ok := ctx.Get("oauth_manager").(*manager.OauthManager)
 	if !ok {
-		return apierror.Unknown(nil)
+		return errors.New("can't get some manager")
 	}
 
 	ts := &models.ChangePasswordTokenSource{}
@@ -166,7 +167,7 @@ func passwordResetSet(ctx echo.Context) error {
 		PasswordRepeat: form.Password,
 	}
 	if err := m.ChangePasswordVerify(f); err != nil {
-		return apierror.Unknown(err)
+		return err
 	}
 
 	// todo: logout & drop sessions

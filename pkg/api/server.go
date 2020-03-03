@@ -221,6 +221,7 @@ func (s *Server) setupRoutes() error {
 		InitOauth2,
 		InitHealth,
 		InitCaptcha,
+		InitPasswordReset,
 	}
 
 	for _, r := range routes {

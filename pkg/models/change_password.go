@@ -22,7 +22,7 @@ type ChangePasswordStartForm struct {
 	// Email is the email address of the user to which the account is registered.
 	Email string `json:"email" form:"email" validate:"required,email"`
 
-	//
+	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `json:"challenge" form:"challenge" validate:""`
 }
 
