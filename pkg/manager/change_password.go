@@ -25,7 +25,7 @@ type ChangePasswordManagerInterface interface {
 	ChangePasswordVerify(*models.ChangePasswordVerifyForm) *models.GeneralError
 
 	// ChangePasswordCheck verifies the token and returns user's email from token
-	ChangePasswordCheck(token string) (string, *models.GeneralError)
+	ChangePasswordCheck(token string) (string, error)
 }
 
 // ChangePasswordManager is the change password manager.
@@ -157,10 +157,10 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	return nil
 }
 
-func (m *ChangePasswordManager) ChangePasswordCheck(token string) (string, *models.GeneralError) {
+func (m *ChangePasswordManager) ChangePasswordCheck(token string) (string, error) {
 	ts := &models.ChangePasswordTokenSource{}
 	if err := m.r.OneTimeTokenService().Get(token, ts); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
+		return "", errors.New("Unable to get OneTimeToken")
 	}
 
 	return ts.Email, nil
