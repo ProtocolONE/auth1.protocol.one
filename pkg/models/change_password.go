@@ -23,7 +23,7 @@ type ChangePasswordStartForm struct {
 	Email string `json:"email" form:"email" validate:"required,email"`
 
 	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
-	Challenge string `json:"challenge" form:"challenge" validate:""`
+	Challenge string `json:"challenge" form:"challenge" validate:"required"`
 }
 
 // ChangePasswordVerifyForm contains form fields for completing a password change.
