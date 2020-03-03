@@ -206,7 +206,7 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routes := []func(c *Server) error{
-		InitLogin,
+		InitSocial,
 		InitPasswordLess,
 		InitChangePassword,
 		InitMFA,

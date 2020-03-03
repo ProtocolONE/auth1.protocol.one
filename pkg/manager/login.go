@@ -28,34 +28,20 @@ var (
 
 // LoginManagerInterface describes of methods for the manager.
 type LoginManagerInterface interface {
-	// Authorize generates an authorization URL for the social network to redirect the user.
-	Authorize(echo.Context, *models.AuthorizeForm) (string, *models.GeneralError)
 
-	// AuthorizeResult validates the response after authorization in the social network.
-	//
-	// In case of successful authentication, the user will be generated a one-time token to complete the
-	// authorization in the basic authorization form.
-	//
-	// If a user has not previously logged in through a social network, but an account has been found with the same
-	// mail as in a social network, then the user will be asked to link these accounts.
-	AuthorizeResult(echo.Context, *models.AuthorizeResultForm) (*models.AuthorizeResultResponse, *models.GeneralError)
-
-	// AuthorizeLink implements the situation with linking the account from the social network and password login (when their email addresses match).
-	//
-	// If the user chooses the linking of the account, then the password from the account will be validated and,
-	// if successful, this social account will be tied to the basic record.
-	//
-	// If the user refused to link, then a new account will be created.
-	AuthorizeLink(echo.Context, *models.AuthorizeLinkForm) (string, *models.GeneralError)
-
+	// ForwardUrl returns url for forwarding user to id provider
 	ForwardUrl(challenge, provider, domain string) (string, error)
 
+	// Callback handles auth_code returned by id provider
 	Callback(provider, code, state, domain string) (string, error)
 
+	// Providers returns list of available id providers for authentication
 	Providers(challenge string) ([]*models.AppIdentityProvider, error)
 
+	// Profile returns user profile attached to token
 	Profile(token string) (*models.UserIdentitySocial, error)
 
+	// AuthLink links user profile attached to token with actual user in db
 	AuthLink(token string, userID bson.ObjectId, app *models.Application) error
 }
 
