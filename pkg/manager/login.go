@@ -41,8 +41,8 @@ type LoginManagerInterface interface {
 	// Profile returns user profile attached to token
 	Profile(token string) (*models.UserIdentitySocial, error)
 
-	// AuthLink links user profile attached to token with actual user in db
-	AuthLink(token string, userID bson.ObjectId, app *models.Application) error
+	// Link links user profile attached to token with actual user in db
+	Link(token string, userID bson.ObjectId, app *models.Application) error
 }
 
 // LoginManager is the login manager.
@@ -369,7 +369,8 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	}, nil
 }
 
-func (m *LoginManager) AuthLink(token string, userID bson.ObjectId, app *models.Application) error {
+// Link links user profile attached to token with actual user in db
+func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Application) error {
 	var t SocialToken
 	if err := m.r.OneTimeTokenService().Use(token, &t); err != nil {
 		return errors.Wrap(err, "can't get token data")

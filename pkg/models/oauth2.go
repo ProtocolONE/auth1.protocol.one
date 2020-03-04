@@ -34,7 +34,7 @@ type Oauth2LoginSubmitForm struct {
 	// Token is the one-time token for authorize user without password.
 	Token string `query:"token" form:"token"`
 
-	// Token is the one-time token for authorize user without password.
+	// Social is the one-time token with social profile
 	Social string `query:"social" form:"social"`
 
 	// Remember is the option for the save user session in the cookie.
@@ -171,6 +171,7 @@ type Oauth2SignUpForm struct {
 	// Remember is the option for the save user session in the cookie.
 	Remember bool `query:"remember" form:"remember"`
 
+	// Social is the one-time token with social profile
 	Social string `query:"social" form:"social"`
 
 	// CaptchaToken is optional captcha token for real user validation

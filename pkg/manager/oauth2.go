@@ -106,7 +106,7 @@ type OauthManager struct {
 	session                 service.SessionService
 	ApiCfg                  *config.Server
 	recaptcha               *captcha.Recaptcha
-	lm LoginManagerInterface
+	lm                      LoginManagerInterface
 }
 
 // NewOauthManager return new oauth manager.
@@ -127,7 +127,7 @@ func NewOauthManager(
 		identityProviderService: service.NewAppIdentityProviderService(),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
-		lm: NewLoginManager(db, r),
+		lm:                      NewLoginManager(db, r),
 	}
 
 	return m
@@ -213,12 +213,12 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", apierror.InvalidCredentials
 			}
 
-		if form.Social != "" {
-			if err := m.lm.AuthLink(form.Social, userIdentity.UserID, app); err != nil {
-				return "",errors.Wrap(err, "can't link social account")
+			if form.Social != "" {
+				if err := m.lm.Link(form.Social, userIdentity.UserID, app); err != nil {
+					return "", errors.Wrap(err, "can't link social account")
+				}
 			}
 		}
-	}
 
 		user, err := m.userService.Get(userIdentity.UserID)
 		if err != nil {
@@ -234,7 +234,6 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", errors.Wrap(err, "unable to add auth log")
 		}
 		userId = user.ID.Hex()
-
 
 	} else {
 		form.Remember = true
@@ -501,11 +500,11 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to create user identity")
 	}
 
-		if form.Social != "" {
-			if err := m.lm.AuthLink(form.Social, userIdentity.UserID, app); err != nil {
-				return "",errors.Wrap(err, "can't link social account")
-			}
+	if form.Social != "" {
+		if err := m.lm.Link(form.Social, userIdentity.UserID, app); err != nil {
+			return "", errors.Wrap(err, "can't link social account")
 		}
+	}
 
 	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
 		return "", errors.Wrap(err, "unable to add auth log")
