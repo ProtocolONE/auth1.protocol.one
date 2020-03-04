@@ -28,6 +28,7 @@ var (
 	NotFound           = New(1014, "not_found", http.StatusNotFound)
 	CaptchaRequired    = New(1015, "captcha_required", http.StatusForbidden)
 	UnknownCaptchaType = New(1016, "unknown_captcha_type", http.StatusBadRequest)
+	TokenOutdated      = New(1017, "token_outdated", http.StatusForbidden)
 )
 
 func New(code int, message string, status int) *APIError {

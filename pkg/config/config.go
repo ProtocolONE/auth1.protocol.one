@@ -27,6 +27,8 @@ type Config struct {
 	// Recaptcha contains settings for recaptcha integration.
 	Recaptcha Recaptcha
 
+	MailTemplates MailTemplates
+
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
@@ -87,6 +89,14 @@ type Recaptcha struct {
 	Key      string `envconfig:"KEY" required:"false" default:""`
 	Secret   string `envconfig:"SECRET" required:"false" default:""`
 	Hostname string `required:"false" default:""`
+}
+
+// Hydra contains settings for public and private urls of the Hydra api.
+type MailTemplates struct {
+	ChangePasswordTpl string `envconfig:"CHANGE_PASSWORD_TPL" required:"true" default:"./public/templates/email/change_password.html"`
+	PlatformUrl       string `envconfig:"PLATFORM_URL" required:"true" default:"http://localhost:7001"`
+	PlatformName      string `envconfig:"PLATFORM_NAME" required:"true" default:"Auth1"`
+	SupportPortalUrl  string `envconfig:"SUPPORT_PORTAL_URL" required:"true" default:"http://localhost:7001"`
 }
 
 func Load() (*Config, error) {

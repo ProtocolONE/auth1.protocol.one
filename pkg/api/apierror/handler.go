@@ -56,7 +56,7 @@ func resp(ctx echo.Context, e *APIError) error {
 }
 
 func Redirect(path string) echo.MiddlewareFunc {
-	u, err := url.Parse(path)
+	_, err := url.Parse(path)
 	if err != nil {
 		panic(err)
 	}
@@ -73,6 +73,10 @@ func Redirect(path string) echo.MiddlewareFunc {
 				e = unknown
 			}
 
+			u, err := url.Parse(path)
+			if err != nil {
+				panic(err)
+			}
 			v := u.Query()
 			v.Add("error", e.Message)
 			v.Add("code", e.Code)

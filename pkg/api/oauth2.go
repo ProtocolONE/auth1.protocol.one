@@ -69,7 +69,6 @@ func oauthLogin(ctx echo.Context) error {
 	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
 		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
 		"AuthDomain":        ctx.Scheme() + "://" + ctx.Request().Host,
-		"Challenge":         form.Challenge,
 		"ClientID":          appID,
 		"PreviousLogin":     previousLogin,
 		"SocProviders":      socProviders,

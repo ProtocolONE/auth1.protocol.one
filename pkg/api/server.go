@@ -62,6 +62,9 @@ type ServerConfig struct {
 
 	// Recaptcha contains settings for recaptcha integration
 	Recaptcha *config.Recaptcha
+
+	// MailTemplates contains settings for email templates
+	MailTemplates *config.MailTemplates
 }
 
 // Server is the instance of the application
@@ -86,6 +89,9 @@ type Server struct {
 
 	// Recaptcha is recaptcha integration
 	Recaptcha *captcha.Recaptcha
+
+	// MailTemplates
+	MailTemplates *config.MailTemplates
 }
 
 // Template is used to display HTML pages.
@@ -110,6 +116,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
 		Recaptcha:     captcha.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
+		MailTemplates: c.MailTemplates,
 	}
 
 	t := &Template{
@@ -208,12 +215,12 @@ func (s *Server) setupRoutes() error {
 	routes := []func(c *Server) error{
 		InitSocial,
 		InitPasswordLess,
-		InitChangePassword,
 		InitMFA,
 		InitManage,
 		InitOauth2,
 		InitHealth,
 		InitCaptcha,
+		InitPasswordReset,
 	}
 
 	for _, r := range routes {
