@@ -31,7 +31,7 @@ func Handler(err error, ctx echo.Context) {
 			e = NotFound
 		default:
 			ctx.Logger().Error(err)
-			e = Unknown(err)
+			e = unknown
 		}
 	}
 
@@ -70,7 +70,7 @@ func Redirect(path string) echo.MiddlewareFunc {
 			var e *APIError
 			if !errors.As(err, &e) {
 				ctx.Logger().Error(err)
-				e = Unknown(err)
+				e = unknown
 			}
 
 			u, err := url.Parse(path)
