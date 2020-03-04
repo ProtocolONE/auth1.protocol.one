@@ -48,12 +48,11 @@ func ErrorHandler(err error, c echo.Context) {
 		id = res.Header().Get(echo.HeaderXRequestID)
 	}
 
-	logger := c.Get("logger").(*zap.Logger)
 	fields := []zapcore.Field{
 		zap.Error(err),
 		zap.Any("request", reqBody),
 	}
-	logger.Error("Server error", fields...)
+	zap.L().Error("Server error", fields...)
 
 	return
 }
