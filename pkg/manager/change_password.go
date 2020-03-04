@@ -160,7 +160,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 func (m *ChangePasswordManager) ChangePasswordCheck(token string) (string, error) {
 	ts := &models.ChangePasswordTokenSource{}
 	if err := m.r.OneTimeTokenService().Get(token, ts); err != nil {
-		return "", errors.New("Unable to get OneTimeToken")
+		return "", errors.New("unable to get OneTimeToken")
 	}
 
 	return ts.Email, nil
