@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 func InitManage(cfg *Server) error {
@@ -15,7 +16,6 @@ func InitManage(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
-
 			return next(c)
 		}
 	})
@@ -38,6 +38,8 @@ func InitManage(cfg *Server) error {
 
 	return nil
 }
+
+// Manage
 
 func createSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}

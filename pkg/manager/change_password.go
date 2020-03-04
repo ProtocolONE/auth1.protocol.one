@@ -1,7 +1,11 @@
 package manager
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"text/template"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -9,8 +13,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 // ChangePasswordManagerInterface describes of methods for the manager.
@@ -21,6 +23,9 @@ type ChangePasswordManagerInterface interface {
 
 	// ChangePasswordVerify validates a one-time token sent by email and, if successful, changes the user's password.
 	ChangePasswordVerify(*models.ChangePasswordVerifyForm) *models.GeneralError
+
+	// ChangePasswordCheck verifies the token and returns user's email from token
+	ChangePasswordCheck(token string) (string, error)
 }
 
 // ChangePasswordManager is the change password manager.
@@ -29,12 +34,14 @@ type ChangePasswordManager struct {
 	userIdentityService     service.UserIdentityServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 	ApiCfg                  *config.Server
+	TplCfg                  *config.MailTemplates
 }
 
 // NewChangePasswordManager return new change password manager.
-func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry, apiCfg *config.Server) ChangePasswordManagerInterface {
+func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry, apiCfg *config.Server, tplCfg *config.MailTemplates) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
 		ApiCfg:                  apiCfg,
+		TplCfg:                  tplCfg,
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
 		identityProviderService: service.NewAppIdentityProviderService(),
@@ -44,6 +51,7 @@ func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistr
 }
 
 func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordStartForm) *models.GeneralError {
+
 	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
 	if err != nil {
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
@@ -68,15 +76,36 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		Length: app.PasswordSettings.TokenLength,
 		TTL:    app.PasswordSettings.TokenTTL,
 	}
-	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email}, ottSettings)
+	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email, ClientID: form.ClientID, Challenge: form.Challenge}, ottSettings)
 	if err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}
 
-	b, err := ioutil.ReadFile("./public/templates/email/change_password.html")
-	body := strings.ReplaceAll(string(b), "{{code}}", token.Token)
-	fmt.Println(body)
-	if err := m.r.Mailer().Send(form.Email, "Change password token", body); err != nil {
+	b, err := ioutil.ReadFile(m.TplCfg.ChangePasswordTpl)
+	tmpl, err := template.New("mail").Parse(string(b))
+	if err != nil {
+		// todo: fix params
+		return &models.GeneralError{Code: "internal"}
+	}
+	w := bytes.Buffer{}
+	err = tmpl.Execute(&w, struct {
+		UserName         string
+		PlatformUrl      string
+		PlatformName     string
+		Token            string
+		SupportPortalUrl string
+	}{
+		UserName:         ui.Username,
+		PlatformUrl:      m.TplCfg.PlatformUrl,
+		PlatformName:     m.TplCfg.PlatformName,
+		Token:            token.Token,
+		SupportPortalUrl: m.TplCfg.SupportPortalUrl,
+	})
+	if err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to build reset password mail")}
+	}
+	fmt.Println(w.String())
+	if err := m.r.Mailer().Send(form.Email, "Change password token", w.String()); err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to send mail with change password token")}
 	}
 
@@ -88,18 +117,18 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "password_repeat", Message: models.ErrorPasswordRepeat, Err: errors.New(models.ErrorPasswordRepeat)}
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
+	ts := &models.ChangePasswordTokenSource{}
+	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
+		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(ts.ClientID))
 	if err != nil {
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
 	if false == validator.IsPasswordValid(app, form.Password) {
 		return &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
-	}
-
-	ts := &models.ChangePasswordTokenSource{}
-	if err := m.r.OneTimeTokenService().Use(form.Token, ts); err != nil {
-		return &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
 	}
 
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
@@ -126,4 +155,13 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	return nil
+}
+
+func (m *ChangePasswordManager) ChangePasswordCheck(token string) (string, error) {
+	ts := &models.ChangePasswordTokenSource{}
+	if err := m.r.OneTimeTokenService().Get(token, ts); err != nil {
+		return "", errors.New("unable to get OneTimeToken")
+	}
+
+	return ts.Email, nil
 }

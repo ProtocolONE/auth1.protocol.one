@@ -105,6 +105,17 @@ services:
     volumes:
       - auth1-redis:/data/redis
 
+  auth1-mailtrap:
+    image: eaudeweb/mailtrap
+    container_name: auth1-mailtrap
+    ports:
+      - "8001:80"
+    networks:
+      - subnet
+    environment:
+      - MT_USER=test
+      - MT_PASSWD=test
+
   auth1:
     build: .
     container_name: auth1
@@ -112,6 +123,7 @@ services:
     depends_on:
       - auth1-mongo
       - auth1-redis
+      - auth1-mailtrap
       - hydra
     networks:
       - subnet
@@ -129,6 +141,10 @@ services:
       - AUTHONE_RECAPTCHA_KEY=6Lea_dUUAAAAAGV4L8JS7NSgmjOZjafXkS4flPEK
       - AUTHONE_RECAPTCHA_SECRET=6Lea_dUUAAAAAK294XwQmOIujxW8ssNRk_zWU5AB
       - AUTHONE_RECAPTCHA_HOSTNAME=localhost
+      - AUTHONE_MAILER_HOST=auth1-mailtrap
+      - AUTHONE_MAILER_PORT=25
+      - AUTHONE_MAILER_REPLY_TO=noreply@example.com
+      - AUTHONE_MAILER_FROM=noreply@example.com
 
 volumes:
   auth1-mongo:

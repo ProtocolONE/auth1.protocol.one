@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
@@ -13,10 +18,6 @@ import (
 	"github.com/ory/hydra/sdk/go/hydra/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"log"
-	"net/http"
-	"net/url"
-	"os"
 )
 
 var serverCmd = &cobra.Command{
@@ -90,6 +91,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		HydraAdminApi: hydraSDK.Admin,
 		Mailer:        &cfg.Mailer,
 		Recaptcha:     &cfg.Recaptcha,
+		MailTemplates: &cfg.MailTemplates,
 	}
 
 	server, err := api.NewServer(&serverConfig)
