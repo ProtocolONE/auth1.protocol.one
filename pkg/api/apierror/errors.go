@@ -34,15 +34,10 @@ func New(code int, message string, status int) *APIError {
 	return NewAPIError(fmt.Sprintf("%s-%d", ServicePrefix, code), ErrorPrefix+message, status)
 }
 
-func Unknown(err error) *APIError {
-	return unknown
-}
-
 func InvalidRequest(err error) *APIError {
-	fmt.Println(err)
-	return invalidRequest
+	return invalidRequest.WithData(err.Error())
 }
 
 func InvalidParameters(err error) *APIError {
-	return invalidParameters
+	return invalidParameters.WithData(err.Error())
 }
