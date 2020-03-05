@@ -28,31 +28,21 @@ var (
 
 // LoginManagerInterface describes of methods for the manager.
 type LoginManagerInterface interface {
-	// Authorize generates an authorization URL for the social network to redirect the user.
-	Authorize(echo.Context, *models.AuthorizeForm) (string, *models.GeneralError)
 
-	// AuthorizeResult validates the response after authorization in the social network.
-	//
-	// In case of successful authentication, the user will be generated a one-time token to complete the
-	// authorization in the basic authorization form.
-	//
-	// If a user has not previously logged in through a social network, but an account has been found with the same
-	// mail as in a social network, then the user will be asked to link these accounts.
-	AuthorizeResult(echo.Context, *models.AuthorizeResultForm) (*models.AuthorizeResultResponse, *models.GeneralError)
-
-	// AuthorizeLink implements the situation with linking the account from the social network and password login (when their email addresses match).
-	//
-	// If the user chooses the linking of the account, then the password from the account will be validated and,
-	// if successful, this social account will be tied to the basic record.
-	//
-	// If the user refused to link, then a new account will be created.
-	AuthorizeLink(echo.Context, *models.AuthorizeLinkForm) (string, *models.GeneralError)
-
+	// ForwardUrl returns url for forwarding user to id provider
 	ForwardUrl(challenge, provider, domain string) (string, error)
 
+	// Callback handles auth_code returned by id provider
 	Callback(provider, code, state, domain string) (string, error)
 
+	// Providers returns list of available id providers for authentication
 	Providers(challenge string) ([]*models.AppIdentityProvider, error)
+
+	// Profile returns user profile attached to token
+	Profile(token string) (*models.UserIdentitySocial, error)
+
+	// Link links user profile attached to token with actual user in db
+	Link(token string, userID bson.ObjectId, app *models.Application) error
 }
 
 // LoginManager is the login manager.
@@ -81,6 +71,21 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 
 type State struct {
 	Challenge string `json:"challenge`
+}
+
+type SocialToken struct {
+	UserIdentityID string                     `json:"user_ident"`
+	Profile        *models.UserIdentitySocial `json:"profile"`
+	Provider       string                     `json:"provider"`
+}
+
+func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error) {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Get(token, &t); err != nil {
+		return nil, errors.Wrap(err, "can't get token data")
+	}
+
+	return t.Profile, nil
 }
 
 func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
@@ -165,13 +170,28 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 		}
 
 		if userIdentity != nil && err != mgo.ErrNotFound {
-			// TODO user context
-			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+			ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+				UserIdentityID: userIdentity.ID.Hex(),
+				Profile:        clientProfile,
+				Provider:       provider,
+			}, app.OneTimeTokenSettings)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to create one time link token")
+			}
+
+			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
 		}
 	}
 
-	// TODO store profile in context
-	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s", domain, provider, s.Challenge), nil
+	ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+		Profile:  clientProfile,
+		Provider: provider,
+	}, app.OneTimeTokenSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create one time link token")
+	}
+
+	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
 }
 
 func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {
@@ -347,6 +367,34 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		Result:  SocialAccountSuccess,
 		Payload: map[string]interface{}{"token": ott.Token},
 	}, nil
+}
+
+// Link links user profile attached to token with actual user in db
+func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Application) error {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Use(token, &t); err != nil {
+		return errors.Wrap(err, "can't get token data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, t.Provider)
+	if ip == nil {
+		return errors.New("identity provider not found")
+	}
+
+	userIdentity := &models.UserIdentity{
+		ID:                 bson.NewObjectId(),
+		UserID:             userID,
+		ApplicationID:      app.ID,
+		IdentityProviderID: ip.ID,
+		Email:              t.Profile.Email,
+		ExternalID:         t.Profile.ID,
+		Name:               t.Profile.Name,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+		Credential:         t.Profile.Token,
+	}
+
+	return m.userIdentityService.Create(userIdentity)
 }
 
 func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, *models.GeneralError) {

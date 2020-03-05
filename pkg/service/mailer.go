@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/tls"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"gopkg.in/gomail.v2"
 )

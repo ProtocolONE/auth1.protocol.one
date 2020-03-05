@@ -910,7 +910,7 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 // 		r:       r,
 // 		session: s,
 // 	}
-// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
+// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", ClientID: "login_challenge"})
 
 // 	fmt.Println(err)
 // 	assert.NotNil(t, err)

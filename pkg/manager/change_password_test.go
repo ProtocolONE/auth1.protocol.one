@@ -1,6 +1,9 @@
 package manager
 
 import (
+	"testing"
+
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
@@ -8,13 +11,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestChangePasswordManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewChangePasswordManager(s, &mocks.InternalRegistry{}, nil)
+	m := NewChangePasswordManager(s, &mocks.InternalRegistry{}, nil, nil)
 	assert.Implements(t, (*ChangePasswordManagerInterface)(nil), m)
 }
 
@@ -139,6 +141,9 @@ func TestChangePasswordStartReturnErrorOnSendMail(t *testing.T) {
 		r:                       r,
 		userIdentityService:     ui,
 		identityProviderService: ip,
+		TplCfg: &config.MailTemplates{
+			ChangePasswordTpl: "./public/templates/email/change_password.html",
+		},
 	}
 	err := m.ChangePasswordStart(&models.ChangePasswordStartForm{ClientID: bson.NewObjectId().Hex()})
 	assert.NotNil(t, err)
@@ -167,6 +172,9 @@ func TestChangePasswordStartReturnNilOnSuccessResult(t *testing.T) {
 		r:                       r,
 		userIdentityService:     ui,
 		identityProviderService: ip,
+		TplCfg: &config.MailTemplates{
+			ChangePasswordTpl: "./public/templates/email/change_password.html",
+		},
 	}
 	err := m.ChangePasswordStart(&models.ChangePasswordStartForm{ClientID: bson.NewObjectId().Hex()})
 	assert.Nil(t, err)
@@ -193,7 +201,15 @@ func TestChangePasswordVerifyReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	r := &mocks.InternalRegistry{}
 
+	ott := &mocks.OneTimeTokenServiceInterface{}
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
+
 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
+	r.On("OneTimeTokenService").Return(ott)
 	r.On("ApplicationService").Return(app)
 
 	m := &ChangePasswordManager{
@@ -212,8 +228,16 @@ func TestChangePasswordVerifyReturnErrorWithInvalidPassword(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	r := &mocks.InternalRegistry{}
 
+	ott := &mocks.OneTimeTokenServiceInterface{}
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
+
 	passSettings := &models.PasswordSettings{Min: 4, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
+	r.On("OneTimeTokenService").Return(ott)
 	r.On("ApplicationService").Return(app)
 
 	m := &ChangePasswordManager{
@@ -260,7 +284,11 @@ func TestChangePasswordVerifyReturnErrorWithUnavailableIdentityProvider(t *testi
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
 	r.On("ApplicationService").Return(app)
 	r.On("OneTimeTokenService").Return(ott)
@@ -285,7 +313,11 @@ func TestChangePasswordVerifyReturnErrorWithUnableToGetUserIdentity(t *testing.T
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 	ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentity{}, nil)
 	r.On("ApplicationService").Return(app)
@@ -311,7 +343,11 @@ func TestChangePasswordVerifyReturnErrorWithErrorOnGetUserIdentity(t *testing.T)
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 	ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
@@ -337,7 +373,11 @@ func TestChangePasswordVerifyReturnErrorWithUnableToEncryptPassword(t *testing.T
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 32}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 	ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentity{ID: bson.NewObjectId()}, nil)
 	r.On("ApplicationService").Return(app)
@@ -363,7 +403,11 @@ func TestChangePasswordVerifyReturnErrorWithUnableToUpdatePassword(t *testing.T)
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 	ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentity{ID: bson.NewObjectId()}, nil)
 	ui.On("Update", mock.Anything).Return(errors.New(""))
@@ -390,7 +434,11 @@ func TestChangePasswordVerifyReturnNilOnSuccessResult(t *testing.T) {
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ott.On("Use", mock.Anything, mock.Anything).Return(nil)
+	ott.On("Use", mock.Anything, mock.MatchedBy(
+		func(ts *models.ChangePasswordTokenSource) bool {
+			ts.ClientID = bson.NewObjectId().Hex()
+			return true
+		})).Return(nil)
 	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 	ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentity{ID: bson.NewObjectId()}, nil)
 	ui.On("Update", mock.Anything).Return(nil)
