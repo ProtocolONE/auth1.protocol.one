@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/juju/zaputil/zapctx"
 	"github.com/labstack/echo/v4"
 )
 
@@ -38,5 +40,9 @@ func DeviceID() echo.MiddlewareFunc {
 }
 
 func GetDeviceID(ctx echo.Context) string {
-	return ctx.Get(deviceIdCookie).(string)
+	value, ok := ctx.Get(deviceIdCookie).(string)
+	if !ok {
+		zapctx.Logger(context.TODO()).Error("device_id not found in request context, maybe you forgot add DeviceID middleware?")
+	}
+	return value
 }
