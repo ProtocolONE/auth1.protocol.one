@@ -43,6 +43,9 @@ type LoginManagerInterface interface {
 
 	// Link links user profile attached to token with actual user in db
 	Link(token string, userID bson.ObjectId, app *models.Application) error
+
+	// Check verifies that provided token correct
+	Check(token string) bool
 }
 
 // LoginManager is the login manager.
@@ -367,6 +370,11 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 		Result:  SocialAccountSuccess,
 		Payload: map[string]interface{}{"token": ott.Token},
 	}, nil
+}
+
+func (m *LoginManager) Check(token string) bool {
+	var t SocialToken
+	return m.r.OneTimeTokenService().Get(token, &t) == nil
 }
 
 // Link links user profile attached to token with actual user in db

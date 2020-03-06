@@ -409,7 +409,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, d
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
-	if app.RequiresCaptcha {
+	if app.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
 		if form.CaptchaToken != "" {
 			ok, err := m.recaptcha.Verify(context.TODO(), form.CaptchaToken, form.CaptchaAction, "") // TODO ip
 			if err != nil {
@@ -474,7 +474,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, d
 		Email:          form.Email,
 		EmailVerified:  false,
 		Blocked:        false,
-		DeviceID: 		deviceID,
+		DeviceID:       deviceID,
 		LastIp:         ctx.RealIP(),
 		LastLogin:      time.Now(),
 		LoginsCount:    1,
