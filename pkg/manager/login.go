@@ -76,6 +76,19 @@ type State struct {
 	Challenge string `json:"challenge`
 }
 
+func DecodeState(state string) (*State, error) {
+	data, err := base64.StdEncoding.DecodeString(state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode state param")
+	}
+
+	var s State
+	if err := json.Unmarshal(data, &s); err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal state")
+	}
+	return &s, nil
+}
+
 type SocialToken struct {
 	UserIdentityID string                     `json:"user_ident"`
 	Profile        *models.UserIdentitySocial `json:"profile"`
@@ -107,14 +120,9 @@ func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvide
 }
 
 func (m *LoginManager) Callback(provider, code, state, domain string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(state)
+	s, err := DecodeState(state)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to decode state param")
-	}
-
-	var s State
-	if err := json.Unmarshal(data, &s); err != nil {
-		return "", errors.Wrap(err, "unable to unmarshal state")
+		return "", err
 	}
 
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: s.Challenge, Context: context.TODO()})

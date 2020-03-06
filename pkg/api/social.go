@@ -139,6 +139,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 		req  struct {
 			Code  string `query:"code"`
 			State string `query:"state"`
+			Error string `query:"error"`
 		}
 		domain = fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
 	)
@@ -148,6 +149,14 @@ func (s *Social) Callback(ctx echo.Context) error {
 
 	if err := ctx.Bind(&req); err != nil {
 		return apierror.InvalidRequest(err)
+	}
+
+	if req.Error != "" {
+		s, err := manager.DecodeState(req.State)
+		if err != nil {
+			return err
+		}
+		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/sign-in?login_challenge=%s", s.Challenge))
 	}
 
 	url, err := m.Callback(name, req.Code, req.State, domain)
