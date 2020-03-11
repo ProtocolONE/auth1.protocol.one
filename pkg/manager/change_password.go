@@ -90,15 +90,13 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	w := bytes.Buffer{}
 	err = tmpl.Execute(&w, struct {
 		UserName         string
-		PlatformUrl      string
 		PlatformName     string
-		Token            string
+		ResetLink        string
 		SupportPortalUrl string
 	}{
 		UserName:         ui.Username,
-		PlatformUrl:      m.TplCfg.PlatformUrl,
 		PlatformName:     m.TplCfg.PlatformName,
-		Token:            token.Token,
+		ResetLink:        fmt.Sprintf("%s/change-password?login_challenge=%s&token=%s", m.TplCfg.PlatformUrl, form.Challenge, token.Token),
 		SupportPortalUrl: m.TplCfg.SupportPortalUrl,
 	})
 	if err != nil {
