@@ -11,6 +11,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func InitManage(cfg *Server) error {
@@ -20,7 +21,9 @@ func InitManage(cfg *Server) error {
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 			return next(c)
 		}
-	})
+	}, middleware.BasicAuth(func(u, p string, ctx echo.Context) (bool, error) {
+		return u == "admin" && p == cfg.ServerConfig.ManageSecret, nil
+	}))
 
 	g.POST("/space", createSpace)
 	g.PUT("/space/:id", updateSpace)
