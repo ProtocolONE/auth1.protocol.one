@@ -64,6 +64,7 @@ type AuthorizeLog struct {
 type AuthLogServiceInterface interface {
 	// Add adds an authorization log for the user.
 	Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *models.AppIdentityProvider) error
+	Get(userId string, count int, from string) ([]*AuthorizeLog, error)
 }
 
 // AuthLogService is the AuthLog service.
@@ -106,4 +107,20 @@ func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *
 	}
 
 	return s.db.C(database.TableAuthLog).Insert(record)
+}
+
+func (s AuthLogService) Get(userId string, count int, from string) ([]*AuthorizeLog, error) {
+	query := bson.M{
+		"user_id": bson.ObjectIdHex(userId),
+	}
+	if from != "" {
+		query["_id"] = bson.M{"$gt": bson.ObjectIdHex(from)}
+	}
+
+	var res []*AuthorizeLog
+	if err := s.db.C(database.TableAuthLog).Find(query).Limit(count).All(&res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

@@ -29,3 +29,26 @@ func (_m *AuthLogServiceInterface) Add(reqctx echo.Context, kind service.AuthAct
 
 	return r0
 }
+
+// Get provides a mock function with given fields: userId, count, from
+func (_m *AuthLogServiceInterface) Get(userId string, count int, from string) ([]*service.AuthorizeLog, error) {
+	ret := _m.Called(userId, count, from)
+
+	var r0 []*service.AuthorizeLog
+	if rf, ok := ret.Get(0).(func(string, int, string) []*service.AuthorizeLog); ok {
+		r0 = rf(userId, count, from)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*service.AuthorizeLog)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, int, string) error); ok {
+		r1 = rf(userId, count, from)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
