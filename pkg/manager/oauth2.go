@@ -185,12 +185,12 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", apierror.InvalidChallenge
 	}
 
-			app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
-			if err != nil {
-				return "", errors.Wrap(err, "unable to load application")
-			}
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load application")
+	}
 
-			var ipc *models.AppIdentityProvider
+	var ipc *models.AppIdentityProvider
 	userId := req.Payload.Subject
 	userIdentity := &models.UserIdentity{}
 	if req.Payload.Subject == "" || req.Payload.Subject != form.PreviousLogin {
@@ -232,9 +232,9 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", errors.Wrap(err, "unable to update user")
 		}
 
-			if err := m.authLogService.Add(ctx, service.ActionAuth, userIdentity, app, ipc); err != nil {
-				return "", errors.Wrap(err, "unable to add auth log")
-			}
+		if err := m.authLogService.Add(ctx, service.ActionAuth, userIdentity, app, ipc); err != nil {
+			return "", errors.Wrap(err, "unable to add auth log")
+		}
 		userId = user.ID.Hex()
 
 	} else {
