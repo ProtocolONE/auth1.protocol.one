@@ -26,6 +26,8 @@ var (
 	SocialAccountError   = "error"
 )
 
+var ErrAlreadyLinked = errors.New("account already linked to social")
+
 // LoginManagerInterface describes of methods for the manager.
 type LoginManagerInterface interface {
 
@@ -395,6 +397,15 @@ func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Appl
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, t.Provider)
 	if ip == nil {
 		return errors.New("identity provider not found")
+	}
+
+	// check for already linked
+	_, err := m.userIdentityService.FindByUser(app, ip, userID)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return ErrAlreadyLinked
+		}
+		return errors.Wrap(err, "can't search user identity info")
 	}
 
 	userIdentity := &models.UserIdentity{
