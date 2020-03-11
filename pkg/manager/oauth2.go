@@ -75,7 +75,7 @@ type OauthManagerInterface interface {
 	// SignUp registers a new user using login and password.
 	//
 	// After successful registration, the URL for the redirect will be returned to pass the agreement consent process.
-	SignUp(echo.Context, *models.Oauth2SignUpForm) (string, error)
+	SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, deviceID string) (string, error)
 
 	// IsUsernameFree checks if username is available for signup
 	IsUsernameFree(ctx echo.Context, challenge, username string) (bool, error)
@@ -396,7 +396,7 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 	return ok, nil
 }
 
-func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (string, error) {
+func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, deviceID string) (string, error) {
 	if err := m.session.Set(ctx, loginRememberKey, form.Remember); err != nil {
 		return "", errors.Wrap(err, "error saving session")
 	}
@@ -411,7 +411,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
-	if app.RequiresCaptcha {
+	if app.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
 		if form.CaptchaToken != "" {
 			ok, err := m.recaptcha.Verify(context.TODO(), form.CaptchaToken, form.CaptchaAction, "") // TODO ip
 			if err != nil {
@@ -476,6 +476,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		Email:          form.Email,
 		EmailVerified:  false,
 		Blocked:        false,
+		DeviceID:       deviceID,
 		LastIp:         ctx.RealIP(),
 		LastLogin:      time.Now(),
 		LoginsCount:    1,
