@@ -120,6 +120,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			Name:          models.AppIdentityProviderNameDefault,
 			DisplayName:   models.AppIdentityProviderDisplayNameDefault,
 		}},
+		WebHooks: form.Application.Webhooks,
 	}
 
 	if err := m.r.ApplicationService().Create(app); err != nil {

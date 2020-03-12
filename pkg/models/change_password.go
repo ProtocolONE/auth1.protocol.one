@@ -16,6 +16,9 @@ func (a *ChangePasswordForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 // ChangePasswordStartForm contains the form fields for starting an operation for changing the password.
 type ChangePasswordStartForm struct {
+	// Subject is the user id
+	Subject string `json:"subject" form:"subject" validate:"required"`
+
 	// ClientID is the application id
 	ClientID string `json:"client_id" form:"client_id" validate:"required"`
 
@@ -46,6 +49,7 @@ type ChangePasswordTokenSource struct {
 	Email     string
 	ClientID  string
 	Challenge string
+	Subject   string
 }
 
 func (a *ChangePasswordStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {

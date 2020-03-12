@@ -89,7 +89,7 @@ func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error)
 }
 
 func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get challenge data")
 	}
@@ -114,7 +114,7 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 		return "", errors.Wrap(err, "unable to unmarshal state")
 	}
 
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: s.Challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: s.Challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
 	}
@@ -147,9 +147,9 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 		id := userIdentity.UserID.Hex()
 		// TODO sucessfully login
 		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
-			Context:   context.TODO(),
-			Challenge: s.Challenge,
-			Body:      &models2.HandledLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
+			Context:        context.TODO(),
+			LoginChallenge: s.Challenge,
+			Body:           &models2.HandledLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
 		})
 		if err != nil {
 			return "", errors.Wrap(err, "unable to accept login challenge")
@@ -195,7 +195,7 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 }
 
 func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
 	}
@@ -488,9 +488,9 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 
 	userId := user.ID.Hex()
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
-		Challenge: form.Challenge,
-		Body:      &models2.HandledLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
-		Context:   ctx.Request().Context(),
+		LoginChallenge: form.Challenge,
+		Body:           &models2.HandledLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
+		Context:        ctx.Request().Context(),
 	})
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}

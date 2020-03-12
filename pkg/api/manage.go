@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
+	"github.com/ory/hydra/sdk/go/hydra/client/admin"
 )
 
 func InitManage(cfg *Server) error {
@@ -16,6 +19,7 @@ func InitManage(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
+			c.Set("Registry", cfg.Registry)
 			return next(c)
 		}
 	})
@@ -35,8 +39,68 @@ func InitManage(cfg *Server) error {
 	g.GET("/identity/templates", getIdentityProviderTemplates)
 	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
+	g.GET("/sessions", listSessions)
+	g.GET("/logout", makeLogout)
 
 	return nil
+}
+
+func listSessions(ctx echo.Context) error {
+	var r struct {
+		Challenge string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
+	}
+
+	if err := ctx.Bind(&r); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+	if err := ctx.Validate(r); err != nil {
+		return apierror.InvalidParameters(err)
+	}
+
+	registry := ctx.Get("Registry").(service.InternalRegistry)
+
+	ok, err := registry.HydraAdminApi().ListSubjectConsentSessions(&admin.ListSubjectConsentSessionsParams{
+		Subject: r.Challenge,
+		Context: ctx.Request().Context(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(200, map[string]interface{}{"len": len(ok.Payload), "payload": ok.Payload})
+}
+
+func makeLogout(ctx echo.Context) error {
+	var r struct {
+		Subject string `query:"subject" r:"subject" validate:"required" json:"subject"`
+	}
+
+	if err := ctx.Bind(&r); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+	if err := ctx.Validate(r); err != nil {
+		return apierror.InvalidParameters(err)
+	}
+
+	registry := ctx.Get("Registry").(service.InternalRegistry)
+
+	_, err := registry.HydraAdminApi().RevokeConsentSessions(&admin.RevokeConsentSessionsParams{
+		Subject: r.Subject,
+		Context: ctx.Request().Context(),
+	})
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+	}
+
+	_, err = registry.HydraAdminApi().RevokeAuthenticationSession(&admin.RevokeAuthenticationSessionParams{
+		Subject: r.Subject,
+		Context: ctx.Request().Context(),
+	})
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+	}
+
+	return ctx.JSON(200, nil)
 }
 
 // Manage

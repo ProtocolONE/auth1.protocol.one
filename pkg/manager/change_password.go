@@ -76,7 +76,12 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		Length: app.PasswordSettings.TokenLength,
 		TTL:    app.PasswordSettings.TokenTTL,
 	}
-	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{Email: form.Email, ClientID: form.ClientID, Challenge: form.Challenge}, ottSettings)
+	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{
+		Email:     form.Email,
+		ClientID:  form.ClientID,
+		Challenge: form.Challenge,
+		Subject:   ui.UserID.Hex(),
+	}, ottSettings)
 	if err != nil {
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnableCreateOttSettings, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/ProtocolONE/mfa-service/pkg"
+	mfa "github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"

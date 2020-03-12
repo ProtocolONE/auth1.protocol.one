@@ -82,6 +82,9 @@ type Application struct {
 	// IdentityProviders contains a list of valid authorization providers for the application, for example using a
 	// local database, an external social authentication service (facebook, google and etc), SAML, and others.
 	IdentityProviders []*AppIdentityProvider `bson:"identity_providers" json:"identity_providers"`
+
+	// WebHook endpoint URLs
+	WebHooks []string `bson:"webhooks" json:"webhooks"`
 }
 
 // PasswordSettings contains settings for valid password criteria.

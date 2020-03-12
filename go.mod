@@ -19,7 +19,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro v1.8.0
 	github.com/micro/go-plugins v1.2.0
-	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
+	github.com/ory/hydra v1.0.0
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.4.0

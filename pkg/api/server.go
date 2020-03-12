@@ -19,6 +19,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
 
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
@@ -84,11 +85,14 @@ type Server struct {
 	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
 
-	// Registry is the registry service
+	// Registry is the Registry service
 	Registry service.InternalRegistry
 
 	// Recaptcha is recaptcha integration
 	Recaptcha *captcha.Recaptcha
+
+	// WebHooks is the web-hooks service
+	WebHooks *webhooks.WebHooks
 
 	// MailTemplates
 	MailTemplates *config.MailTemplates
@@ -116,6 +120,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
 		Recaptcha:     captcha.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
+		WebHooks:      webhooks.NewWebhooks(),
 		MailTemplates: c.MailTemplates,
 	}
 
