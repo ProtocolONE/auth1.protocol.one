@@ -27,7 +27,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -41,7 +41,7 @@ type ServerConfig struct {
 	HydraConfig *config.Hydra
 
 	// HydraAdminApi is client of the Hydra for administration requests.
-	HydraAdminApi *admin.Client
+	HydraAdminApi admin.ClientService
 
 	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session

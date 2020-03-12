@@ -16,8 +16,8 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	models2 "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	models2 "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 	"gopkg.in/tomb.v2"
 )
@@ -162,7 +162,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 			Context:        ctx.Request().Context(),
 			LoginChallenge: form.Challenge,
-			Body:           &models2.HandledLoginRequest{Subject: &req.Payload.Subject},
+			Body:           &models2.AcceptLoginRequest{Subject: &req.Payload.Subject},
 		})
 		if err != nil {
 			return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
@@ -248,7 +248,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 		Context:        ctx.Request().Context(),
 		LoginChallenge: form.Challenge,
-		Body:           &models2.HandledLoginRequest{Subject: &userId, Remember: form.Remember, RememberFor: 0},
+		Body:           &models2.AcceptLoginRequest{Subject: &userId, Remember: form.Remember, RememberFor: 0},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to accept login challenge")
@@ -301,9 +301,9 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 		"name":                  user.Name,
 		"picture":               user.Picture,
 	}
-	req := models2.HandledConsentRequest{
-		GrantedScope: form.Scope,
-		Session: &models2.ConsentRequestSessionData{
+	req := models2.AcceptConsentRequest{
+		GrantScope: form.Scope,
+		Session: &models2.ConsentRequestSession{
 			IDToken:     userInfo,
 			AccessToken: map[string]interface{}{"remember": remember}},
 	}
@@ -511,7 +511,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	}
 
 	userId := user.ID.Hex()
-	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{Context: ctx.Request().Context(), LoginChallenge: form.Challenge, Body: &models2.HandledLoginRequest{Subject: &userId}})
+	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{Context: ctx.Request().Context(), LoginChallenge: form.Challenge, Body: &models2.AcceptLoginRequest{Subject: &userId}})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to accept login challenge")
 	}

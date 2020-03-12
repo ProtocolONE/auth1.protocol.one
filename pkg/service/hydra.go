@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/go-openapi/runtime"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 )
 
 // HydraAdminApi describes of methods for the Hydra administration api.

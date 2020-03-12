@@ -2,7 +2,7 @@
 
 package mocks
 
-import admin "github.com/ory/hydra/sdk/go/hydra/client/admin"
+import admin "github.com/ory/hydra-client-go/client/admin"
 import mock "github.com/stretchr/testify/mock"
 import runtime "github.com/go-openapi/runtime"
 

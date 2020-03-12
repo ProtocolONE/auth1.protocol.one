@@ -11,7 +11,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 )
 
 func InitManage(cfg *Server) error {

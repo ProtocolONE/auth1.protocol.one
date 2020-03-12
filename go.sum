@@ -1149,6 +1149,8 @@ github.com/ory/hydra-client-go v0.0.1 h1:HWXEjp2DrUPu/M+VGPMNqL2QvjERAS9xsiH2R6X
 github.com/ory/hydra-client-go v0.0.1/go.mod h1:lR8StD6TXkUJnRFKyUJT5e6dTdS6ObRXRSVBjLAiLs0=
 github.com/ory/hydra-client-go v1.3.2 h1:ezhwoxjm2lpjx/BWLqnTm+jga45I6YPiuT/PGtPyht4=
 github.com/ory/hydra-client-go v1.3.2/go.mod h1:rEbdNU1+wXAS1JW1M0cF6oTbhulh31TG3MrtGnKM/NE=
+github.com/ory/hydra/sdk/go/hydra v0.0.1 h1:HWXEjp2DrUPu/M+VGPMNqL2QvjERAS9xsiH2R6XKIh4=
+github.com/ory/hydra/sdk/go/hydra v0.0.1/go.mod h1:lR8StD6TXkUJnRFKyUJT5e6dTdS6ObRXRSVBjLAiLs0=
 github.com/ory/sdk/swagutil v0.0.0-20200131170418-ead0c2285f93 h1:+QLNv/tFJbwIpJ7fYGx07G0+IxO8FhhyaVGVkX6RAFM=
 github.com/ory/sdk/swagutil v0.0.0-20200131170418-ead0c2285f93/go.mod h1:Ufg1eAyz+Zt3+oweSZVThG13ewewWCKwBmoNmK8Z0co=
 github.com/ory/viper v1.5.6 h1:w4ceGgWwWLzAFYQ7bHaDZmwNsAto2JPVdyQjQnn7VWI=

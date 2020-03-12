@@ -13,7 +13,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 )
 
 func InitPasswordReset(cfg *Server) error {

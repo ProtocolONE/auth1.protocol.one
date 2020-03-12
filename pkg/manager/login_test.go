@@ -13,8 +13,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	models2 "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	models2 "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -1060,7 +1060,7 @@ func TestAuthorizeLinkReturnUrlOnSuccessResult(t *testing.T) {
 	us.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
 	as.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.RequestHandlerResponse{RedirectTo: "url"}}, nil)
+	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
 	r.On("ApplicationService").Return(app)
 	r.On("OneTimeTokenService").Return(ott)
 	r.On("HydraAdminApi").Return(h)

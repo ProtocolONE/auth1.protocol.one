@@ -15,8 +15,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	models2 "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	models2 "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 )
 
@@ -149,7 +149,7 @@ func (m *LoginManager) Callback(provider, code, state, domain string) (string, e
 		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 			Context:        context.TODO(),
 			LoginChallenge: s.Challenge,
-			Body:           &models2.HandledLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
+			Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
 		})
 		if err != nil {
 			return "", errors.Wrap(err, "unable to accept login challenge")
@@ -489,7 +489,7 @@ func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLin
 	userId := user.ID.Hex()
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 		LoginChallenge: form.Challenge,
-		Body:           &models2.HandledLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
+		Body:           &models2.AcceptLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
 		Context:        ctx.Request().Context(),
 	})
 	if err != nil {
