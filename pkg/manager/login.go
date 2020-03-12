@@ -401,11 +401,11 @@ func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Appl
 
 	// check for already linked
 	_, err := m.userIdentityService.FindByUser(app, ip, userID)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return ErrAlreadyLinked
+	if err != mgo.ErrNotFound {
+		if err != nil {
+			return errors.Wrap(err, "can't search user identity info")
 		}
-		return errors.Wrap(err, "can't search user identity info")
+		return ErrAlreadyLinked
 	}
 
 	userIdentity := &models.UserIdentity{
