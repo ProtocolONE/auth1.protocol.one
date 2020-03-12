@@ -214,14 +214,15 @@ func (s *Server) Start() error {
 
 func (s *Server) setupRoutes() error {
 	routes := []func(c *Server) error{
-		InitSocial,
-		InitPasswordLess,
-		InitMFA,
+		InitHealth,
 		InitManage,
 		InitOauth2,
-		InitHealth,
 		InitCaptcha,
 		InitPasswordReset,
+		InitSocial,
+		InitLogin,
+		InitPasswordLess,
+		InitMFA,
 	}
 
 	for _, r := range routes {
