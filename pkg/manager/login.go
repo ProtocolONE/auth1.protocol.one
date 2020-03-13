@@ -26,6 +26,8 @@ var (
 	SocialAccountError   = "error"
 )
 
+var ErrAlreadyLinked = errors.New("account already linked to social")
+
 // LoginManagerInterface describes of methods for the manager.
 type LoginManagerInterface interface {
 
@@ -43,6 +45,9 @@ type LoginManagerInterface interface {
 
 	// Link links user profile attached to token with actual user in db
 	Link(token string, userID bson.ObjectId, app *models.Application) error
+
+	// Check verifies that provided token correct
+	Check(token string) bool
 }
 
 // LoginManager is the login manager.
@@ -71,6 +76,19 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 
 type State struct {
 	Challenge string `json:"challenge`
+}
+
+func DecodeState(state string) (*State, error) {
+	data, err := base64.StdEncoding.DecodeString(state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode state param")
+	}
+
+	var s State
+	if err := json.Unmarshal(data, &s); err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal state")
+	}
+	return &s, nil
 }
 
 type SocialToken struct {
@@ -104,14 +122,9 @@ func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvide
 }
 
 func (m *LoginManager) Callback(provider, code, state, domain string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(state)
+	s, err := DecodeState(state)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to decode state param")
-	}
-
-	var s State
-	if err := json.Unmarshal(data, &s); err != nil {
-		return "", errors.Wrap(err, "unable to unmarshal state")
+		return "", err
 	}
 
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: s.Challenge, Context: context.TODO()})
@@ -369,6 +382,11 @@ func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeR
 	}, nil
 }
 
+func (m *LoginManager) Check(token string) bool {
+	var t SocialToken
+	return m.r.OneTimeTokenService().Get(token, &t) == nil
+}
+
 // Link links user profile attached to token with actual user in db
 func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Application) error {
 	var t SocialToken
@@ -379,6 +397,15 @@ func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Appl
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, t.Provider)
 	if ip == nil {
 		return errors.New("identity provider not found")
+	}
+
+	// check for already linked
+	_, err := m.userIdentityService.FindByUser(app, ip, userID)
+	if err != mgo.ErrNotFound {
+		if err != nil {
+			return errors.Wrap(err, "can't search user identity info")
+		}
+		return ErrAlreadyLinked
 	}
 
 	userIdentity := &models.UserIdentity{

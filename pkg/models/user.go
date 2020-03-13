@@ -51,6 +51,9 @@ type User struct {
 	// Blocked is status of user blocked.
 	Blocked bool `bson:"blocked" json:"blocked"`
 
+	// DeviceID is unique user client identifier
+	DeviceID string `bson:"device_id" json:"device_id"`
+
 	// CreatedAt returns the timestamp of the user creation.
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 

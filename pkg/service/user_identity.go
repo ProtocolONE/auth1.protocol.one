@@ -17,6 +17,9 @@ type UserIdentityServiceInterface interface {
 
 	// Get return the user identity by id.
 	Get(*models.Application, *models.AppIdentityProvider, string) (*models.UserIdentity, error)
+
+	// FindByUser return identity by userId
+	FindByUser(app *models.Application, ip *models.AppIdentityProvider, userId bson.ObjectId) (*models.UserIdentity, error)
 }
 
 // UserIdentityService is the user identity service.
@@ -44,6 +47,17 @@ func (us UserIdentityService) Update(userIdentity *models.UserIdentity) error {
 	}
 
 	return nil
+}
+
+func (us UserIdentityService) FindByUser(app *models.Application, ip *models.AppIdentityProvider, userId bson.ObjectId) (*models.UserIdentity, error) {
+	ui := &models.UserIdentity{}
+	if err := us.db.C(database.TableUserIdentity).
+		Find(bson.M{"app_id": app.ID, "identity_provider_id": ip.ID, "user_id": userId}).
+		One(&ui); err != nil {
+		return nil, err
+	}
+
+	return ui, nil
 }
 
 func (us UserIdentityService) Get(app *models.Application, identityProvider *models.AppIdentityProvider, externalId string) (*models.UserIdentity, error) {

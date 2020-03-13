@@ -56,7 +56,7 @@ func (r *Recaptcha) Verify(ctx context.Context, token, action, ip string) (bool,
 		Success     bool     `json:"success"`      //: true,
 		ChallengeTs string   `json:"challenge_ts"` //: "2020-02-05T15:26:33Z",
 		Hostname    string   `json:"hostname"`     //: "localhost",
-		Score       float64  `json:"score"`        //: 0.9,
+		Score       *float64 `json:"score"`        //: 0.9,
 		Action      string   `json:"action"`       //: "homepage"
 		ErrorCodes  []string `json:"error-codes"`
 	}
@@ -80,7 +80,7 @@ func (r *Recaptcha) Verify(ctx context.Context, token, action, ip string) (bool,
 		return false, nil
 	}
 
-	if res.Score > 0.5 {
+	if res.Score == nil || *res.Score > 0.5 {
 		return true, nil
 	}
 	return false, nil
