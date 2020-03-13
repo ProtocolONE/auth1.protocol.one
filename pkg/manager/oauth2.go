@@ -123,7 +123,7 @@ func NewOauthManager(
 		r:                       r,
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
-		authLogService:          service.NewAuthLogService(db),
+		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
 		identityProviderService: service.NewAppIdentityProviderService(),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
@@ -185,6 +185,12 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", apierror.InvalidChallenge
 	}
 
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load application")
+	}
+
+	var ipc *models.AppIdentityProvider
 	userId := req.Payload.Subject
 	userIdentity := &models.UserIdentity{}
 	if req.Payload.Subject == "" || req.Payload.Subject != form.PreviousLogin {
@@ -193,12 +199,8 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", apierror.InvalidToken
 			}
 		} else {
-			app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
-			if err != nil {
-				return "", errors.Wrap(err, "unable to load application")
-			}
 
-			ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+			ipc = m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 			if ipc == nil {
 				return "", errors.New("unable to get identity provider")
 			}
@@ -233,7 +235,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 			return "", errors.Wrap(err, "unable to update user")
 		}
 
-		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
+		if err := m.authLogService.Add(ctx, service.ActionAuth, userIdentity, app, ipc); err != nil {
 			return "", errors.Wrap(err, "unable to add auth log")
 		}
 		userId = user.ID.Hex()
@@ -513,7 +515,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, d
 		}
 	}
 
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
+	if err := m.authLogService.Add(ctx, service.ActionReg, userIdentity, app, ipc); err != nil {
 		return "", errors.Wrap(err, "unable to add auth log")
 	}
 

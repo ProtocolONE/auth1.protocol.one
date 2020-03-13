@@ -4,21 +4,26 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func InitManage(cfg *Server) error {
-	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
+	g := cfg.Echo.Group("/api/manage", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
 			return next(c)
 		}
-	})
+	}, middleware.BasicAuth(func(u, p string, ctx echo.Context) (bool, error) {
+		return u == "admin" && p == cfg.ServerConfig.ManageSecret, nil
+	}))
 
 	g.POST("/space", createSpace)
 	g.PUT("/space/:id", updateSpace)
@@ -35,11 +40,42 @@ func InitManage(cfg *Server) error {
 	g.GET("/identity/templates", getIdentityProviderTemplates)
 	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
+	g.GET("/authlog", authlog)
 
 	return nil
 }
 
 // Manage
+func authlog(ctx echo.Context) error {
+	var req struct {
+		UserID string `query:"user_id" validate:"required"`
+		From   string `query:"from"`
+		Count  int    `query:"count"`
+	}
+	req.Count = 100 // default
+
+	if err := ctx.Bind(&req); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+
+	if err := ctx.Validate(req); err != nil {
+		return apierror.InvalidParameters(err)
+	}
+
+	// limit max records
+	if req.Count > 10000 {
+		req.Count = 10000
+	}
+
+	db := ctx.Get("database").(database.MgoSession)
+	s := service.NewAuthLogService(db, nil)
+	logs, err := s.Get(req.UserID, req.Count, req.From)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, logs)
+}
 
 func createSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}

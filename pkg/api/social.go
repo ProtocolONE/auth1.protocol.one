@@ -159,7 +159,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/sign-in?login_challenge=%s", s.Challenge))
 	}
 
-	url, err := m.Callback(name, req.Code, req.State, domain)
+	url, err := m.Callback(ctx, name, req.Code, req.State, domain)
 	if err != nil {
 		return err
 	}
