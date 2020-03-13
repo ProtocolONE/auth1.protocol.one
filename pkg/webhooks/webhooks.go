@@ -22,6 +22,7 @@ const (
 type Hook struct {
 	ID        string            `json:"id"`
 	Action    string            `json:"action"`
+	UserID    string            `json:"user_id"`
 	CreatedAt string            `json:"created_at"`
 	Event     map[string]string `json:"event"`
 }
