@@ -30,6 +30,7 @@ var (
 	UnknownCaptchaType = New(1016, "unknown_captcha_type", http.StatusBadRequest)
 	TokenOutdated      = New(1017, "token_outdated", http.StatusForbidden)
 	AlreadyLinked      = New(1018, "already_linked", http.StatusConflict)
+	Unauthorized       = New(1019, "unauthorized", http.StatusUnauthorized)
 )
 
 func New(code int, message string, status int) *APIError {

@@ -20,13 +20,16 @@ var testDeviceID = "11d99202-27e9-4a65-b32e-53d8f6bb53a2"
 func TestOauthManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewOauthManager(s, &mocks.InternalRegistry{}, &config.Session{Name: ""}, &config.Hydra{}, nil, nil)
+	m := NewOauthManager(s, mockIntRegistry(), &config.Session{Name: ""}, &config.Hydra{}, nil, nil)
 	assert.Implements(t, (*OauthManagerInterface)(nil), m)
+}
+
+type TestAuth struct {
 }
 
 func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -41,7 +44,7 @@ func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 func TestCheckAuthReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
@@ -60,7 +63,7 @@ func TestCheckAuthReturnErrorWithUnableToSetClientIdToSession(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
@@ -87,7 +90,7 @@ func TestCheckAuthReturnSuccessWithEmptySubject(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
@@ -115,7 +118,7 @@ func TestCheckAuthReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj"}}, nil)
@@ -143,7 +146,7 @@ func TestCheckAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj", Skip: true}}, nil)
@@ -175,7 +178,7 @@ func TestCheckAuthReturnUrlForSkipStep(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj", Skip: true}}, nil)
@@ -206,7 +209,7 @@ func TestCheckAuthReturnErrorWithUnableToGetUser(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: false}}, nil)
@@ -240,7 +243,7 @@ func TestCheckAuthReturnUserWithoutSkip(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	sess := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: false}}, nil)
@@ -268,7 +271,7 @@ func TestCheckAuthReturnUserWithoutSkip(t *testing.T) {
 
 func TestAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -281,13 +284,16 @@ func TestAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 }
 
 func TestAuthReturnErrorWithIncorrectToken(t *testing.T) {
+	app := &mocks.ApplicationServiceInterface{}
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	ott.On("Use", "invalid_auth_token", mock.Anything).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
+	r.On("ApplicationService").Return(app)
 	r.On("OneTimeTokenService").Return(ott)
 
 	m := &OauthManager{r: r}
@@ -301,7 +307,7 @@ func TestAuthReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
@@ -322,7 +328,7 @@ func TestAuthReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
@@ -348,7 +354,7 @@ func TestAuthReturnErrorWithUnavailableUserIdentity(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	uis := &mocks.UserIdentityServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
@@ -376,7 +382,7 @@ func TestAuthReturnErrorWithComparePassword(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	uis := &mocks.UserIdentityServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 
@@ -407,7 +413,7 @@ func TestAuthReturnErrorWithUnableToGetUser(t *testing.T) {
 	uis := &mocks.UserIdentityServiceInterface{}
 	us := &mocks.UserServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
@@ -442,7 +448,7 @@ func TestAuthReturnErrorWithUnableToUpdateUser(t *testing.T) {
 	uis := &mocks.UserIdentityServiceInterface{}
 	us := &mocks.UserServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
@@ -479,7 +485,7 @@ func TestAuthReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	us := &mocks.UserServiceInterface{}
 	al := &mocks.AuthLogServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
 	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
@@ -492,7 +498,7 @@ func TestAuthReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	uis.On("Get", mock.Anything, mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
 	us.On("Get", mock.Anything).Return(&models.User{}, nil)
 	us.On("Update", mock.Anything).Return(nil)
-	al.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
 	r.On("ApplicationService").Return(app)
 	r.On("OneTimeTokenService").Return(ott)
@@ -513,9 +519,12 @@ func TestAuthReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 func TestAuthReturnErrorWithUnableToSetSessionRemember(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
+	app := &mocks.ApplicationServiceInterface{}
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	r.On("ApplicationService").Return(app)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
 
@@ -532,9 +541,12 @@ func TestAuthReturnErrorWithUnableToSetSessionRemember(t *testing.T) {
 func TestAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
+	app := &mocks.ApplicationServiceInterface{}
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	r.On("ApplicationService").Return(app)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -552,7 +564,11 @@ func TestAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
 func TestAuthReturnUrlToConsentRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
+
+	app := &mocks.ApplicationServiceInterface{}
+	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
+	r.On("ApplicationService").Return(app)
 
 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
@@ -576,7 +592,7 @@ func TestGetScopes(t *testing.T) {
 
 func TestConsentReturnErrorWithUnableToGetConsentRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -591,7 +607,7 @@ func TestConsentReturnErrorWithUnableToGetConsentRequest(t *testing.T) {
 func TestConsentReturnErrorWithUnableToSetClientToSession(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(errors.New(""))
@@ -610,7 +626,7 @@ func TestConsentReturnErrorWithUnableToSetClientToSession(t *testing.T) {
 func TestConsentReturnScopes(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, RequestedScope: []string{"openid", "offline"}}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
@@ -627,7 +643,7 @@ func TestConsentReturnScopes(t *testing.T) {
 
 func TestConsentSubmitReturnErrorWithUnableToGetConsentRequest(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -643,7 +659,7 @@ func TestConsentSubmitReturnErrorWithUnableToGetUser(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: bson.NewObjectId().Hex()}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
@@ -665,7 +681,7 @@ func TestConsentSubmitReturnErrorWithUnableToGetRemember(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: bson.NewObjectId().Hex(), Skip: true}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
@@ -688,7 +704,7 @@ func TestConsentSubmitReturnErrorWithUnableToAcceptConsent(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: bson.NewObjectId().Hex()}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
@@ -711,7 +727,7 @@ func TestConsentSubmitReturnUrlToRedirect(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	s := &mocks.SessionService{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	h.On("GetConsentRequest", mock.Anything).Return(&admin.GetConsentRequestOK{Payload: &models2.ConsentRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: bson.NewObjectId().Hex()}}, nil)
 	s.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
@@ -731,7 +747,7 @@ func TestConsentSubmitReturnUrlToRedirect(t *testing.T) {
 
 func TestIntrospectReturnErrorWithIncorrectClient(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
@@ -745,7 +761,7 @@ func TestIntrospectReturnErrorWithIncorrectClient(t *testing.T) {
 
 func TestIntrospectReturnErrorWithIncorrectSecret(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{AuthSecret: "1"}, nil)
 	r.On("ApplicationService").Return(app)
@@ -760,7 +776,7 @@ func TestIntrospectReturnErrorWithIncorrectSecret(t *testing.T) {
 func TestIntrospectReturnErrorWithUnableToIntrospect(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{AuthSecret: "1"}, nil)
 	h.On("IntrospectOAuth2Token", mock.Anything, mock.Anything).Return(nil, errors.New(""))
@@ -777,7 +793,7 @@ func TestIntrospectReturnErrorWithUnableToIntrospect(t *testing.T) {
 func TestIntrospectReturnSuccess(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{AuthSecret: "1"}, nil)
 	h.On("IntrospectOAuth2Token", mock.Anything, mock.Anything).Return(&admin.IntrospectOAuth2TokenOK{Payload: &models2.OAuth2TokenIntrospection{}}, nil)
@@ -806,7 +822,7 @@ func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 // func TestSignUpReturnErrorWithUnableToGetClientFromSession(t *testing.T) {
 // 	s := &mocks.SessionService{}
 // 	app := &mocks.ApplicationServiceInterface{}
-// 	r := &mocks.InternalRegistry{}
+// 	r := mockIntRegistry()
 
 // 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 // 	s.On("Get", mock.Anything, clientIdSessionKey).Return(nil, errors.New(""))
@@ -826,7 +842,7 @@ func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 // func TestSignUpReturnErrorWithUnableToGetApplication(t *testing.T) {
 // 	s := &mocks.SessionService{}
 // 	app := &mocks.ApplicationServiceInterface{}
-// 	r := &mocks.InternalRegistry{}
+// 	r := mockIntRegistry()
 
 // 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 // 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
@@ -846,7 +862,7 @@ func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 func TestSignUpReturnErrorWithInvalidPassword(t *testing.T) {
 	s := &mocks.SessionService{}
 	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 	h := &mocks.HydraAdminApi{}
 
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
@@ -871,7 +887,7 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 	s := &mocks.SessionService{}
 	app := &mocks.ApplicationServiceInterface{}
 	h := &mocks.HydraAdminApi{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
@@ -896,7 +912,7 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 // 	s := &mocks.SessionService{}
 // 	app := &mocks.ApplicationServiceInterface{}
 // 	h := &mocks.HydraAdminApi{}
-// 	r := &mocks.InternalRegistry{}
+// 	r := mockIntRegistry()
 
 // 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
 // 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
@@ -923,7 +939,7 @@ func TestSignUpReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
@@ -952,7 +968,7 @@ func TestSignUpReturnErrorWithUnableToGetUserIdentity(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
@@ -983,7 +999,7 @@ func TestSignUpReturnErrorWithEncryptPassword(t *testing.T) {
 	h := &mocks.HydraAdminApi{}
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 40}
@@ -1015,7 +1031,7 @@ func TestSignUpReturnErrorWithUnableToCreateUser(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
 	u := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
@@ -1049,7 +1065,7 @@ func TestSignUpReturnErrorWithUnableToCreateUserIdentity(t *testing.T) {
 	ip := &mocks.AppIdentityProviderServiceInterface{}
 	ui := &mocks.UserIdentityServiceInterface{}
 	u := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
@@ -1085,7 +1101,7 @@ func TestSignUpReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	ui := &mocks.UserIdentityServiceInterface{}
 	u := &mocks.UserServiceInterface{}
 	a := &mocks.AuthLogServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
@@ -1097,7 +1113,7 @@ func TestSignUpReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
 
@@ -1123,7 +1139,7 @@ func TestSignUpReturnErrorWithUnableToAcceptLoginChallenge(t *testing.T) {
 	ui := &mocks.UserIdentityServiceInterface{}
 	u := &mocks.UserServiceInterface{}
 	a := &mocks.AuthLogServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
@@ -1135,7 +1151,7 @@ func TestSignUpReturnErrorWithUnableToAcceptLoginChallenge(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
@@ -1162,7 +1178,7 @@ func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
 	ui := &mocks.UserIdentityServiceInterface{}
 	u := &mocks.UserServiceInterface{}
 	a := &mocks.AuthLogServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	clientId := bson.NewObjectId().Hex()
 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
@@ -1174,8 +1190,8 @@ func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
 	ui.On("Get", mock.Anything, mock.Anything, "email").Return(nil, errors.New(""))
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
+	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.RequestHandlerResponse{RedirectTo: "url"}}, nil)
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
 
@@ -1223,7 +1239,7 @@ func TestCallBackReturnErrorWithEmptyClientId(t *testing.T) {
 func TestCallBackReturnErrorWithUnableToGetApplication(t *testing.T) {
 	s := &mocks.SessionService{}
 	a := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
 	a.On("Get", mock.Anything).Return(nil, errors.New(""))

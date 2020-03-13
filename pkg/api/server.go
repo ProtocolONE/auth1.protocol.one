@@ -21,6 +21,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
 
+	geoproto "github.com/ProtocolONE/geoip-service/pkg/proto"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
 	"github.com/go-redis/redis"
@@ -45,6 +46,8 @@ type ServerConfig struct {
 
 	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
+
+	GeoService geoproto.GeoIpService
 
 	// MfaService describes the interface for working with MFA micro-service.
 	MfaService proto.MfaService
@@ -111,6 +114,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		MfaService:    c.MfaService,
 		RedisClient:   c.RedisClient,
 		Mailer:        service.NewMailer(c.Mailer),
+		GeoIpService:  c.GeoService,
 	}
 	server := &Server{
 		Echo:          echo.New(),

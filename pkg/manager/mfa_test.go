@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"testing"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
@@ -9,19 +11,25 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestMFAManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewMFAManager(s, &mocks.InternalRegistry{})
+	r := mockIntRegistry()
+	m := NewMFAManager(s, r)
 	assert.Implements(t, (*MFAManagerInterface)(nil), m)
+}
+
+func mockIntRegistry() *mocks.InternalRegistry {
+	r := &mocks.InternalRegistry{}
+	r.On("GeoIpService").Return(nil)
+	return r
 }
 
 func TestMFAVerifyReturnErrorWithUnableToGetToken(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	ott.On("Get", mock.Anything, mock.Anything).Return(errors.New(""))
 	r.On("OneTimeTokenService").Return(ott)
@@ -36,7 +44,7 @@ func TestMFAVerifyReturnErrorWithUnableToGetToken(t *testing.T) {
 func TestMFAVerifyReturnErrorWithCheckCode(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	mfa := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	ott.On("Get", "token", &models.UserMfaToken{}).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*models.UserMfaToken)
@@ -57,7 +65,7 @@ func TestMFAVerifyReturnErrorWithCheckCode(t *testing.T) {
 func TestMFAVerifyReturnErrorWithResultIsFalse(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	mfa := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	ott.On("Get", "token", &models.UserMfaToken{}).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*models.UserMfaToken)
@@ -79,7 +87,7 @@ func TestMFAVerifyReturnErrorWithUnableToGetUser(t *testing.T) {
 	ott := &mocks.OneTimeTokenServiceInterface{}
 	mfa := &mocks.MfaApiInterface{}
 	us := &mocks.UserServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	ott.On("Get", "token", &models.UserMfaToken{}).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*models.UserMfaToken)
@@ -106,7 +114,7 @@ func TestMFAVerifySuccessResult(t *testing.T) {
 	mfa := &mocks.MfaApiInterface{}
 	us := &mocks.UserServiceInterface{}
 	a := &mocks.AuthLogServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	ott.On("Get", "token", &models.UserMfaToken{}).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*models.UserMfaToken)
@@ -130,7 +138,7 @@ func TestMFAVerifySuccessResult(t *testing.T) {
 
 func TestMFAAddReturnErrorWithUnableToGetApplication(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
 	r.On("ApplicationService").Return(app)
@@ -147,7 +155,7 @@ func TestMFAAddReturnErrorWithUnableToGetApplication(t *testing.T) {
 func TestMFAAddReturnErrorWithUnableToGetProvider(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(nil, errors.New(""))
@@ -166,7 +174,7 @@ func TestMFAAddReturnErrorWithUnableToGetProvider(t *testing.T) {
 func TestMFAAddReturnErrorWithUnableToGetProvider2(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(nil, nil)
@@ -186,7 +194,7 @@ func TestMFAAddReturnErrorWithIncorrectAuthHeader(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId()}, nil)
@@ -208,7 +216,7 @@ func TestMFAAddReturnErrorWithUnableToCreateMfa(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId()}, nil)
@@ -232,7 +240,7 @@ func TestMFAAddReturnErrorWithUnableToAddProvider(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId()}, nil)
@@ -257,7 +265,7 @@ func TestMFAAddReturnSuccess(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId()}, nil)
@@ -284,7 +292,7 @@ func TestMFAChallengeReturnNil(t *testing.T) {
 
 func TestMFAManagerError_MFAList(t *testing.T) {
 	mfa := &mocks.MfaServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	mfa.On("GetUserProviders", mock.Anything).Return([]*models.MfaProvider{}, errors.New("Some error"))
 
@@ -301,7 +309,7 @@ func TestMFAManagerError_MFAList(t *testing.T) {
 
 func TestMFAManagerSuccess_MFAList(t *testing.T) {
 	mfa := &mocks.MfaServiceInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	mfa.On("GetUserProviders", mock.Anything).Return([]*models.MfaProvider{}, nil)
 
@@ -318,7 +326,7 @@ func TestMFAManagerProvidersMismatch_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{ID: bson.NewObjectId()}, nil)
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId(), AppID: bson.NewObjectId()}, nil)
@@ -342,7 +350,7 @@ func TestMFAManagerAppIdIncorrect_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{ID: bson.NewObjectId()}, errors.New("Some error"))
 	mfa.On("Get", mock.Anything).Return(&models.MfaProvider{ID: bson.NewObjectId(), AppID: bson.NewObjectId()}, nil)
@@ -366,7 +374,7 @@ func TestMFAManagerErrorWithoutHeaders_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	id := bson.NewObjectId()
 	app.On("Get", mock.Anything).Return(&models.Application{ID: id}, nil)
@@ -390,7 +398,7 @@ func TestMFAManagerError_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	id := bson.NewObjectId()
 	app.On("Get", mock.Anything).Return(&models.Application{ID: id}, nil)
@@ -415,7 +423,7 @@ func TestMFAManagerSuccess_MFARemove(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	mfa := &mocks.MfaServiceInterface{}
 	mfaApi := &mocks.MfaApiInterface{}
-	r := &mocks.InternalRegistry{}
+	r := mockIntRegistry()
 
 	id := bson.NewObjectId()
 	app.On("Get", mock.Anything).Return(&models.Application{ID: id}, nil)

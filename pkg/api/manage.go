@@ -11,18 +11,19 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra-client-go/client/admin"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func InitManage(cfg *Server) error {
-	g := cfg.Echo.Group("/api", func(next echo.HandlerFunc) echo.HandlerFunc {
+	g := cfg.Echo.Group("/api/manage", func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
-			c.Set("Registry", cfg.Registry)
 			return next(c)
 		}
-	})
+	}, middleware.BasicAuth(func(u, p string, ctx echo.Context) (bool, error) {
+		return u == "admin" && p == cfg.ServerConfig.ManageSecret, nil
+	}))
 
 	g.POST("/space", createSpace)
 	g.PUT("/space/:id", updateSpace)
@@ -39,71 +40,42 @@ func InitManage(cfg *Server) error {
 	g.GET("/identity/templates", getIdentityProviderTemplates)
 	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
-	g.GET("/sessions", listSessions)
-	g.GET("/logout", makeLogout)
+	g.GET("/authlog", authlog)
 
 	return nil
 }
 
-func listSessions(ctx echo.Context) error {
-	var r struct {
-		Challenge string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
+// Manage
+func authlog(ctx echo.Context) error {
+	var req struct {
+		UserID string `query:"user_id" validate:"required"`
+		From   string `query:"from"`
+		Count  int    `query:"count"`
 	}
+	req.Count = 100 // default
 
-	if err := ctx.Bind(&r); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		return apierror.InvalidRequest(err)
 	}
-	if err := ctx.Validate(r); err != nil {
+
+	if err := ctx.Validate(req); err != nil {
 		return apierror.InvalidParameters(err)
 	}
 
-	registry := ctx.Get("Registry").(service.InternalRegistry)
+	// limit max records
+	if req.Count > 10000 {
+		req.Count = 10000
+	}
 
-	ok, err := registry.HydraAdminApi().ListSubjectConsentSessions(&admin.ListSubjectConsentSessionsParams{
-		Subject: r.Challenge,
-		Context: ctx.Request().Context(),
-	})
+	db := ctx.Get("database").(database.MgoSession)
+	s := service.NewAuthLogService(db, nil)
+	logs, err := s.Get(req.UserID, req.Count, req.From)
 	if err != nil {
 		return err
 	}
 
-	return ctx.JSON(200, map[string]interface{}{"len": len(ok.Payload), "payload": ok.Payload})
+	return ctx.JSON(http.StatusOK, logs)
 }
-
-func makeLogout(ctx echo.Context) error {
-	var r struct {
-		Subject string `query:"subject" r:"subject" validate:"required" json:"subject"`
-	}
-
-	if err := ctx.Bind(&r); err != nil {
-		return apierror.InvalidRequest(err)
-	}
-	if err := ctx.Validate(r); err != nil {
-		return apierror.InvalidParameters(err)
-	}
-
-	registry := ctx.Get("Registry").(service.InternalRegistry)
-
-	_, err := registry.HydraAdminApi().RevokeConsentSessions(&admin.RevokeConsentSessionsParams{
-		Subject: r.Subject,
-		Context: ctx.Request().Context(),
-	})
-	if err != nil {
-		ctx.Logger().Error(err.Error())
-	}
-
-	_, err = registry.HydraAdminApi().RevokeAuthenticationSession(&admin.RevokeAuthenticationSessionParams{
-		Subject: r.Subject,
-		Context: ctx.Request().Context(),
-	})
-	if err != nil {
-		ctx.Logger().Error(err.Error())
-	}
-
-	return ctx.JSON(200, nil)
-}
-
-// Manage
 
 func createSpace(ctx echo.Context) error {
 	form := &models.SpaceForm{}

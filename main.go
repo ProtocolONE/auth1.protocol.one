@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/cmd"
 	_ "net/http/pprof"
+
+	"github.com/ProtocolONE/auth1.protocol.one/cmd"
 )
 
 func main() {

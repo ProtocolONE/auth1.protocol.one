@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -9,30 +11,30 @@ type AuthorizeLog struct {
 	// ID is the record id.
 	ID bson.ObjectId `bson:"_id" json:"id"`
 
+	// Timestamp in UTC
+	Timestamp time.Time `bson:"timestamp" json:"timestamp"`
+
 	// UserID is the user id.
 	UserID bson.ObjectId `bson:"user_id" json:"user_id"`
 
-	// UserAgentId is the user agent id.
-	UserAgentId bson.ObjectId `bson:"useragent_id" json:"useragent_id"`
+	// ActionType is auth action registration or authentication
+	ActionType string `bson:"action_type" json:"action_type"`
 
-	// IpId is the ip id.
-	IpId bson.ObjectId `bson:"ip_id" json:"ip_id"`
-}
+	// Referer is browser referer page
+	Referer string `bson:"referer" json:"referer"`
 
-// AuthorizeLog describes a table for storing the user authorizations agents.
-type AuthorizeUserAgent struct {
-	// ID is the record id.
-	ID bson.ObjectId `bson:"_id" json:"id"`
+	// AppID is application id
+	AppID bson.ObjectId `bson:"app_id" json:"app_id"`
 
-	// Value is the user agent.
-	Value string `bson:"value" json:"value"`
-}
+	// AppName
+	AppName string `bson:"app_name" json:"app_name"`
 
-// AuthorizeLog describes a table for storing the user authorizations ips.
-type AuthorizeUserIP struct {
-	// ID is the record id.
-	ID bson.ObjectId `bson:"_id" json:"id"`
+	// UserAgent is client useragent
+	UserAgent string `bson:"useragent" json:"useragent"`
 
-	// Value is the ip address.
-	Value string `bson:"value" json:"value"`
+	// IP is user ip
+	IP string `bson:"ip" json:"ip"`
+
+	// ClientTime time from http Date header
+	ClientTime time.Time `bson:"client_time" json:"client_time"`
 }

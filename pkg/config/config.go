@@ -40,6 +40,7 @@ type Server struct {
 	AllowOrigins      []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
 	AllowCredentials  bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
 	AuthWebFormSdkUrl string   `envconfig:"AUTH_WEB_FORM_SDK_URL" required:"false" default:"https://static.protocol.one/auth/form/dev/auth-web-form.js"`
+	ManageSecret      string   `required:"false" default:"password"`
 }
 
 // Database contains settings for connection to the database.
