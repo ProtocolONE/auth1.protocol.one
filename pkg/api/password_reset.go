@@ -20,7 +20,6 @@ func InitPasswordReset(cfg *Server) error {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("manage_manager", manager.NewManageManager(db, cfg.Registry))
-			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig, cfg.Recaptcha))
 			c.Set("password_manager", manager.NewChangePasswordManager(db, cfg.Registry, cfg.ServerConfig, cfg.MailTemplates))
 			c.Set("recaptcha", cfg.Recaptcha)
 			c.Set("registry", cfg.Registry)
@@ -41,7 +40,7 @@ func InitPasswordReset(cfg *Server) error {
 func passwordReset(ctx echo.Context) error {
 	var r struct {
 		CaptchaToken  string `query:"captchaToken" r:"captchaToken" validate:"required" json:"captchaToken"`
-		CaptchaAction string `query:"captchaAction" r:"captchaAction" validate:"required" json:"captchaAction"`
+		CaptchaAction string `query:"captchaAction" r:"captchaAction" json:"captchaAction"`
 		Challenge     string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
 		Email         string `query:"email" r:"email" validate:"required" json:"email"`
 	}
@@ -148,11 +147,6 @@ func passwordResetSet(ctx echo.Context) error {
 		return errors.New("can't get some manager")
 	}
 
-	oauthManager, ok := ctx.Get("oauth_manager").(*manager.OauthManager)
-	if !ok {
-		return errors.New("can't get some manager")
-	}
-
 	ts := &models.ChangePasswordTokenSource{}
 	if err := registry.OneTimeTokenService().Get(form.Token, ts); err != nil {
 		return apierror.InvalidToken
@@ -170,16 +164,7 @@ func passwordResetSet(ctx echo.Context) error {
 
 	// todo: logout & drop sessions
 
-	// login
-	loginForm := new(models.Oauth2LoginSubmitForm)
-	loginForm.Challenge = ts.Challenge
-	loginForm.Email = ts.Email
-	loginForm.Password = form.Password
-
-	url, err := oauthManager.Auth(ctx, loginForm)
-	if err != nil {
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"status": "ok",
+	})
 }

@@ -217,6 +217,9 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 
 			if form.Social != "" {
 				if err := m.lm.Link(form.Social, userIdentity.UserID, app); err != nil {
+					if err == ErrAlreadyLinked {
+						return "", apierror.AlreadyLinked
+					}
 					return "", errors.Wrap(err, "can't link social account")
 				}
 			}
@@ -505,6 +508,9 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm, d
 
 	if form.Social != "" {
 		if err := m.lm.Link(form.Social, userIdentity.UserID, app); err != nil {
+			if err == ErrAlreadyLinked {
+				return "", apierror.AlreadyLinked
+			}
 			return "", errors.Wrap(err, "can't link social account")
 		}
 	}
