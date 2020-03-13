@@ -13,7 +13,7 @@ Manage API
 
 Examples:
 
-	https://id.tst.qilin.super.com/api/manage/authlog?user_id=5e4bf686ec27360001d36517&from=5e6b5956dddb0f00011b5eec
+	https://localhost/api/manage/authlog?user_id=5e4bf686ec27360001d36517&from=5e6b5956dddb0f00011b5eec
 
 	[
 		{
