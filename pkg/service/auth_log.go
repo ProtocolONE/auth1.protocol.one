@@ -1,14 +1,20 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	geo "github.com/ProtocolONE/geoip-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
+	"github.com/juju/zaputil/zapctx"
 	"github.com/labstack/echo/v4"
+	"github.com/micro/go-micro/client"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type AuthActionType string
@@ -56,8 +62,20 @@ type AuthorizeLog struct {
 	// IP is user ip
 	IP string `bson:"ip" json:"ip"`
 
+	IPInfo IPInfo `bson:"ip_info" json:"ip_info"`
+
 	// ClientTime time from http Date header
 	ClientTime time.Time `bson:"client_time" json:"client_time"`
+}
+
+type IPInfo struct {
+	Country     string   `bson:"country" json:"country"`
+	City        string   `bson:"city" json:"city"`
+	Subdivision []string `bson:"subdivision" json:"subdivision"`
+}
+
+type GeoIp interface {
+	GetIpData(ctx context.Context, in *geo.GeoIpDataRequest, opts ...client.CallOption) (*geo.GeoIpDataResponse, error)
 }
 
 // AuthLogServiceInterface describes of methods for the AuthLog service.
@@ -69,12 +87,13 @@ type AuthLogServiceInterface interface {
 
 // AuthLogService is the AuthLog service.
 type AuthLogService struct {
-	db *mgo.Database
+	db  *mgo.Database
+	geo GeoIp
 }
 
 // NewAuthLogService return new AuthLog service.
-func NewAuthLogService(h database.MgoSession) *AuthLogService {
-	return &AuthLogService{db: h.DB("")}
+func NewAuthLogService(h database.MgoSession, geo GeoIp) *AuthLogService {
+	return &AuthLogService{db: h.DB(""), geo: geo}
 }
 
 func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *models.AppIdentityProvider) error {
@@ -106,7 +125,47 @@ func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *
 		record.ProviderName = provider.Name
 	}
 
+	ipinfo, err := s.getIPInfo(record.IP)
+	if err != nil {
+		zapctx.Logger(context.TODO()).Error("can't get geoip info", zap.Error(err))
+	}
+	record.IPInfo = ipinfo
+
 	return s.db.C(database.TableAuthLog).Insert(record)
+}
+
+func (s *AuthLogService) getIPInfo(ip string) (ipinfo IPInfo, err error) {
+	georesp, err := s.geo.GetIpData(context.TODO(), &geo.GeoIpDataRequest{IP: ip})
+	if err != nil {
+		return ipinfo, err
+	}
+
+	if georesp == nil {
+		return ipinfo, errors.New("no repsonse")
+	}
+
+	city := georesp.GetCity()
+	if city != nil {
+		names := city.GetNames()
+		if names != nil {
+			ipinfo.City = names["en"]
+		}
+	}
+	country := georesp.GetCountry()
+	if country != nil {
+		names := country.GetNames()
+		if names != nil {
+			ipinfo.Country = names["en"]
+		}
+	}
+	for _, sub := range georesp.GetSubdivisions() {
+		names := sub.GetNames()
+		if names != nil {
+			ipinfo.Subdivision = append(ipinfo.Subdivision, names["en"])
+		}
+
+	}
+	return ipinfo, nil
 }
 
 func (s AuthLogService) Get(userId string, count int, from string) ([]*AuthorizeLog, error) {

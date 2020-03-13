@@ -16,7 +16,9 @@ import (
 func TestLoginManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewLoginManager(s, &mocks.InternalRegistry{})
+	r := &mocks.InternalRegistry{}
+	r.On("GeoIpService").Return(nil)
+	m := NewLoginManager(s, r)
 	assert.Implements(t, (*LoginManagerInterface)(nil), m)
 }
 

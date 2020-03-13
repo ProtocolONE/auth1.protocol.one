@@ -68,7 +68,7 @@ func authlog(ctx echo.Context) error {
 	}
 
 	db := ctx.Get("database").(database.MgoSession)
-	s := service.NewAuthLogService(db)
+	s := service.NewAuthLogService(db, nil)
 	logs, err := s.Get(req.UserID, req.Count, req.From)
 	if err != nil {
 		return err
