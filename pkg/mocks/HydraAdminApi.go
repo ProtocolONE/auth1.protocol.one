@@ -172,6 +172,75 @@ func (_m *HydraAdminApi) IntrospectOAuth2Token(_a0 *admin.IntrospectOAuth2TokenP
 	return r0, r1
 }
 
+// ListSubjectConsentSessions provides a mock function with given fields: params
+func (_m *HydraAdminApi) ListSubjectConsentSessions(params *admin.ListSubjectConsentSessionsParams) (*admin.ListSubjectConsentSessionsOK, error) {
+	ret := _m.Called(params)
+
+	var r0 *admin.ListSubjectConsentSessionsOK
+	if rf, ok := ret.Get(0).(func(*admin.ListSubjectConsentSessionsParams) *admin.ListSubjectConsentSessionsOK); ok {
+		r0 = rf(params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*admin.ListSubjectConsentSessionsOK)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*admin.ListSubjectConsentSessionsParams) error); ok {
+		r1 = rf(params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RevokeAuthenticationSession provides a mock function with given fields: params
+func (_m *HydraAdminApi) RevokeAuthenticationSession(params *admin.RevokeAuthenticationSessionParams) (*admin.RevokeAuthenticationSessionNoContent, error) {
+	ret := _m.Called(params)
+
+	var r0 *admin.RevokeAuthenticationSessionNoContent
+	if rf, ok := ret.Get(0).(func(*admin.RevokeAuthenticationSessionParams) *admin.RevokeAuthenticationSessionNoContent); ok {
+		r0 = rf(params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*admin.RevokeAuthenticationSessionNoContent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*admin.RevokeAuthenticationSessionParams) error); ok {
+		r1 = rf(params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RevokeConsentSessions provides a mock function with given fields: params
+func (_m *HydraAdminApi) RevokeConsentSessions(params *admin.RevokeConsentSessionsParams) (*admin.RevokeConsentSessionsNoContent, error) {
+	ret := _m.Called(params)
+
+	var r0 *admin.RevokeConsentSessionsNoContent
+	if rf, ok := ret.Get(0).(func(*admin.RevokeConsentSessionsParams) *admin.RevokeConsentSessionsNoContent); ok {
+		r0 = rf(params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*admin.RevokeConsentSessionsNoContent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*admin.RevokeConsentSessionsParams) error); ok {
+		r1 = rf(params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateOAuth2Client provides a mock function with given fields: _a0
 func (_m *HydraAdminApi) UpdateOAuth2Client(_a0 *admin.UpdateOAuth2ClientParams) (*admin.UpdateOAuth2ClientOK, error) {
 	ret := _m.Called(_a0)
