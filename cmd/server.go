@@ -9,6 +9,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/geoip-service/pkg"
+	geoproto "github.com/ProtocolONE/geoip-service/pkg/proto"
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
@@ -70,6 +72,8 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	ms := proto.NewMfaService(mfa.ServiceName, service.Client())
 
+	geo := geoproto.NewGeoIpService(geoip.ServiceName, service.Client())
+
 	u, err := url.Parse(cfg.Hydra.AdminURL)
 	if err != nil {
 		zap.L().Fatal("Invalid of the Hydra admin url", zap.Error(err))
@@ -84,6 +88,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		ApiConfig:     &cfg.Server,
 		HydraConfig:   &cfg.Hydra,
 		SessionConfig: &cfg.Session,
+		GeoService:    geo,
 		MfaService:    ms,
 		MgoSession:    db,
 		SessionStore:  store,

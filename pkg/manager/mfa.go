@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -45,7 +46,7 @@ type MFAManager struct {
 func NewMFAManager(h database.MgoSession, r service.InternalRegistry) MFAManagerInterface {
 	m := &MFAManager{
 		r:              r,
-		authLogService: service.NewAuthLogService(h),
+		authLogService: service.NewAuthLogService(h, r.GeoIpService()),
 		mfaService:     service.NewMfaService(h),
 		userService:    service.NewUserService(h),
 	}

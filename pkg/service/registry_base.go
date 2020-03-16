@@ -16,6 +16,7 @@ type RegistryBase struct {
 	watcher persist.Watcher
 	hydra   HydraAdminApi
 	mfa     MfaApiInterface
+	geo     GeoIp
 	mailer  MailerInterface
 }
 
@@ -26,6 +27,9 @@ type RegistryConfig struct {
 
 	// RedisClient is the client of the Redis.
 	RedisClient *redis.Client
+
+	// GeoIpService is the interface for the GeoIp micro-service.
+	GeoIpService GeoIp
 
 	// MfaService is the interface for the MFA micro-service.
 	MfaService MfaApiInterface
@@ -45,6 +49,7 @@ func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 		hydra:   config.HydraAdminApi,
 		mfa:     config.MfaService,
 		mailer:  config.Mailer,
+		geo:     config.GeoIpService,
 	}
 }
 
@@ -66,6 +71,10 @@ func (r *RegistryBase) HydraAdminApi() HydraAdminApi {
 
 func (r *RegistryBase) MfaService() MfaApiInterface {
 	return r.mfa
+}
+
+func (r *RegistryBase) GeoIpService() GeoIp {
+	return r.geo
 }
 
 func (r *RegistryBase) Mailer() MailerInterface {

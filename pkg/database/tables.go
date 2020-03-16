@@ -8,8 +8,10 @@ const (
 	TableUserIdentity        = "user_identity"
 	TableUserIdentityData    = "user_identity_data"
 	TableAuthLog             = "auth_log"
-	TableUserAgent           = "user_agent"
-	TableUserIP              = "user_ip"
 	TableApplicationMfa      = "application_mfa"
 	TableUserMfa             = "user_mfa"
+
+	// removed (normalization in auth_log not needed)
+	TableUserAgent = "user_agent"
+	TableUserIP    = "user_ip"
 )

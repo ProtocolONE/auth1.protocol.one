@@ -40,7 +40,7 @@ func InitPasswordReset(cfg *Server) error {
 func passwordReset(ctx echo.Context) error {
 	var r struct {
 		CaptchaToken  string `query:"captchaToken" r:"captchaToken" validate:"required" json:"captchaToken"`
-		CaptchaAction string `query:"captchaAction" r:"captchaAction" validate:"required" json:"captchaAction"`
+		CaptchaAction string `query:"captchaAction" r:"captchaAction" json:"captchaAction"`
 		Challenge     string `query:"challenge" r:"challenge" validate:"required" json:"challenge"`
 		Email         string `query:"email" r:"email" validate:"required" json:"email"`
 	}

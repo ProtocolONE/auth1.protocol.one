@@ -19,6 +19,9 @@ type InternalRegistry interface {
 	// MfaService return the client of MFA micro-service.
 	MfaService() MfaApiInterface
 
+	// GeoIp returns the client of GeoIP  micro-service.
+	GeoIpService() GeoIp
+
 	// ApplicationService return instance of the application service.
 	ApplicationService() ApplicationServiceInterface
 

@@ -116,6 +116,11 @@ services:
       - MT_USER=test
       - MT_PASSWD=test
 
+  geoip:
+    image: p1hub/p1geoip:master
+    networks:
+      - subnet    
+
   auth1:
     build: .
     container_name: auth1

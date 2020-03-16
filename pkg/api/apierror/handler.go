@@ -29,6 +29,8 @@ func Handler(err error, ctx echo.Context) {
 			e = MethodNotAllowed
 		case echo.ErrNotFound:
 			e = NotFound
+		case echo.ErrUnauthorized:
+			e = Unauthorized
 		default:
 			ctx.Logger().Error(err)
 			e = unknown
