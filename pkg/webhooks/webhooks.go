@@ -72,6 +72,7 @@ func trigger(ctx context.Context, endpoints []string, hook Hook) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(endpoints))
 
+	// todo: do queue and retry on failure
 	for _, url := range endpoints {
 		go func() {
 			defer wg.Done()

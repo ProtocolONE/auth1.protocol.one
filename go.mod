@@ -8,10 +8,9 @@ require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
-	github.com/go-openapi/runtime v0.19.11
+	github.com/go-openapi/runtime v0.19.0
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/google/uuid v1.1.1
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3
 	github.com/juju/zaputil v0.0.0-20190326175239-ef53049637ac
 	github.com/kelseyhightower/envconfig v1.3.0
