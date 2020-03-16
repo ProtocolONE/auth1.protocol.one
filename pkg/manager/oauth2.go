@@ -14,6 +14,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
+	"github.com/globalsign/mgo"
 	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra/sdk/go/hydra/client/admin"
@@ -186,6 +187,10 @@ func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: context.TODO(), Challenge: challenge})
 	if err != nil {
 		return nil, apierror.InvalidChallenge
+	}
+
+	if req.Payload.Subject  == "" {
+		return nil, mgo.ErrNotFound
 	}
 
 	return m.userService.Get(bson.ObjectIdHex(req.Payload.Subject))

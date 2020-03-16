@@ -58,7 +58,7 @@ services:
       - URLS_SELF_ISSUER=http://localhost:7001
       - URLS_SELF_PUBLIC=http://localhost:7001
       - URLS_CONSENT=http://localhost:7001/oauth2/consent
-      - URLS_LOGIN=http://localhost:7001/sign-in
+      - URLS_LOGIN=http://localhost:7001/api/login
       - URLS_ERROR=http://localhost:7001/error
       - URLS_POST_LOGOUT_REDIRECT=http://localhost:7001/oauth2/logout
       - LOG_LEVEL=debug

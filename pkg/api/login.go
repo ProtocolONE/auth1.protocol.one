@@ -14,7 +14,8 @@ import (
 func InitLogin(cfg *Server) error {
 	ctl := &Login{cfg}
 
-	cfg.Echo.POST("/api/login", ctl.login)
+	cfg.Echo.POST("/api/login", ctl.login, apierror.Redirect("/error"))
+	cfg.Echo.GET("/api/login", ctl.check)
 	cfg.Echo.GET("/api/login/subject", ctl.subject)
 
 	return nil
@@ -23,6 +24,27 @@ func InitLogin(cfg *Server) error {
 // Login is login controller
 type Login struct {
 	cfg *Server
+}
+
+func (ctl *Login) check(ctx echo.Context) error {
+	form := new(models.Oauth2LoginForm)
+	if err := ctx.Bind(form); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewOauthManager(db, ctl.cfg.Registry, ctl.cfg.SessionConfig, ctl.cfg.HydraConfig, ctl.cfg.ServerConfig, ctl.cfg.Recaptcha)
+
+	_, _, _, url, err := m.CheckAuth(ctx, form)
+	if err != nil {
+		return err
+	}
+
+	if url != "" {
+		return ctx.Redirect(http.StatusTemporaryRedirect, url)
+	}
+
+	return ctx.Redirect(http.StatusTemporaryRedirect, "/sign-in?login_challenge="+form.Challenge)
 }
 
 func (ctl *Login) login(ctx echo.Context) error {
