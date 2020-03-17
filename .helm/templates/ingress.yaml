@@ -42,6 +42,10 @@ spec:
             backend:
               serviceName: {{ $hydraSvc }}
               servicePort: 4444
+          - path: /oauth2/sessions/logout
+            backend:
+              serviceName: {{ $hydraSvc }}
+              servicePort: 4444
           - path: /oauth2/userinfo
             backend:
               serviceName: {{ $hydraSvc }}
