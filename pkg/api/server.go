@@ -19,6 +19,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
 
 	geoproto "github.com/ProtocolONE/geoip-service/pkg/proto"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
@@ -27,7 +28,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 	"go.uber.org/zap"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -41,7 +42,7 @@ type ServerConfig struct {
 	HydraConfig *config.Hydra
 
 	// HydraAdminApi is client of the Hydra for administration requests.
-	HydraAdminApi *admin.Client
+	HydraAdminApi admin.ClientService
 
 	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
@@ -87,11 +88,14 @@ type Server struct {
 	// SessionConfig contains settings for the session.
 	SessionConfig *config.Session
 
-	// Registry is the registry service
+	// Registry is the Registry service
 	Registry service.InternalRegistry
 
 	// Recaptcha is recaptcha integration
 	Recaptcha *captcha.Recaptcha
+
+	// WebHooks is the web-hooks service
+	WebHooks *webhooks.WebHooks
 
 	// MailTemplates
 	MailTemplates *config.MailTemplates
@@ -120,6 +124,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		HydraConfig:   c.HydraConfig,
 		Registry:      service.NewRegistryBase(registryConfig),
 		Recaptcha:     captcha.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
+		WebHooks:      webhooks.NewWebhooks(),
 		MailTemplates: c.MailTemplates,
 	}
 

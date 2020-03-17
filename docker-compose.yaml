@@ -32,7 +32,7 @@ services:
       - subnet
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.9_oryOS.10
+    image: oryd/hydra:v1.3.2
     container_name: hydra-migrate
     depends_on:
       - auth1-postgres
@@ -44,10 +44,10 @@ services:
       - SYSTEMS_SECRET=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
       - SECRETS_COOKIE=newYouReallyNeedToChangeThis youReallyNeedToChangeThis
     restart: on-failure
-    command: "migrate sql postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable"
+    command: "migrate sql postgres://hydra:secret@auth1-postgres/hydra?sslmode=disable --yes"
 
   hydra:
-    image: oryd/hydra:v1.0.0-rc.9_oryOS.10
+    image: oryd/hydra:v1.3.2
     container_name: hydra
     depends_on:
       - hydra-migrate

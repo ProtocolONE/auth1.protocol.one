@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/go-openapi/runtime"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
+	"github.com/ory/hydra-client-go/client/admin"
 )
 
 // HydraAdminApi describes of methods for the Hydra administration api.
@@ -31,4 +31,13 @@ type HydraAdminApi interface {
 
 	// IntrospectOAuth2Token introspects o auth2 tokens.
 	IntrospectOAuth2Token(*admin.IntrospectOAuth2TokenParams, runtime.ClientAuthInfoWriter) (*admin.IntrospectOAuth2TokenOK, error)
+
+	// ListSubjectConsentSessions lists all consent sessions of a subject
+	ListSubjectConsentSessions(params *admin.ListSubjectConsentSessionsParams) (*admin.ListSubjectConsentSessionsOK, error)
+
+	// RevokeConsentSessions revokes consent sessions of a subject for a specific o auth 2 0 client
+	RevokeConsentSessions(params *admin.RevokeConsentSessionsParams) (*admin.RevokeConsentSessionsNoContent, error)
+
+	// RevokeAuthenticationSession invalidates a user s authentication session
+	RevokeAuthenticationSession(params *admin.RevokeAuthenticationSessionParams) (*admin.RevokeAuthenticationSessionNoContent, error)
 }

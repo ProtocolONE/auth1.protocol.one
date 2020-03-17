@@ -17,7 +17,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-plugins/client/selector/static"
-	"github.com/ory/hydra/sdk/go/hydra/client"
+	"github.com/ory/hydra-client-go/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

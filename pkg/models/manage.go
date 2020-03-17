@@ -25,6 +25,7 @@ type ApplicationFormApp struct {
 	HasSharedUsers   bool     `bson:"has_shared_users" json:"has_shared_users"`
 	UniqueUsernames  bool     `bson:"unique_usernames" json:"unique_usernames"`
 	RequiresCaptcha  bool     `bson:"requires_captcha" json:"requires_captcha"`
+	Webhooks         []string `bson:"webhooks" json:"webhooks"`
 }
 
 func (a *ApplicationFormApp) MarshalLogObject(enc zapcore.ObjectEncoder) error {

@@ -13,8 +13,8 @@ import (
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	models2 "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	models2 "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 )
 
@@ -105,7 +105,7 @@ func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error)
 }
 
 func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get challenge data")
 	}
@@ -125,7 +125,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 		return "", err
 	}
 
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: s.Challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: s.Challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
 	}
@@ -162,9 +162,9 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 		id := userIdentity.UserID.Hex()
 		// TODO sucessfully login
 		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
-			Context:   context.TODO(),
-			Challenge: s.Challenge,
-			Body:      &models2.HandledLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
+			Context:        context.TODO(),
+			LoginChallenge: s.Challenge,
+			Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
 		})
 		if err != nil {
 			return "", errors.Wrap(err, "unable to accept login challenge")
@@ -210,7 +210,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 }
 
 func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Challenge: challenge, Context: context.TODO()})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
 	}

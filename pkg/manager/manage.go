@@ -10,8 +10,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	hydra_models "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	hydra_models "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
 )
 
@@ -120,6 +120,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			Name:          models.AppIdentityProviderNameDefault,
 			DisplayName:   models.AppIdentityProviderDisplayNameDefault,
 		}},
+		WebHooks: form.Application.Webhooks,
 	}
 
 	if err := m.r.ApplicationService().Create(app); err != nil {
@@ -128,10 +129,10 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 
 	_, err = m.r.HydraAdminApi().CreateOAuth2Client(&admin.CreateOAuth2ClientParams{
 		Context: ctx.Request().Context(),
-		Body: &hydra_models.Client{
+		Body: &hydra_models.OAuth2Client{
 			ClientID:      app.ID.Hex(),
-			Name:          app.Name,
-			Secret:        app.AuthSecret,
+			ClientName:    app.Name,
+			ClientSecret:  app.AuthSecret,
 			GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
 			ResponseTypes: []string{"code", "id_token", "token"},
 			RedirectUris:  app.AuthRedirectUrls,
