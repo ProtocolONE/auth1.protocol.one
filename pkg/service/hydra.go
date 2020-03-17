@@ -40,4 +40,6 @@ type HydraAdminApi interface {
 
 	// RevokeAuthenticationSession invalidates a user s authentication session
 	RevokeAuthenticationSession(params *admin.RevokeAuthenticationSessionParams) (*admin.RevokeAuthenticationSessionNoContent, error)
+
+	AcceptLogoutRequest(params *admin.AcceptLogoutRequestParams) (*admin.AcceptLogoutRequestOK, error)
 }
