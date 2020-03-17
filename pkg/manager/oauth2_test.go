@@ -290,7 +290,7 @@ func TestAuthReturnErrorWithIncorrectToken(t *testing.T) {
 	r := mockIntRegistry()
 
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
 	ott.On("Use", "invalid_auth_token", mock.Anything).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
 	r.On("ApplicationService").Return(app)
@@ -524,7 +524,7 @@ func TestAuthReturnErrorWithUnableToSetSessionRemember(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	r.On("ApplicationService").Return(app)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
 	r.On("HydraAdminApi").Return(h)
 
@@ -546,7 +546,7 @@ func TestAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
 	app := &mocks.ApplicationServiceInterface{}
 	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	r.On("ApplicationService").Return(app)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
+	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
 	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
 	r.On("HydraAdminApi").Return(h)
@@ -1191,7 +1191,7 @@ func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
 	u.On("Create", mock.Anything).Return(nil)
 	ui.On("Create", mock.Anything).Return(nil)
 	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.RequestHandlerResponse{RedirectTo: "url"}}, nil)
+	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
 	r.On("ApplicationService").Return(app)
 	r.On("HydraAdminApi").Return(h)
 
