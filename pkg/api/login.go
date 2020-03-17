@@ -9,6 +9,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
+	"github.com/ory/hydra-client-go/client/admin"
 )
 
 func InitLogin(cfg *Server) error {
@@ -17,6 +18,7 @@ func InitLogin(cfg *Server) error {
 	cfg.Echo.POST("/api/login", ctl.login, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/login", ctl.check)
 	cfg.Echo.GET("/api/login/subject", ctl.subject)
+	cfg.Echo.GET("/api/logout", ctl.logout, apierror.Redirect("/error"))
 
 	return nil
 }
@@ -66,6 +68,20 @@ func (ctl *Login) login(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+}
+
+func (ctl *Login) logout(ctx echo.Context) error {
+	challenge := ctx.QueryParam("logout_challenge")
+
+	r, err := ctl.cfg.Registry.HydraAdminApi().AcceptLogoutRequest(&admin.AcceptLogoutRequestParams{
+		Context:         ctx.Request().Context(),
+		LogoutChallenge: challenge,
+	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.Redirect(http.StatusTemporaryRedirect, r.Payload.RedirectTo)
 }
 
 func (ctl *Login) subject(ctx echo.Context) error {

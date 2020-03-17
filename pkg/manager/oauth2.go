@@ -184,7 +184,7 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 }
 
 func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: context.TODO(), Challenge: challenge})
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: context.TODO(), LoginChallenge: challenge})
 	if err != nil {
 		return nil, apierror.InvalidChallenge
 	}
