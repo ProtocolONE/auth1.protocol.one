@@ -14,6 +14,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo/bson"
+	"github.com/globalsign/mgo"
 	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra-client-go/client/admin"
@@ -79,6 +80,9 @@ type OauthManagerInterface interface {
 
 	// IsUsernameFree checks if username is available for signup
 	IsUsernameFree(ctx echo.Context, challenge, username string) (bool, error)
+
+	// FindPrevUser returns remembered previous authenticated user
+	FindPrevUser(challenge string) (*models.User, error)
 
 	// CallBack verifies the result of oauth2 authorization.
 	//
@@ -178,6 +182,20 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 
 	return req.Payload.Client.ClientID, user, ipc, "", nil
 }
+
+func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: context.TODO(), Challenge: challenge})
+	if err != nil {
+		return nil, apierror.InvalidChallenge
+	}
+
+	if req.Payload.Subject  == "" {
+		return nil, mgo.ErrNotFound
+	}
+
+	return m.userService.Get(bson.ObjectIdHex(req.Payload.Subject))
+}
+
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, error) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: ctx.Request().Context(), LoginChallenge: form.Challenge})
