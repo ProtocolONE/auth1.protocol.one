@@ -170,7 +170,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 			return next(ctx)
 		}
 	})
-	s.Use(DeviceID())
+	s.Use(service.DeviceID())
 
 	registerCustomValidator(s)
 

@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var testDeviceID = "11d99202-27e9-4a65-b32e-53d8f6bb53a2"
-
 func TestOauthManager(t *testing.T) {
 	s := &mocks.MgoSession{}
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
@@ -812,7 +810,7 @@ func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 	s.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
 
 	m := &OauthManager{session: s}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
@@ -877,7 +875,7 @@ func TestSignUpReturnErrorWithInvalidPassword(t *testing.T) {
 		r:       r,
 		session: s,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "1"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "1"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "password", err.Code)
 	// assert.Equal(t, models.ErrorPasswordIncorrect, err.Message)
@@ -901,7 +899,7 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 		r:       r,
 		session: s,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorLoginChallenge, err.Message)
@@ -956,7 +954,7 @@ func TestSignUpReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
 		session:                 s,
 		identityProviderService: ip,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "client_id", err.Code)
 	// assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
@@ -987,7 +985,7 @@ func TestSignUpReturnErrorWithUnableToGetUserIdentity(t *testing.T) {
 		identityProviderService: ip,
 		userIdentityService:     ui,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "email", err.Code)
 	// assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
@@ -1018,7 +1016,7 @@ func TestSignUpReturnErrorWithEncryptPassword(t *testing.T) {
 		identityProviderService: ip,
 		userIdentityService:     ui,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "password", err.Code)
 	// assert.Equal(t, models.ErrorCryptPassword, err.Message)
@@ -1052,7 +1050,7 @@ func TestSignUpReturnErrorWithUnableToCreateUser(t *testing.T) {
 		userIdentityService:     ui,
 		userService:             u,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorCreateUser, err.Message)
@@ -1087,7 +1085,7 @@ func TestSignUpReturnErrorWithUnableToCreateUserIdentity(t *testing.T) {
 		userIdentityService:     ui,
 		userService:             u,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorCreateUserIdentity, err.Message)
@@ -1125,7 +1123,7 @@ func TestSignUpReturnErrorWithUnableToAddAuthLog(t *testing.T) {
 		userService:             u,
 		authLogService:          a,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorAddAuthLog, err.Message)
@@ -1164,7 +1162,7 @@ func TestSignUpReturnErrorWithUnableToAcceptLoginChallenge(t *testing.T) {
 		userService:             u,
 		authLogService:          a,
 	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
@@ -1203,7 +1201,7 @@ func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
 		userService:             u,
 		authLogService:          a,
 	}
-	url, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"}, testDeviceID)
+	url, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.Nil(t, err)
 	assert.Equal(t, "url", url)
 }

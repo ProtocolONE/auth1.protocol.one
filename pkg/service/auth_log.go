@@ -59,9 +59,13 @@ type AuthorizeLog struct {
 	// UserAgent is client useragent
 	UserAgent string `bson:"useragent" json:"useragent"`
 
+	// DeviceID is unique device identifier (special cookie for browser)
+	DeviceID string `bson:"device_id" json:"device_id"`
+
 	// IP is user ip
 	IP string `bson:"ip" json:"ip"`
 
+	// IPInfo is geo2ip info
 	IPInfo IPInfo `bson:"ip_info" json:"ip_info"`
 
 	// ClientTime time from http Date header
@@ -117,6 +121,7 @@ func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *
 		Referer:    reqctx.Request().Referer(),
 		UserAgent:  reqctx.Request().UserAgent(),
 		IP:         reqctx.RealIP(),
+		DeviceID:   GetDeviceID(reqctx),
 		ClientTime: ctime,
 	}
 	// identity provider
