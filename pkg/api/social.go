@@ -62,7 +62,7 @@ func (s *Social) Signup(ctx echo.Context) error {
 		return apierror.InvalidRequest(err)
 	}
 
-	url, err := m.SignUp(ctx, form, GetDeviceID(ctx))
+	url, err := m.SignUp(ctx, form)
 	if err != nil {
 		return err
 	}
