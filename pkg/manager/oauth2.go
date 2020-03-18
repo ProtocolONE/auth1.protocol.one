@@ -328,6 +328,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 	}
 	req := models2.AcceptConsentRequest{
 		GrantScope: form.Scope,
+		Remember: true,
 		Session: &models2.ConsentRequestSession{
 			IDToken:     userInfo,
 			AccessToken: map[string]interface{}{"remember": remember}},
