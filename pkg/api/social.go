@@ -19,6 +19,7 @@ func InitSocial(cfg *Server) error {
 
 	cfg.Echo.GET("/api/providers", s.List)
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
+	cfg.Echo.GET("/api/providers/:name/check", s.Check)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
 	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
@@ -119,6 +120,7 @@ func (s *Social) Forward(ctx echo.Context) error {
 	var (
 		name      = ctx.Param("name")
 		challenge = ctx.QueryParam("login_challenge")
+		launcher  = ctx.QueryParam("launcher")
 		domain    = fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
 	)
 
@@ -128,6 +130,19 @@ func (s *Social) Forward(ctx echo.Context) error {
 	url, err := m.ForwardUrl(challenge, name, domain)
 	if err != nil {
 		return err
+	}
+
+	// if launcher == true, then store challenge and options
+	if launcher == "true" {
+		err := s.registry.LauncherTokenService().Create(challenge, models.LauncherToken{
+			Name:   name,
+			Status: "in_progress",
+		}, &models.LauncherTokenSettings{
+			TTL: 600,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return ctx.Redirect(http.StatusPermanentRedirect, url)
@@ -164,6 +179,23 @@ func (s *Social) Callback(ctx echo.Context) error {
 		return err
 	}
 
+	// if launcher token with login_challenge key exists, then return to launcher
+	state, err := manager.DecodeState(req.State)
+	if err == nil {
+		println("Callback: state decoded")
+		t := &models.LauncherToken{}
+		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
+		if err == nil {
+			t.Status = "success"
+			s.registry.LauncherTokenService().Create(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
+			// return to launcher
+			return ctx.Redirect(http.StatusTemporaryRedirect, "/social-confirm")
+		}
+		println("callback error on token: " + err.Error())
+	} else {
+		println("Callback error: " + err.Error())
+	}
+
 	return ctx.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -182,4 +214,29 @@ func (s *Social) Profile(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, profile)
 
+}
+
+func (s *Social) Check(ctx echo.Context) error {
+	var (
+		name           = ctx.Param("name")
+		loginChallenge = ctx.QueryParam("login_challenge")
+		t              = &models.LauncherToken{}
+	)
+
+	err := s.registry.LauncherTokenService().Get(loginChallenge, t)
+	if err != nil {
+		return ctx.JSON(http.StatusOK, map[string]string{
+			"status": "expired",
+		})
+	}
+
+	if t.Name != name {
+		return ctx.JSON(http.StatusOK, map[string]string{
+			"status": "expired",
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"status": t.Status,
+	})
 }

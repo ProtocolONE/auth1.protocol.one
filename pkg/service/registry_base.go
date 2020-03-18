@@ -13,6 +13,7 @@ type RegistryBase struct {
 	session database.MgoSession
 	as      ApplicationServiceInterface
 	ott     OneTimeTokenServiceInterface
+	lts     LauncherTokenServiceInterface
 	watcher persist.Watcher
 	hydra   HydraAdminApi
 	mfa     MfaApiInterface
@@ -95,4 +96,12 @@ func (r *RegistryBase) OneTimeTokenService() OneTimeTokenServiceInterface {
 	}
 
 	return r.ott
+}
+
+func (r *RegistryBase) LauncherTokenService() LauncherTokenServiceInterface {
+	if r.lts == nil {
+		r.lts = NewLauncherTokenService(r.redis)
+	}
+
+	return r.lts
 }
