@@ -32,6 +32,8 @@ type LauncherToken struct {
 	Name string `json:"name"`
 	// Status stores state of the login process
 	Status string `json:"status"`
+	// URL to finish
+	URL string `json:"url"`
 }
 
 // JwtClaim is deprecated and will be removed.

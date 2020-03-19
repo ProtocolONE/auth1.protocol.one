@@ -189,6 +189,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
 		if err == nil {
 			t.Status = "success"
+			t.URL = url
 			s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
 			// return to launcher
 			return ctx.Redirect(http.StatusTemporaryRedirect, "/social-sign-in-confirm")
@@ -216,6 +217,11 @@ func (s *Social) Profile(ctx echo.Context) error {
 }
 
 func (s *Social) Check(ctx echo.Context) error {
+	type response struct {
+		Status string `json:"status"`
+		URL    string `json:"url,omitempty"`
+	}
+
 	var (
 		name           = ctx.Param("name")
 		loginChallenge = ctx.QueryParam("login_challenge")
@@ -224,18 +230,20 @@ func (s *Social) Check(ctx echo.Context) error {
 
 	err := s.registry.LauncherTokenService().Get(loginChallenge, t)
 	if err != nil {
-		return ctx.JSON(http.StatusOK, map[string]string{
-			"status": "expired",
+		ctx.Logger().Error(err.Error())
+		return ctx.JSON(http.StatusOK, response{
+			Status: "expired",
 		})
 	}
 
 	if t.Name != name {
-		return ctx.JSON(http.StatusOK, map[string]string{
-			"status": "expired",
+		return ctx.JSON(http.StatusOK, response{
+			Status: "expired",
 		})
 	}
 
-	return ctx.JSON(http.StatusOK, map[string]string{
-		"status": t.Status,
+	return ctx.JSON(http.StatusOK, response{
+		Status: t.Status,
+		URL:    t.URL,
 	})
 }
