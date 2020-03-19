@@ -20,6 +20,10 @@ import (
 	"github.com/ory/hydra-client-go/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+		httptransport "github.com/go-openapi/runtime/client"
+		"github.com/go-openapi/runtime"
+		"github.com/go-openapi/strfmt"
+
 )
 
 var serverCmd = &cobra.Command{
@@ -79,7 +83,13 @@ func runServer(cmd *cobra.Command, args []string) {
 		zap.L().Fatal("Invalid of the Hydra admin url", zap.Error(err))
 	}
 
-	hydraSDK := client.NewHTTPClientWithConfig(nil, &client.TransportConfig{Schemes: []string{u.Scheme}, Host: u.Host})
+
+	transport := httptransport.New(u.Host, "", []string{u.Scheme})
+	transport.DefaultAuthentication = runtime.ClientAuthInfoWriterFunc(func(req runtime.ClientRequest, _ strfmt.Registry) error {
+		req.SetHeaderParam("X-Forwarded-Proto", "https")
+		return nil
+	})
+	hydraSDK := client.New(transport, nil)
 	if err != nil {
 		zap.L().Fatal("Hydra SDK creation failed", zap.Error(err))
 	}
