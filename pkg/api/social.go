@@ -20,6 +20,7 @@ func InitSocial(cfg *Server) error {
 	cfg.Echo.GET("/api/providers", s.List)
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
 	cfg.Echo.GET("/api/providers/:name/check", s.Check)
+	cfg.Echo.GET("/api/providers/:name/confirm", s.Confirm)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
 	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
@@ -187,13 +188,15 @@ func (s *Social) Callback(ctx echo.Context) error {
 	if state.Launcher == "true" {
 		t := &models.LauncherToken{}
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
-		if err == nil {
-			t.Status = "success"
-			t.URL = url
-			s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
-			// return to launcher
-			return ctx.Redirect(http.StatusTemporaryRedirect, "/social-sign-in-confirm")
+		if err != nil {
+			return err
 		}
+		t.URL = url
+		err = s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
+		if err != nil {
+			return err
+		}
+		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/social-sign-in-confirm?login_challenge=%s&name=%s", state.Challenge, name))
 	}
 
 	return ctx.Redirect(http.StatusTemporaryRedirect, url)
@@ -245,5 +248,26 @@ func (s *Social) Check(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, response{
 		Status: t.Status,
 		URL:    t.URL,
+	})
+}
+
+func (s *Social) Confirm(ctx echo.Context) error {
+	var (
+		challenge = ctx.QueryParam("login_challenge")
+	)
+
+	t := &models.LauncherToken{}
+	err := s.registry.LauncherTokenService().Get(challenge, t)
+	if err != nil {
+		return err
+	}
+
+	t.Status = "success"
+	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"status": "success",
 	})
 }
