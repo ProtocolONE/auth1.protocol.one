@@ -44,14 +44,19 @@ type RegistryConfig struct {
 
 // NewRegistryBase creates new registry service.
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
-	return &RegistryBase{
+	r := &RegistryBase{
 		session: config.MgoSession,
 		redis:   config.RedisClient,
 		hydra:   config.HydraAdminApi,
 		mfa:     config.MfaService,
 		mailer:  config.Mailer,
 		geo:     config.GeoIpService,
+		ott:     NewOneTimeTokenService(config.RedisClient),
+		lts:     NewLauncherTokenService(config.RedisClient),
 	}
+	r.as = NewApplicationService(r)
+
+	return r
 }
 
 func (r *RegistryBase) Watcher() persist.Watcher {
@@ -83,25 +88,13 @@ func (r *RegistryBase) Mailer() MailerInterface {
 }
 
 func (r *RegistryBase) ApplicationService() ApplicationServiceInterface {
-	if r.as == nil {
-		r.as = NewApplicationService(r)
-	}
-
 	return r.as
 }
 
 func (r *RegistryBase) OneTimeTokenService() OneTimeTokenServiceInterface {
-	if r.ott == nil {
-		r.ott = NewOneTimeTokenService(r.redis)
-	}
-
 	return r.ott
 }
 
 func (r *RegistryBase) LauncherTokenService() LauncherTokenServiceInterface {
-	if r.lts == nil {
-		r.lts = NewLauncherTokenService(r.redis)
-	}
-
 	return r.lts
 }
