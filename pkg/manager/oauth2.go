@@ -33,6 +33,8 @@ var (
 	clientIdSessionKey = "oauth_client_id"
 	logoutSessionKey   = "oauth_logout_redirect_uri"
 	logoutHydraUrl     = "/oauth2/auth/sessions/login/revoke"
+
+	RememberTime = 30*24*60*60
 )
 
 // OauthManagerInterface describes of methods for the manager.
@@ -273,7 +275,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 		Context:        ctx.Request().Context(),
 		LoginChallenge: form.Challenge,
-		Body:           &models2.AcceptLoginRequest{Subject: &userId, Remember: form.Remember, RememberFor: 0},
+		Body:           &models2.AcceptLoginRequest{Subject: &userId, Remember: form.Remember, RememberFor: RememberTime},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to accept login challenge")
@@ -329,6 +331,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 	req := models2.AcceptConsentRequest{
 		GrantScope: form.Scope,
 		Remember: true,
+		RememberFor: RememberTime,
 		Session: &models2.ConsentRequestSession{
 			IDToken:     userInfo,
 			AccessToken: map[string]interface{}{"remember": remember}},

@@ -164,7 +164,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 			Context:        context.TODO(),
 			LoginChallenge: s.Challenge,
-			Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: false, RememberFor: 0}, // TODO remember
+			Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: true, RememberFor: RememberTime},
 		})
 		if err != nil {
 			return "", errors.Wrap(err, "unable to accept login challenge")
