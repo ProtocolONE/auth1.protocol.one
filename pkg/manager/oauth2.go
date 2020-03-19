@@ -13,8 +13,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
-	"github.com/globalsign/mgo/bson"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"github.com/jinzhu/copier"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra-client-go/client/admin"
@@ -26,6 +26,7 @@ import (
 const (
 	scopeOffline = "offline"
 	scopeOpenId  = "openid"
+	RememberTime = 30 * 24 * 60 * 60
 )
 
 var (
@@ -33,8 +34,6 @@ var (
 	clientIdSessionKey = "oauth_client_id"
 	logoutSessionKey   = "oauth_logout_redirect_uri"
 	logoutHydraUrl     = "/oauth2/auth/sessions/login/revoke"
-
-	RememberTime = 30*24*60*60
 )
 
 // OauthManagerInterface describes of methods for the manager.
@@ -191,13 +190,12 @@ func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {
 		return nil, apierror.InvalidChallenge
 	}
 
-	if req.Payload.Subject  == "" {
+	if req.Payload.Subject == "" {
 		return nil, mgo.ErrNotFound
 	}
 
 	return m.userService.Get(bson.ObjectIdHex(req.Payload.Subject))
 }
-
 
 func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm) (string, error) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{Context: ctx.Request().Context(), LoginChallenge: form.Challenge})
@@ -329,8 +327,8 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 		"picture":               user.Picture,
 	}
 	req := models2.AcceptConsentRequest{
-		GrantScope: form.Scope,
-		Remember: true,
+		GrantScope:  form.Scope,
+		Remember:    true,
 		RememberFor: RememberTime,
 		Session: &models2.ConsentRequestSession{
 			IDToken:     userInfo,
