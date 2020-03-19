@@ -13,14 +13,14 @@ const LauncherTokenStoragePattern = "lts_data_%s"
 
 // LauncherTokenServiceInterface describes of methods for the launcher token service.
 type LauncherTokenServiceInterface interface {
-	// Create creates a launcher token with arbitrary data and the specified settings
-	Create(string, interface{}, *models.LauncherTokenSettings) error
+	// Set creates a launcher token with arbitrary data and the specified settings
+	Set(key string, obj interface{}, settings *models.LauncherTokenSettings) error
 
 	// Get returns the contents of a launcher token by its code.
-	Get(string, interface{}) error
+	Get(key string, obj interface{}) error
 
 	// Use returns the contents of a launcher token by its code and deletes it.
-	Use(string, interface{}) error
+	Use(key string, obj interface{}) error
 }
 
 // LauncherTokenService is the launcher token service.
@@ -36,24 +36,24 @@ func NewLauncherTokenService(redis *redis.Client) LauncherTokenServiceInterface 
 	}
 }
 
-func (s *LauncherTokenService) Create(challenge string, obj interface{}, settings *models.LauncherTokenSettings) error {
-	challenge = fmt.Sprintf(LauncherTokenStoragePattern, challenge)
+func (s *LauncherTokenService) Set(key string, obj interface{}, settings *models.LauncherTokenSettings) error {
+	key = fmt.Sprintf(LauncherTokenStoragePattern, key)
 
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
 
-	resSet := s.Redis.Set(challenge, data, 0)
+	resSet := s.Redis.Set(key, data, 0)
 	if resSet.Err() != nil {
 		return resSet.Err()
 	}
-	resExp := s.Redis.Expire(challenge, time.Duration(settings.TTL)*time.Second)
+	resExp := s.Redis.Expire(key, time.Duration(settings.TTL)*time.Second)
 	return resExp.Err()
 }
 
-func (s *LauncherTokenService) Get(token string, obj interface{}) error {
-	res, err := s.Redis.Get(fmt.Sprintf(LauncherTokenStoragePattern, token)).Bytes()
+func (s *LauncherTokenService) Get(key string, obj interface{}) error {
+	res, err := s.Redis.Get(fmt.Sprintf(LauncherTokenStoragePattern, key)).Bytes()
 	if err != nil {
 		return err
 	}
@@ -64,10 +64,10 @@ func (s *LauncherTokenService) Get(token string, obj interface{}) error {
 	return nil
 }
 
-func (s *LauncherTokenService) Use(token string, d interface{}) error {
-	if err := s.Get(token, &d); err != nil {
+func (s *LauncherTokenService) Use(key string, d interface{}) error {
+	if err := s.Get(key, &d); err != nil {
 		return err
 	}
 
-	return s.Redis.Del(fmt.Sprintf(LauncherTokenStoragePattern, token)).Err()
+	return s.Redis.Del(fmt.Sprintf(LauncherTokenStoragePattern, key)).Err()
 }

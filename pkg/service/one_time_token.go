@@ -3,10 +3,11 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/go-redis/redis"
-	"time"
 )
 
 const OneTimeTokenStoragePattern = "ott_data_%s"

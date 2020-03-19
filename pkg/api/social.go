@@ -134,7 +134,7 @@ func (s *Social) Forward(ctx echo.Context) error {
 
 	// if launcher == true, then store challenge and options
 	if launcher == "true" {
-		err := s.registry.LauncherTokenService().Create(challenge, models.LauncherToken{
+		err := s.registry.LauncherTokenService().Set(challenge, models.LauncherToken{
 			Name:   name,
 			Status: "in_progress",
 		}, &models.LauncherTokenSettings{
@@ -189,7 +189,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
 		if err == nil {
 			t.Status = "success"
-			s.registry.LauncherTokenService().Create(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
+			s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
 			// return to launcher
 			return ctx.Redirect(http.StatusTemporaryRedirect, "/social-sign-in-confirm")
 		}
