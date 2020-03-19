@@ -16,13 +16,13 @@ const OneTimeTokenStoragePattern = "ott_data_%s"
 type OneTimeTokenServiceInterface interface {
 	// Create creates a one-time token with arbitrary data and the specified settings
 	// for the length of the token and its lifetime.
-	Create(interface{}, *models.OneTimeTokenSettings) (*models.OneTimeToken, error)
+	Create(obj interface{}, settings *models.OneTimeTokenSettings) (*models.OneTimeToken, error)
 
 	// Get returns the contents of a one-time token by its code.
-	Get(string, interface{}) error
+	Get(token string, obj interface{}) error
 
 	// Use returns the contents of a one-time token by its code and deletes it.
-	Use(string, interface{}) error
+	Use(token string, obj interface{}) error
 }
 
 // OneTimeTokenService is the one-time token service.
