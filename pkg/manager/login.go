@@ -30,7 +30,7 @@ var ErrAlreadyLinked = errors.New("account already linked to social")
 type LoginManagerInterface interface {
 
 	// ForwardUrl returns url for forwarding user to id provider
-	ForwardUrl(challenge, provider, domain string) (string, error)
+	ForwardUrl(challenge, provider, domain, launcher string) (string, error)
 
 	// Callback handles auth_code returned by id provider
 	Callback(ctx echo.Context, provider, code, state, domain string) (string, error)
@@ -74,6 +74,7 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 
 type State struct {
 	Challenge string `json:"challenge`
+	Launcher  string `json:"launcher"`
 }
 
 func DecodeState(state string) (*State, error) {
@@ -209,7 +210,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
 }
 
-func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, error) {
+func (m *LoginManager) ForwardUrl(challenge, provider, domain, launcher string) (string, error) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
@@ -225,7 +226,7 @@ func (m *LoginManager) ForwardUrl(challenge, provider, domain string) (string, e
 		return "", errors.New("identity provider not found")
 	}
 
-	return m.identityProviderService.GetAuthUrl(domain, ip, &State{Challenge: challenge})
+	return m.identityProviderService.GetAuthUrl(domain, ip, &State{Challenge: challenge, Launcher: launcher})
 }
 
 func (m *LoginManager) Check(token string) bool {

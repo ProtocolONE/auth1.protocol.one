@@ -127,7 +127,7 @@ func (s *Social) Forward(ctx echo.Context) error {
 	db := ctx.Get("database").(database.MgoSession)
 	m := manager.NewLoginManager(db, s.registry)
 
-	url, err := m.ForwardUrl(challenge, name, domain)
+	url, err := m.ForwardUrl(challenge, name, domain, launcher)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,10 @@ func (s *Social) Callback(ctx echo.Context) error {
 
 	// if launcher token with login_challenge key exists, then return to launcher
 	state, err := manager.DecodeState(req.State)
-	if err == nil {
+	if err != nil {
+		return err
+	}
+	if state.Launcher == "true" {
 		t := &models.LauncherToken{}
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
 		if err == nil {
