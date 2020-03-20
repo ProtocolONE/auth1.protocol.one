@@ -1,13 +1,14 @@
 package service
 
 import (
+	"sync"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 const ApplicationWatcherChannel = "application"
