@@ -1,37 +1,38 @@
 package api
 
 import (
+	"strconv"
+	"time"
+
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"strconv"
-	"time"
 )
 
-func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
+func RequestLogger(skipper func(echo.Context) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 
 			err := next(c)
 
-			stop := time.Now()
+			if skipper(c) {
+				return err
+			}
+
+			duration := time.Since(start)
 			req := c.Request()
 			res := c.Response()
-
-			id := req.Header.Get(echo.HeaderXRequestID)
-			if id == "" {
-				id = res.Header().Get(echo.HeaderXRequestID)
-			}
 
 			p := req.URL.Path
 			if p == "" {
 				p = "/"
 			}
 
-			cl := req.Header.Get(echo.HeaderContentLength)
-			if cl == "" {
-				cl = "0"
+			var bytesIn int64 = 0
+			if v, err := strconv.ParseInt(req.Header.Get(echo.HeaderContentLength), 10, 64); err == nil {
+				bytesIn = v
 			}
 
 			status := res.Status
@@ -44,30 +45,25 @@ func ZapLogger(log *zap.Logger) echo.MiddlewareFunc {
 				zap.String("remote_ip", c.RealIP()),
 				zap.String("referer", req.Referer()),
 				zap.String("user_agent", req.UserAgent()),
-				zap.String("time_unix", strconv.FormatInt(time.Now().Unix(), 10)),
-				zap.String("time_unix_nano", strconv.FormatInt(time.Now().UnixNano(), 10)),
-				zap.String("time_rfc3339", time.Now().Format(time.RFC3339)),
-				zap.String("time_rfc3339_nano", time.Now().Format(time.RFC3339Nano)),
-				zap.String("latency", strconv.FormatInt(int64(stop.Sub(start)), 10)),
-				zap.String("latency_human", stop.Sub(start).String()),
-				zap.String("bytes_in", cl),
-				zap.String("bytes_out", strconv.FormatInt(res.Size, 10)),
-			}
-
-			logger := c.Get("logger")
-			if logger != nil {
-				log = logger.(*zap.Logger)
+				// zap.String("time_unix", strconv.FormatInt(time.Now().Unix(), 10)),
+				// zap.String("time_unix_nano", strconv.FormatInt(time.Now().UnixNano(), 10)),
+				// zap.String("time_rfc3339", time.Now().Format(time.RFC3339)),
+				// zap.String("time_rfc3339_nano", time.Now().Format(time.RFC3339Nano)),
+				zap.Int64("latency", int64(duration)),
+				zap.String("latency_human", duration.String()),
+				zap.Int64("bytes_in", bytesIn),
+				zap.Int64("bytes_out", res.Size),
 			}
 
 			switch {
 			case status >= 500:
-				log.Error("Server error", fields...)
+				log.Error(c.Request().Context(), "Server error", fields...)
 			case status >= 400:
-				log.Warn("Client error", fields...)
+				log.Warn(c.Request().Context(), "Client error", fields...)
 			case status >= 300:
-				log.Info("Redirection", fields...)
+				log.Info(c.Request().Context(), "Redirection", fields...)
 			default:
-				log.Info("Success", fields...)
+				log.Info(c.Request().Context(), "Success", fields...)
 			}
 
 			return err

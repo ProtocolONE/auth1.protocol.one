@@ -325,6 +325,7 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 		"phone_number_verified": user.PhoneVerified,
 		"name":                  user.Name,
 		"picture":               user.Picture,
+		"username":              user.Username,
 	}
 	req := models2.AcceptConsentRequest{
 		GrantScope:  form.Scope,

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/google/uuid"
-	"github.com/juju/zaputil/zapctx"
 	"go.uber.org/zap"
 )
 
@@ -34,8 +34,6 @@ func NewWebhooks() *WebHooks {
 }
 
 func (wh *WebHooks) UserLogout(ctx context.Context, userId string, endpoints []string) error {
-	log := zapctx.Logger(ctx)
-
 	uid, err := uuid.NewUUID()
 	if err != nil {
 		return err
@@ -48,26 +46,24 @@ func (wh *WebHooks) UserLogout(ctx context.Context, userId string, endpoints []s
 		Event:     map[string]string{},
 	}
 
-	log.Info(fmt.Sprintf("Webhook %s started", hook.ID))
+	log.Info(ctx, fmt.Sprintf("Webhook %s started", hook.ID))
 	trigger(ctx, endpoints, hook)
-	log.Info(fmt.Sprintf("Webhook %s finished", hook.ID))
+	log.Info(ctx, fmt.Sprintf("Webhook %s finished", hook.ID))
 
 	return nil
 }
 
 func trigger(ctx context.Context, endpoints []string, hook Hook) {
-	log := zapctx.Logger(ctx)
-
 	jsonHook, err := json.Marshal(hook)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error(ctx, err.Error())
 		return
 	}
 
 	buf := &bytes.Buffer{}
 	buf.Write(jsonHook)
 
-	log.Debug("webhook", zap.ByteString("body", jsonHook))
+	log.Debug(ctx, "webhook", zap.ByteString("body", jsonHook))
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(endpoints))
@@ -78,7 +74,7 @@ func trigger(ctx context.Context, endpoints []string, hook Hook) {
 			defer wg.Done()
 			err := post(url, buf)
 			if err != nil {
-				log.Error(err.Error(), zap.String("hook", hook.ID), zap.String("url", url))
+				log.Error(ctx, err.Error(), zap.String("hook", hook.ID), zap.String("url", url))
 			}
 		}()
 	}

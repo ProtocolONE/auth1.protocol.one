@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
@@ -133,20 +134,16 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	}
 	s := server.Echo
 	s.Renderer = t
-	s.HTTPErrorHandler = apierror.Handler //helper.ErrorHandler
-	s.Use(ZapLogger(zap.L()))
-	s.Use(middleware.Recover())
-	s.Use(middleware.RequestID())
-	s.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			var logger = zap.L().With(
-				zap.String("request_id", ctx.Response().Header().Get(echo.HeaderXRequestID)),
-			)
-			ctx.Set("logger", logger)
 
-			return next(ctx)
-		}
-	})
+	// postprocessing middleware
+	s.Use(RequestLogger(skip("/health")))
+	s.Use(apierror.Middleware())
+
+	// preprocessing middleware
+	s.Use(middleware.RequestID())
+	s.Use(service.DeviceID())
+	s.Use(contextMiddleware())
+
 	// TODO: Validate origins for each application by settings
 	s.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowHeaders:     []string{"authorization", "content-type"},
@@ -170,7 +167,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 			return next(ctx)
 		}
 	})
-	s.Use(service.DeviceID())
 
 	registerCustomValidator(s)
 
@@ -243,8 +239,31 @@ func (s *Server) setupRoutes() error {
 	return nil
 }
 
+func contextMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+			rid := c.Response().Header().Get(echo.HeaderXRequestID)
+			did := service.GetDeviceID(c)
+			c.SetRequest(c.Request().WithContext(appcore.WithRequest(ctx, rid, did)))
+			return next(c)
+		}
+	}
+}
+
 func (t *Template) Render(w io.Writer, name string, data interface{}, ctx echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func skip(urls ...string) middleware.Skipper {
+	return func(c echo.Context) bool {
+		for _, u := range urls {
+			if strings.HasPrefix(c.Path(), u) {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 func csrfSkipper(ctx echo.Context) bool {

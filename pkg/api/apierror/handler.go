@@ -1,12 +1,15 @@
 package apierror
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
 	"errors"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 )
 
 // Response represents json response for api errors
@@ -15,10 +18,31 @@ type Response struct {
 	RequestID string `json:"request_id,omitempty"`
 }
 
+func Middleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			defer func() {
+				if r := recover(); r != nil {
+					err, ok := r.(error)
+					if !ok {
+						err = fmt.Errorf("%v", r)
+					}
+					Handler(err, c)
+				}
+			}()
+			err := next(c)
+			if err != nil {
+				Handler(err, c)
+			}
+			return nil
+		}
+	}
+}
+
 // Handler represents echo error handler for api
 func Handler(err error, ctx echo.Context) {
 	if ctx.Response().Committed {
-		ctx.Logger().Error("response already commited", err)
+		log.Error(ctx.Request().Context(), "Response already commited", zap.Error(err))
 		return
 	}
 
@@ -32,13 +56,13 @@ func Handler(err error, ctx echo.Context) {
 		case echo.ErrUnauthorized:
 			e = Unauthorized
 		default:
-			ctx.Logger().Error(err)
+			log.Error(ctx.Request().Context(), "Unknown api error", zap.Error(err))
 			e = unknown
 		}
 	}
 
 	if err := resp(ctx, e); err != nil {
-		ctx.Logger().Error(err)
+		log.Error(ctx.Request().Context(), "API response failure", zap.Error(err))
 	}
 }
 
@@ -71,7 +95,7 @@ func Redirect(path string) echo.MiddlewareFunc {
 
 			var e *APIError
 			if !errors.As(err, &e) {
-				ctx.Logger().Error(err)
+				log.Error(ctx.Request().Context(), "Unknown api error", zap.Error(err))
 				e = unknown
 			}
 
@@ -84,7 +108,6 @@ func Redirect(path string) echo.MiddlewareFunc {
 			v.Add("code", e.Code)
 			u.RawQuery = v.Encode()
 			return ctx.Redirect(http.StatusTemporaryRedirect, u.String())
-
 		}
 	}
 }
