@@ -43,6 +43,7 @@ func (wh *WebHooks) UserLogout(ctx context.Context, userId string, endpoints []s
 		ID:        uid.String(),
 		Action:    UserLogoutAction,
 		CreatedAt: time.Now().Format(time.RFC3339),
+		UserID:    userId,
 		Event:     map[string]string{},
 	}
 
