@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	geo "github.com/ProtocolONE/geoip-service/pkg/proto"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/juju/zaputil/zapctx"
 	"github.com/labstack/echo/v4"
 	"github.com/micro/go-micro/client"
 	"github.com/pkg/errors"
@@ -132,7 +132,7 @@ func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *
 
 	ipinfo, err := s.getIPInfo(record.IP)
 	if err != nil {
-		zapctx.Logger(context.TODO()).Error("can't get geoip info", zap.Error(err))
+		log.Error(reqctx.Request().Context(), "can't get geoip info", zap.Error(err))
 	}
 	record.IPInfo = ipinfo
 

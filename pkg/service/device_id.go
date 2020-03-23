@@ -1,12 +1,11 @@
 package service
 
 import (
-	"context"
 	"net/http"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/google/uuid"
-	"github.com/juju/zaputil/zapctx"
 	"github.com/labstack/echo/v4"
 )
 
@@ -42,7 +41,7 @@ func DeviceID() echo.MiddlewareFunc {
 func GetDeviceID(ctx echo.Context) string {
 	value, ok := ctx.Get(deviceIdCookie).(string)
 	if !ok {
-		zapctx.Logger(context.TODO()).Error("device_id not found in request context, maybe you forgot add DeviceID middleware?")
+		log.Error(ctx.Request().Context(), "device_id not found in request context, maybe you forgot add DeviceID middleware?")
 	}
 	return value
 }
