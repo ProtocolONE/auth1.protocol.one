@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
@@ -14,6 +16,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra-client-go/client/admin"
+	"go.uber.org/zap"
 )
 
 func InitPasswordReset(cfg *Server) error {
@@ -102,7 +105,6 @@ func (pr *PasswordReset) PasswordReset(ctx echo.Context) error {
 		if err.Code == "email" {
 			return apierror.EmailNotFound
 		}
-		ctx.Logger().Error(err.Error())
 		return err
 	}
 
@@ -168,39 +170,42 @@ func (pr *PasswordReset) PasswordResetSet(ctx echo.Context) error {
 		return err
 	}
 
+	rctx := ctx.Request().Context()
+
 	// revoke consent sessions & revoke auth sessions
 	_, err := pr.Registry.HydraAdminApi().RevokeConsentSessions(&admin.RevokeConsentSessionsParams{
 		Subject: ts.Subject,
-		Context: ctx.Request().Context(),
+		Context: rctx,
 	})
 	if err != nil {
-		ctx.Logger().Error(err)
+		log.Error(rctx, "failed revoke consent sessions", zap.Error(err))
 	}
 
 	_, err = pr.Registry.HydraAdminApi().RevokeAuthenticationSession(&admin.RevokeAuthenticationSessionParams{
 		Subject: ts.Subject,
-		Context: ctx.Request().Context(),
+		Context: rctx,
 	})
 	if err != nil {
-		ctx.Logger().Error(err)
+		log.Error(rctx, "failed revoke auth session", zap.Error(err))
 	}
 
-	pr.userLogoutWebHook(ctx, ts)
+	pr.userLogoutWebHook(rctx, ts)
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"status": "ok",
 	})
 }
 
-func (pr *PasswordReset) userLogoutWebHook(ctx echo.Context, ts *models.ChangePasswordTokenSource) {
+func (pr *PasswordReset) userLogoutWebHook(ctx context.Context, ts *models.ChangePasswordTokenSource) {
 	app, err := pr.Registry.ApplicationService().Get(bson.ObjectIdHex(ts.ClientID))
 	if err != nil {
-		ctx.Logger().Error("Cannot execute user.logout WebHook, error on getting app by id: %s", err.Error())
+		log.Error(ctx, "Cannot execute user.logout WebHook, error on getting app by id", zap.Error(err))
+		return
 	}
 	go func() {
-		err := pr.WebHooks.UserLogout(ctx.Request().Context(), ts.Subject, app.WebHooks)
+		err := pr.WebHooks.UserLogout(ctx, ts.Subject, app.WebHooks)
 		if err != nil {
-			ctx.Logger().Error("Error on user.logout WebHook: %s", err.Error())
+			log.Error(ctx, "Error on user.logout WebHook", zap.Error(err))
 		}
 	}()
 }

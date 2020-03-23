@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/juju/zaputil/zapctx"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -31,7 +31,6 @@ func (r *Recaptcha) Key() string {
 
 // Verify checks provided token in recaptcha service
 func (r *Recaptcha) Verify(ctx context.Context, token, action, ip string) (bool, error) {
-	log := zapctx.Logger(ctx)
 	form := url.Values{
 		"secret":   {r.secret},
 		"response": {token},
@@ -50,7 +49,7 @@ func (r *Recaptcha) Verify(ctx context.Context, token, action, ip string) (bool,
 		return false, errors.WithMessage(err, "recaptcha verify request failed")
 	}
 
-	log.Debug("recaptcha verify", zap.ByteString("response", data))
+	log.Debug(ctx, "recaptcha verify", zap.ByteString("response", data))
 
 	var res struct {
 		Success     bool     `json:"success"`      //: true,
@@ -66,17 +65,17 @@ func (r *Recaptcha) Verify(ctx context.Context, token, action, ip string) (bool,
 	}
 
 	if !res.Success {
-		log.Warn("recaptcha verify errors", zap.Strings("errors", res.ErrorCodes))
+		log.Warn(ctx, "recaptcha verify errors", zap.Strings("errors", res.ErrorCodes))
 		return false, nil
 	}
 
 	if action != "" && res.Action != action {
-		log.Warn("recaptcha actions doesn't match", zap.String("re_action", res.Action), zap.String("our_action", action))
+		log.Warn(ctx, "recaptcha actions doesn't match", zap.String("re_action", res.Action), zap.String("our_action", action))
 		return false, nil
 	}
 
 	if r.hostname != "" && res.Hostname != r.hostname {
-		log.Warn("recaptcha hostname doesn't match", zap.String("re_hostname", res.Hostname), zap.String("our_hostname", r.hostname))
+		log.Warn(ctx, "recaptcha hostname doesn't match", zap.String("re_hostname", res.Hostname), zap.String("our_hostname", r.hostname))
 		return false, nil
 	}
 
