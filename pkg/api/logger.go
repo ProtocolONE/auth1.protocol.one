@@ -10,12 +10,16 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func RequestLogger() echo.MiddlewareFunc {
+func RequestLogger(skipper func(echo.Context) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			start := time.Now()
 
 			err := next(c)
+
+			if skipper(c) {
+				return err
+			}
 
 			duration := time.Since(start)
 			req := c.Request()
@@ -27,7 +31,7 @@ func RequestLogger() echo.MiddlewareFunc {
 			}
 
 			var bytesIn int64 = 0
-			if v, err := strconv.ParseInt(req.Header.Get(echo.HeaderContentLength),10,64); err == nil {
+			if v, err := strconv.ParseInt(req.Header.Get(echo.HeaderContentLength), 10, 64); err == nil {
 				bytesIn = v
 			}
 

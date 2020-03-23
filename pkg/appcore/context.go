@@ -8,6 +8,7 @@ import (
 
 type Ctx struct {
 	RequestID string
+	DeviceID  string
 	// Challenge string // todo Session identifier
 	Logger *zap.Logger
 }
@@ -29,9 +30,9 @@ func Context(ctx context.Context) Ctx {
 	return Ctx{Logger: zap.L()}
 }
 
-func WithRequest(ctx context.Context, requestID string) context.Context { // todo add session id
+func WithRequest(ctx context.Context, requestID, deviceID string) context.Context { // todo add session id
 	return With(ctx, Ctx{
 		RequestID: requestID,
-		Logger:    zap.L().With(zap.String("request_id", requestID)),
+		Logger:    zap.L().With(zap.String("request_id", requestID), zap.String("device_id", deviceID)),
 	})
 }

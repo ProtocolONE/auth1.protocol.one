@@ -134,14 +134,14 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	}
 	s := server.Echo
 	s.Renderer = t
-	s.HTTPErrorHandler = apierror.Handler //helper.ErrorHandler
 
 	// postprocessing middleware
-	s.Use(RequestLogger())
-	s.Use(middleware.Recover())
+	s.Use(RequestLogger(skip("/health")))
+	s.Use(apierror.Middleware())
 
 	// preprocessing middleware
 	s.Use(middleware.RequestID())
+	s.Use(service.DeviceID())
 	s.Use(contextMiddleware())
 
 	// TODO: Validate origins for each application by settings
@@ -167,7 +167,6 @@ func NewServer(c *ServerConfig) (*Server, error) {
 			return next(ctx)
 		}
 	})
-	s.Use(service.DeviceID())
 
 	registerCustomValidator(s)
 
@@ -245,7 +244,8 @@ func contextMiddleware() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			ctx := c.Request().Context()
 			rid := c.Response().Header().Get(echo.HeaderXRequestID)
-			c.SetRequest(c.Request().WithContext(appcore.WithRequest(ctx, rid)))
+			did := service.GetDeviceID(c)
+			c.SetRequest(c.Request().WithContext(appcore.WithRequest(ctx, rid, did)))
 			return next(c)
 		}
 	}
@@ -253,6 +253,17 @@ func contextMiddleware() echo.MiddlewareFunc {
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, ctx echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func skip(urls ...string) middleware.Skipper {
+	return func(c echo.Context) bool {
+		for _, u := range urls {
+			if strings.HasPrefix(c.Path(), u) {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 func csrfSkipper(ctx echo.Context) bool {

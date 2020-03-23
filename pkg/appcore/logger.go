@@ -41,7 +41,7 @@ func newDevLogger() *zap.Logger {
 				MessageKey:  "msg",
 				LevelKey:    "level",
 				TimeKey:     "ts",
-				EncodeLevel: zapcore.LowercaseLevelEncoder,
+				EncodeLevel: zapcore.CapitalColorLevelEncoder,
 				EncodeTime:  zapcore.ISO8601TimeEncoder,
 			}),
 			os.Stdout,
