@@ -48,9 +48,10 @@ func InitManage(cfg *Server) error {
 // Manage
 func authlog(ctx echo.Context) error {
 	var req struct {
-		UserID string `query:"user_id" validate:"required"`
-		From   string `query:"from"`
-		Count  int    `query:"count"`
+		UserID   string `query:"user_id"`
+		DeviceID string `query:"device_id"`
+		From     string `query:"from"`
+		Count    int    `query:"count"`
 	}
 	req.Count = 100 // default
 
@@ -69,7 +70,13 @@ func authlog(ctx echo.Context) error {
 
 	db := ctx.Get("database").(database.MgoSession)
 	s := service.NewAuthLogService(db, nil)
-	logs, err := s.Get(req.UserID, req.Count, req.From)
+	var logs []*service.AuthorizeLog
+	var err error
+	if req.UserID != "" {
+		logs, err = s.Get(req.UserID, req.Count, req.From)
+	} else {
+		logs, err = s.GetByDevice(req.DeviceID, req.Count, req.From)
+	}
 	if err != nil {
 		return err
 	}

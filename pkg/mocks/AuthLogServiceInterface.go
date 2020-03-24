@@ -52,3 +52,26 @@ func (_m *AuthLogServiceInterface) Get(userId string, count int, from string) ([
 
 	return r0, r1
 }
+
+// GetByDevice provides a mock function with given fields: deviceID, count, from
+func (_m *AuthLogServiceInterface) GetByDevice(deviceID string, count int, from string) ([]*service.AuthorizeLog, error) {
+	ret := _m.Called(deviceID, count, from)
+
+	var r0 []*service.AuthorizeLog
+	if rf, ok := ret.Get(0).(func(string, int, string) []*service.AuthorizeLog); ok {
+		r0 = rf(deviceID, count, from)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*service.AuthorizeLog)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, int, string) error); ok {
+		r1 = rf(deviceID, count, from)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
