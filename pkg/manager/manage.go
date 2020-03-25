@@ -87,18 +87,19 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 
 	appID := bson.NewObjectId()
 	app := &models.Application{
-		ID:               appID,
-		SpaceId:          s.Id,
-		Name:             form.Application.Name,
-		Description:      form.Application.Description,
-		IsActive:         form.Application.IsActive,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-		AuthSecret:       helper.GetRandString(64),
-		AuthRedirectUrls: form.Application.AuthRedirectUrls,
-		HasSharedUsers:   form.Application.HasSharedUsers,
-		UniqueUsernames:  form.Application.UniqueUsernames,
-		RequiresCaptcha:  form.Application.RequiresCaptcha,
+		ID:                     appID,
+		SpaceId:                s.Id,
+		Name:                   form.Application.Name,
+		Description:            form.Application.Description,
+		IsActive:               form.Application.IsActive,
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
+		AuthSecret:             helper.GetRandString(64),
+		AuthRedirectUrls:       form.Application.AuthRedirectUrls,
+		PostLogoutRedirectUrls: form.Application.PostLogoutRedirectUrls,
+		HasSharedUsers:         form.Application.HasSharedUsers,
+		UniqueUsernames:        form.Application.UniqueUsernames,
+		RequiresCaptcha:        form.Application.RequiresCaptcha,
 		PasswordSettings: &models.PasswordSettings{
 			BcryptCost:     models.PasswordBcryptCostDefault,
 			Min:            models.PasswordMinDefault,
@@ -130,13 +131,14 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	_, err = m.r.HydraAdminApi().CreateOAuth2Client(&admin.CreateOAuth2ClientParams{
 		Context: ctx.Request().Context(),
 		Body: &hydra_models.OAuth2Client{
-			ClientID:      app.ID.Hex(),
-			ClientName:    app.Name,
-			ClientSecret:  app.AuthSecret,
-			GrantTypes:    []string{"authorization_code", "refresh_token", "implicit"},
-			ResponseTypes: []string{"code", "id_token", "token"},
-			RedirectUris:  app.AuthRedirectUrls,
-			Scope:         "openid offline",
+			ClientID:               app.ID.Hex(),
+			ClientName:             app.Name,
+			ClientSecret:           app.AuthSecret,
+			GrantTypes:             []string{"authorization_code", "refresh_token", "implicit"},
+			ResponseTypes:          []string{"code", "id_token", "token"},
+			RedirectUris:           app.AuthRedirectUrls,
+			PostLogoutRedirectUris: app.PostLogoutRedirectUrls,
+			Scope:                  "openid offline",
 		},
 	})
 	if err != nil {
@@ -170,6 +172,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.IsActive = form.Application.IsActive
 	a.UpdatedAt = time.Now()
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
+	a.PostLogoutRedirectUrls = form.Application.PostLogoutRedirectUrls
 	a.HasSharedUsers = form.Application.HasSharedUsers
 	a.UniqueUsernames = form.Application.UniqueUsernames
 	a.RequiresCaptcha = form.Application.RequiresCaptcha
@@ -185,6 +188,7 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	}
 
 	client.Payload.RedirectUris = form.Application.AuthRedirectUrls
+	client.Payload.PostLogoutRedirectUris = form.Application.PostLogoutRedirectUrls
 
 	_, err = m.r.HydraAdminApi().UpdateOAuth2Client(&admin.UpdateOAuth2ClientParams{ID: id, Body: client.Payload, Context: ctx.Request().Context()})
 	if err != nil {
