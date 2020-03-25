@@ -183,7 +183,7 @@ func (s AuthLogService) Get(userId string, count int, from string) ([]*Authorize
 	}
 
 	var res []*AuthorizeLog
-	if err := s.db.C(database.TableAuthLog).Find(query).Sort("-timestamp").Limit(count).All(&res); err != nil {
+	if err := s.db.C(database.TableAuthLog).Find(query).Sort("-_id").Limit(count).All(&res); err != nil {
 		return nil, err
 	}
 
@@ -199,7 +199,7 @@ func (s AuthLogService) GetByDevice(deviceID string, count int, from string) ([]
 	}
 
 	var res []*AuthorizeLog
-	if err := s.db.C(database.TableAuthLog).Find(query).Sort("-timestamp").Limit(count).All(&res); err != nil {
+	if err := s.db.C(database.TableAuthLog).Find(query).Sort("-_id").Limit(count).All(&res); err != nil {
 		return nil, err
 	}
 

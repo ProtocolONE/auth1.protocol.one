@@ -14,16 +14,15 @@ import (
 	"github.com/ProtocolONE/mfa-service/pkg"
 	"github.com/ProtocolONE/mfa-service/pkg/proto"
 	"github.com/boj/redistore"
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 	"github.com/micro/go-plugins/client/selector/static"
 	"github.com/ory/hydra-client-go/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-		httptransport "github.com/go-openapi/runtime/client"
-		"github.com/go-openapi/runtime"
-		"github.com/go-openapi/strfmt"
-
 )
 
 var serverCmd = &cobra.Command{
@@ -82,7 +81,6 @@ func runServer(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.L().Fatal("Invalid of the Hydra admin url", zap.Error(err))
 	}
-
 
 	transport := httptransport.New(u.Host, "", []string{u.Scheme})
 	transport.DefaultAuthentication = runtime.ClientAuthInfoWriterFunc(func(req runtime.ClientRequest, _ strfmt.Registry) error {

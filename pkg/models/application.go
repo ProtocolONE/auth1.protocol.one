@@ -63,6 +63,9 @@ type Application struct {
 	// AuthRedirectUrls is an array of allowed redirect urls for the client.
 	AuthRedirectUrls []string `bson:"auth_redirect_urls" json:"auth_redirect_urls" validate:"required"`
 
+	// PostLogoutRedirectUris is an array of allowed post logout redirect urls for the client.
+	PostLogoutRedirectUrls []string `bson:"post_logout_redirect_urls" json:"post_logout_redirect_urls"`
+
 	// HasSharedUsers determines whether users are shared across the entire space or only within the application.
 	// If this option is set, then users from other applications (in space) will be able to log in to this application.
 	HasSharedUsers bool `bson:"has_shared_users" json:"has_shared_users"`
