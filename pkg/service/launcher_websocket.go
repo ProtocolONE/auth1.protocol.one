@@ -136,7 +136,7 @@ func (c *LauncherClient) Await() {
 type LauncherMessage struct {
 	LoginChallenge string `json:"-"`
 	Status         string `json:"status"`
-	URL            string `json:"url"`
+	URL            string `json:"url,omitempty"`
 }
 
 func (m *LauncherMessage) Marshal() []byte {
