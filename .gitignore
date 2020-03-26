@@ -1,6 +1,8 @@
+.DS_Store
 .idea
 *.exe
 *.exe~
 *.out
 /sandbox/
+/bin
 /bin/

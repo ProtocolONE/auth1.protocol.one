@@ -21,6 +21,7 @@ func InitSocial(cfg *Server) error {
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
 	cfg.Echo.GET("/api/providers/:name/check", s.Check)
 	cfg.Echo.GET("/api/providers/:name/confirm", s.Confirm)
+	cfg.Echo.GET("/api/providers/ws", s.WS)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
 	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
@@ -251,6 +252,29 @@ func (s *Social) Check(ctx echo.Context) error {
 	})
 }
 
+func (s *Social) WS(ctx echo.Context) error {
+	conn, err := service.Upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	loginChallenge := ctx.QueryParam("login_challenge")
+
+	srv := s.registry.LauncherServer()
+	c := service.NewLauncherClient(loginChallenge, conn, srv)
+
+	srv.Register(c)
+
+	go c.Read()
+	go c.Write()
+
+	// wait till the ws will be closed
+	c.Await()
+
+	return nil
+}
+
 func (s *Social) Confirm(ctx echo.Context) error {
 	var (
 		challenge = ctx.QueryParam("login_challenge")
@@ -261,6 +285,8 @@ func (s *Social) Confirm(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	s.registry.LauncherServer().Success(challenge, t.URL)
 
 	t.Status = "success"
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})

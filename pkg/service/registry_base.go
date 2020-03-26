@@ -14,6 +14,7 @@ type RegistryBase struct {
 	as      ApplicationServiceInterface
 	ott     OneTimeTokenServiceInterface
 	lts     LauncherTokenServiceInterface
+	lss     LauncherServerService
 	watcher persist.Watcher
 	hydra   HydraAdminApi
 	mfa     MfaApiInterface
@@ -53,6 +54,7 @@ func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 		geo:     config.GeoIpService,
 		ott:     NewOneTimeTokenService(config.RedisClient),
 		lts:     NewLauncherTokenService(config.RedisClient),
+		lss:     NewLauncherServerService(),
 	}
 	r.as = NewApplicationService(r)
 
@@ -97,4 +99,8 @@ func (r *RegistryBase) OneTimeTokenService() OneTimeTokenServiceInterface {
 
 func (r *RegistryBase) LauncherTokenService() LauncherTokenServiceInterface {
 	return r.lts
+}
+
+func (r *RegistryBase) LauncherServer() LauncherServerService {
+	return r.lss
 }

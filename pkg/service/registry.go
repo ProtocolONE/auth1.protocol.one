@@ -31,6 +31,9 @@ type InternalRegistry interface {
 	// LauncherTokenService returns instance of the launcher token service
 	LauncherTokenService() LauncherTokenServiceInterface
 
+	// LauncherTokenService returns instance of the launcher token service
+	LauncherServer() LauncherServerService
+
 	// Mailer return client of the postman service.
 	Mailer() MailerInterface
 }
