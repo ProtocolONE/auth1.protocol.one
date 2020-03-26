@@ -28,6 +28,8 @@ services:
   web:
     image: p1hub/store-auth-web:master
     container_name: auth1-web
+    environment:
+      - REACT_APP_API_URL=http://localhost:7001
     networks:
       - subnet
 

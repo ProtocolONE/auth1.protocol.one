@@ -33,6 +33,14 @@ server {
         proxy_pass ${AUTHONE_SERVER};
     }
 
+    location /api/providers/ws {
+        proxy_pass ${AUTHONE_SERVER};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade ${DOLLAR}http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Origin '';
+    }
+
     location /api {
         proxy_pass ${AUTHONE_SERVER};
     }
