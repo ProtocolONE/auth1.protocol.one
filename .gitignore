@@ -4,5 +4,5 @@
 *.exe~
 *.out
 /sandbox/
-/bin
+/auth1
 /bin/

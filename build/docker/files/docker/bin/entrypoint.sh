@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-exec ./bin migration && ./bin server
+exec /app/auth1 migration && /app/auth1 server

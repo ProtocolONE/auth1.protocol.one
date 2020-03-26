@@ -1,6 +1,6 @@
 .PHONY: dev-build-up
 dev-build-up: ## build for docker, build docker image and run docker-compose
-	@env GOOS="linux" GOARCH=amd64 go build -o ./bin main.go
+	@env GOOS="linux" GOARCH=amd64 go build -o ./auth1 main.go
 	@docker build -t auth1:local -f build/docker/Dockerfile .
 	@docker-compose -f deployments/docker-compose/docker-compose.yml -p auth1 up -d
 
