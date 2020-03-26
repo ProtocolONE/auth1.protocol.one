@@ -39,6 +39,7 @@ func NewLauncherClient(loginChallenge string, conn *websocket.Conn, srv Launcher
 		conn:           conn,
 		send:           make(chan []byte),
 		srv:            srv,
+		closed:         make(chan bool),
 	}
 }
 
