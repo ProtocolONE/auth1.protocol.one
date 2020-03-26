@@ -1,0 +1,52 @@
+server {
+    listen ${NGINX_PORT};
+    server_name ${NGINX_HOST};
+
+    proxy_set_header Host ${DOLLAR}http_host;
+
+    location /oauth2/auth {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/token {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/revoke {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /.well-known/jwks.json {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /.well-known/openid-configuration {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/userinfo {
+        rewrite ^/oauth2/userinfo(.*)$ /userinfo$1 break;
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2 {
+        proxy_pass ${AUTHONE_SERVER};
+    }
+
+    location /api {
+        proxy_pass ${AUTHONE_SERVER};
+    }
+
+    location / {
+        proxy_pass ${WEB_SERVER};
+    }
+}
+
+server {
+    listen ${DEBUG_PORT};
+    server_name ${NGINX_HOST};
+
+    location /debug {
+        proxy_pass ${AUTHONE_DEBUG};
+    }
+}
