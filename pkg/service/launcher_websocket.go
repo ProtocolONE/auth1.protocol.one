@@ -200,6 +200,7 @@ func (s *LauncherServer) Success(loginChallenge, url string) {
 				URL:            url,
 			}
 			c.send <- m.Marshal()
+			// todo: close connection (?)
 			break
 		}
 	}

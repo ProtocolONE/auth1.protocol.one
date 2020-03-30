@@ -28,6 +28,12 @@ type LauncherTokenSettings struct {
 }
 
 type LauncherToken struct {
+	// Challenge is login_challenge
+	Challenge string `json:"challenge"`
+	// UserIdentity stores user identity
+	UserIdentity *UserIdentity `json:"ui"`
+	// UserIdentitySocial stores user social profile data
+	UserIdentitySocial *UserIdentitySocial `json:"uis"`
 	// Name is the name of social provider
 	Name string `json:"name"`
 	// Status stores state of the login process

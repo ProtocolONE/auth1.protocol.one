@@ -11,6 +11,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
 )
 
@@ -136,9 +137,11 @@ func (s *Social) Forward(ctx echo.Context) error {
 
 	// if launcher == true, then store challenge and options
 	if launcher == "true" {
+		s.registry.LauncherServer().InProgress(challenge)
 		err := s.registry.LauncherTokenService().Set(challenge, models.LauncherToken{
-			Name:   name,
-			Status: "in_progress",
+			Challenge: challenge,
+			Name:      name,
+			Status:    "in_progress",
 		}, &models.LauncherTokenSettings{
 			TTL: 600,
 		})
@@ -176,30 +179,55 @@ func (s *Social) Callback(ctx echo.Context) error {
 		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/sign-in?login_challenge=%s", s.Challenge))
 	}
 
-	url, err := m.Callback(ctx, name, req.Code, req.State, domain)
-	if err != nil {
-		return err
-	}
-
 	// if launcher token with login_challenge key exists, then return to launcher
 	state, err := manager.DecodeState(req.State)
 	if err != nil {
+		ctx.Logger().Error(err.Error())
 		return err
 	}
+
+	ui, uis, err := m.GetUserIdentities(state.Challenge, name, domain, req.Code)
+	if err != nil && err != mgo.ErrNotFound {
+		ctx.Logger().Error(err.Error())
+		return err
+	}
+
+	// For Launcher
 	if state.Launcher == "true" {
 		t := &models.LauncherToken{}
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
 		if err != nil {
+			ctx.Logger().Error(err.Error())
 			return err
 		}
-		t.URL = url
+
+		t.UserIdentity = ui
+		t.UserIdentitySocial = uis
+
 		err = s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
 		if err != nil {
+			ctx.Logger().Error(err.Error())
 			return err
 		}
 		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/social-sign-in-confirm?login_challenge=%s&name=%s", state.Challenge, name))
 	}
 
+	// For Web
+	if ui != nil && err != mgo.ErrNotFound {
+		// accept login and redirect
+		url, err := m.Accept(ctx, ui, name, state.Challenge)
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+		return ctx.Redirect(http.StatusTemporaryRedirect, url)
+	}
+	// UserIdentity does not exist: link or sign up
+	url, err := m.SocialLogin(uis, domain, name, state.Challenge)
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+		return err
+	}
 	return ctx.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -269,6 +297,17 @@ func (s *Social) WS(ctx echo.Context) error {
 	go c.Read()
 	go c.Write()
 
+	t := &models.LauncherToken{}
+	s.registry.LauncherTokenService().Get(loginChallenge, t)
+	switch t.Status {
+	case "in_progress":
+		srv.InProgress(loginChallenge)
+	case "success":
+		srv.Success(loginChallenge, t.URL)
+	default:
+		// void
+	}
+
 	// wait till the ws will be closed
 	c.Await()
 
@@ -278,6 +317,7 @@ func (s *Social) WS(ctx echo.Context) error {
 func (s *Social) Confirm(ctx echo.Context) error {
 	var (
 		challenge = ctx.QueryParam("login_challenge")
+		url       = ""
 	)
 
 	t := &models.LauncherToken{}
@@ -286,13 +326,34 @@ func (s *Social) Confirm(ctx echo.Context) error {
 		return err
 	}
 
-	s.registry.LauncherServer().Success(challenge, t.URL)
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	if t.UserIdentity != nil {
+		// accept login and redirect
+		url, err = m.Accept(ctx, t.UserIdentity, t.Name, t.Challenge)
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+	} else {
+		// UserIdentity does not exist: link or sign up
+		url, err = m.SocialLogin(t.UserIdentitySocial, "", t.Name, t.Challenge)
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+	}
+
+	s.registry.LauncherServer().Success(challenge, url)
 
 	t.Status = "success"
+	t.URL = url
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
 	if err != nil {
 		return err
 	}
+
 	return ctx.JSON(http.StatusOK, map[string]string{
 		"status": "success",
 	})
