@@ -174,7 +174,6 @@ func (m *LoginManager) Accept(ctx echo.Context, ui *models.UserIdentity, provide
 	}
 
 	id := ui.UserID.Hex()
-	// TODO sucessfully login
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
 		Context:        context.TODO(),
 		LoginChallenge: challenge,
