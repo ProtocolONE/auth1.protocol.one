@@ -22,6 +22,7 @@ func InitSocial(cfg *Server) error {
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
 	cfg.Echo.GET("/api/providers/:name/check", s.Check)
 	cfg.Echo.GET("/api/providers/:name/confirm", s.Confirm)
+	cfg.Echo.GET("/api/providers/:name/cancel", s.Cancel)
 	cfg.Echo.GET("/api/providers/ws", s.WS)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
 	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
@@ -323,7 +324,18 @@ func (s *Social) Confirm(ctx echo.Context) error {
 	t := &models.LauncherToken{}
 	err := s.registry.LauncherTokenService().Get(challenge, t)
 	if err != nil {
+		if err == apierror.NotFound {
+			return ctx.JSON(http.StatusOK, map[string]string{
+				"status": "expired",
+			})
+		}
 		return err
+	}
+
+	if t.Status == models.LauncherAuth_Canceled {
+		return ctx.JSON(http.StatusOK, map[string]string{
+			"status": "canceled",
+		})
 	}
 
 	db := ctx.Get("database").(database.MgoSession)
@@ -347,7 +359,36 @@ func (s *Social) Confirm(ctx echo.Context) error {
 
 	s.registry.LauncherServer().Success(challenge, url)
 
-	t.Status = "success"
+	t.Status = models.LauncherAuth_Success
+	t.URL = url
+	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"status": "success",
+	})
+}
+
+func (s *Social) Cancel(ctx echo.Context) error {
+	var (
+		challenge = ctx.QueryParam("login_challenge")
+		url       = ""
+	)
+
+	t := &models.LauncherToken{}
+	err := s.registry.LauncherTokenService().Get(challenge, t)
+	if err != nil {
+		if err == apierror.NotFound {
+			return ctx.JSON(http.StatusOK, map[string]string{
+				"status": "expired",
+			})
+		}
+		return err
+	}
+
+	t.Status = models.LauncherAuth_Canceled
 	t.URL = url
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
 	if err != nil {
