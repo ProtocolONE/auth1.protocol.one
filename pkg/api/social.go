@@ -183,13 +183,11 @@ func (s *Social) Callback(ctx echo.Context) error {
 	// if launcher token with login_challenge key exists, then return to launcher
 	state, err := manager.DecodeState(req.State)
 	if err != nil {
-		ctx.Logger().Error(err.Error())
 		return err
 	}
 
 	ui, uis, err := m.GetUserIdentities(state.Challenge, name, domain, req.Code)
 	if err != nil && err != mgo.ErrNotFound {
-		ctx.Logger().Error(err.Error())
 		return err
 	}
 
@@ -198,7 +196,6 @@ func (s *Social) Callback(ctx echo.Context) error {
 		t := &models.LauncherToken{}
 		err := s.registry.LauncherTokenService().Get(state.Challenge, t)
 		if err != nil {
-			ctx.Logger().Error(err.Error())
 			return err
 		}
 
@@ -207,7 +204,6 @@ func (s *Social) Callback(ctx echo.Context) error {
 
 		err = s.registry.LauncherTokenService().Set(state.Challenge, t, &models.LauncherTokenSettings{TTL: 600})
 		if err != nil {
-			ctx.Logger().Error(err.Error())
 			return err
 		}
 		return ctx.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/social-sign-in-confirm?login_challenge=%s&name=%s", state.Challenge, name))
@@ -218,7 +214,6 @@ func (s *Social) Callback(ctx echo.Context) error {
 		// accept login and redirect
 		url, err := m.Accept(ctx, ui, name, state.Challenge)
 		if err != nil {
-			ctx.Logger().Error(err.Error())
 			return err
 		}
 		return ctx.Redirect(http.StatusTemporaryRedirect, url)
@@ -226,7 +221,6 @@ func (s *Social) Callback(ctx echo.Context) error {
 	// UserIdentity does not exist: link or sign up
 	url, err := m.SocialLogin(uis, domain, name, state.Challenge)
 	if err != nil {
-		ctx.Logger().Error(err.Error())
 		return err
 	}
 	return ctx.Redirect(http.StatusTemporaryRedirect, url)
@@ -263,7 +257,6 @@ func (s *Social) Check(ctx echo.Context) error {
 
 	err := s.registry.LauncherTokenService().Get(loginChallenge, t)
 	if err != nil {
-		ctx.Logger().Error(err.Error())
 		return ctx.JSON(http.StatusOK, response{
 			Status: "expired",
 		})
@@ -345,14 +338,12 @@ func (s *Social) Confirm(ctx echo.Context) error {
 		// accept login and redirect
 		url, err = m.Accept(ctx, t.UserIdentity, t.Name, t.Challenge)
 		if err != nil {
-			ctx.Logger().Error(err.Error())
 			return err
 		}
 	} else {
 		// UserIdentity does not exist: link or sign up
 		url, err = m.SocialLogin(t.UserIdentitySocial, "", t.Name, t.Challenge)
 		if err != nil {
-			ctx.Logger().Error(err.Error())
 			return err
 		}
 	}
