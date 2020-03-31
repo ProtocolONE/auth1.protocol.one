@@ -365,7 +365,6 @@ func (s *Social) Confirm(ctx echo.Context) error {
 func (s *Social) Cancel(ctx echo.Context) error {
 	var (
 		challenge = ctx.QueryParam("login_challenge")
-		url       = ""
 	)
 
 	t := &models.LauncherToken{}
@@ -380,7 +379,6 @@ func (s *Social) Cancel(ctx echo.Context) error {
 	}
 
 	t.Status = models.LauncherAuth_Canceled
-	t.URL = url
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
 	if err != nil {
 		return err
