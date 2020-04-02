@@ -70,6 +70,9 @@ type ServerConfig struct {
 
 	// MailTemplates contains settings for email templates
 	MailTemplates *config.MailTemplates
+
+	// Centrifugo contains centrifugo settings
+	Centrifugo *config.Centrifugo
 }
 
 // Server is the instance of the application
@@ -110,12 +113,13 @@ type Template struct {
 // NewServer creates new instance of the application.
 func NewServer(c *ServerConfig) (*Server, error) {
 	registryConfig := &service.RegistryConfig{
-		MgoSession:    c.MgoSession,
-		HydraAdminApi: c.HydraAdminApi,
-		MfaService:    c.MfaService,
-		RedisClient:   c.RedisClient,
-		Mailer:        service.NewMailer(c.Mailer),
-		GeoIpService:  c.GeoService,
+		MgoSession:        c.MgoSession,
+		HydraAdminApi:     c.HydraAdminApi,
+		MfaService:        c.MfaService,
+		RedisClient:       c.RedisClient,
+		Mailer:            service.NewMailer(c.Mailer),
+		GeoIpService:      c.GeoService,
+		CentrifugoService: service.NewCentrifugoService(c.Centrifugo),
 	}
 	server := &Server{
 		Echo:          echo.New(),
@@ -225,6 +229,7 @@ func (s *Server) setupRoutes() error {
 		InitCaptcha,
 		InitPasswordReset,
 		InitSocial,
+		InitCentrifugo,
 		InitLogin,
 		InitPasswordLess,
 		InitMFA,

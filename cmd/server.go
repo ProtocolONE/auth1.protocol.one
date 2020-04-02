@@ -105,6 +105,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		Mailer:        &cfg.Mailer,
 		Recaptcha:     &cfg.Recaptcha,
 		MailTemplates: &cfg.MailTemplates,
+		Centrifugo:    &cfg.Centrifugo,
 	}
 
 	server, err := api.NewServer(&serverConfig)
