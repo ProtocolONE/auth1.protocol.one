@@ -28,6 +28,22 @@ func (_m *InternalRegistry) ApplicationService() service.ApplicationServiceInter
 	return r0
 }
 
+// CentrifugoService provides a mock function with given fields:
+func (_m *InternalRegistry) CentrifugoService() service.CentrifugoServiceInterface {
+	ret := _m.Called()
+
+	var r0 service.CentrifugoServiceInterface
+	if rf, ok := ret.Get(0).(func() service.CentrifugoServiceInterface); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(service.CentrifugoServiceInterface)
+		}
+	}
+
+	return r0
+}
+
 // GeoIpService provides a mock function with given fields:
 func (_m *InternalRegistry) GeoIpService() service.GeoIp {
 	ret := _m.Called()
@@ -54,22 +70,6 @@ func (_m *InternalRegistry) HydraAdminApi() service.HydraAdminApi {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(service.HydraAdminApi)
-		}
-	}
-
-	return r0
-}
-
-// LauncherServer provides a mock function with given fields:
-func (_m *InternalRegistry) LauncherServer() service.LauncherServerService {
-	ret := _m.Called()
-
-	var r0 service.LauncherServerService
-	if rf, ok := ret.Get(0).(func() service.LauncherServerService); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(service.LauncherServerService)
 		}
 	}
 
