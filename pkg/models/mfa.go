@@ -88,7 +88,7 @@ type MfaApplicationProviderForm struct {
 	// Name is the provider name.
 	Name string `bson:"name" json:"name" validate:"required"`
 
-	// Channel is the channel of delivery code.
+	// LauncherChannel is the channel of delivery code.
 	Channel string `bson:"channel" json:"channel"`
 
 	// Type is the type of provider (otp, sms).
@@ -109,7 +109,7 @@ type MfaProvider struct {
 	// Type is the type of provider (otp, sms).
 	Type string `bson:"type" json:"type"`
 
-	// Channel is the channel of delivery code.
+	// LauncherChannel is the channel of delivery code.
 	Channel string `bson:"channel" json:"channel"`
 }
 
@@ -139,7 +139,7 @@ type MfaConnection struct {
 	// Type is the type of provider (otp, sms).
 	Type string `bson:"type" json:"type"`
 
-	// Channel is the channel of delivery code.
+	// LauncherChannel is the channel of delivery code.
 	Channel string `bson:"channel" json:"channel"`
 }
 
@@ -148,7 +148,7 @@ func (m *MfaProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ApplicationID", m.AppID.String())
 	enc.AddString("Name", m.Name)
 	enc.AddString("Type", m.Type)
-	enc.AddString("Channel", m.Channel)
+	enc.AddString("LauncherChannel", m.Channel)
 	return nil
 }
 
@@ -177,7 +177,7 @@ func (m *MfaApplicationForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 func (m *MfaApplicationProviderForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Name", m.Name)
-	enc.AddString("Channel", m.Channel)
+	enc.AddString("LauncherChannel", m.Channel)
 	enc.AddString("Type", m.Type)
 
 	return nil

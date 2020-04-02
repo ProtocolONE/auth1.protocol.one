@@ -14,12 +14,12 @@ type RegistryBase struct {
 	as      ApplicationServiceInterface
 	ott     OneTimeTokenServiceInterface
 	lts     LauncherTokenServiceInterface
-	lss     LauncherServerService
 	watcher persist.Watcher
 	hydra   HydraAdminApi
 	mfa     MfaApiInterface
 	geo     GeoIp
 	mailer  MailerInterface
+	cent    CentrifugoServiceInterface
 }
 
 // RegistryConfig contains the configuration parameters of Registry
@@ -41,6 +41,9 @@ type RegistryConfig struct {
 
 	// Mailer is the interface for the postman.
 	Mailer MailerInterface
+
+	// CentrifugoService
+	CentrifugoService CentrifugoServiceInterface
 }
 
 // NewRegistryBase creates new registry service.
@@ -54,7 +57,7 @@ func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 		geo:     config.GeoIpService,
 		ott:     NewOneTimeTokenService(config.RedisClient),
 		lts:     NewLauncherTokenService(config.RedisClient),
-		lss:     NewLauncherServerService(),
+		cent:    config.CentrifugoService,
 	}
 	r.as = NewApplicationService(r)
 
@@ -97,10 +100,10 @@ func (r *RegistryBase) OneTimeTokenService() OneTimeTokenServiceInterface {
 	return r.ott
 }
 
-func (r *RegistryBase) LauncherTokenService() LauncherTokenServiceInterface {
-	return r.lts
+func (r *RegistryBase) CentrifugoService() CentrifugoServiceInterface {
+	return r.cent
 }
 
-func (r *RegistryBase) LauncherServer() LauncherServerService {
-	return r.lss
+func (r *RegistryBase) LauncherTokenService() LauncherTokenServiceInterface {
+	return r.lts
 }

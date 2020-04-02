@@ -29,10 +29,10 @@ type InternalRegistry interface {
 	OneTimeTokenService() OneTimeTokenServiceInterface
 
 	// LauncherTokenService returns instance of the launcher token service
-	LauncherTokenService() LauncherTokenServiceInterface
+	CentrifugoService() CentrifugoServiceInterface
 
 	// LauncherTokenService returns instance of the launcher token service
-	LauncherServer() LauncherServerService
+	LauncherTokenService() LauncherTokenServiceInterface
 
 	// Mailer return client of the postman service.
 	Mailer() MailerInterface

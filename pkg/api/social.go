@@ -22,8 +22,6 @@ func InitSocial(cfg *Server) error {
 	cfg.Echo.GET("/api/providers/:name/profile", s.Profile)
 	cfg.Echo.GET("/api/providers/:name/check", s.Check)
 	cfg.Echo.GET("/api/providers/:name/confirm", s.Confirm)
-	cfg.Echo.GET("/api/providers/:name/cancel", s.Cancel)
-	cfg.Echo.GET("/api/providers/ws", s.WS)
 	cfg.Echo.POST("/api/providers/:name/link", s.Link)
 	cfg.Echo.POST("/api/providers/:name/signup", s.Signup)
 	// redirect based apis
@@ -138,7 +136,6 @@ func (s *Social) Forward(ctx echo.Context) error {
 
 	// if launcher == true, then store challenge and options
 	if launcher == "true" {
-		s.registry.LauncherServer().InProgress(challenge)
 		err := s.registry.LauncherTokenService().Set(challenge, models.LauncherToken{
 			Challenge: challenge,
 			Name:      name,
@@ -146,6 +143,10 @@ func (s *Social) Forward(ctx echo.Context) error {
 		}, &models.LauncherTokenSettings{
 			TTL: 600,
 		})
+		if err != nil {
+			return err
+		}
+		err = s.registry.CentrifugoService().InProgress(challenge)
 		if err != nil {
 			return err
 		}
@@ -274,116 +275,27 @@ func (s *Social) Check(ctx echo.Context) error {
 	})
 }
 
-func (s *Social) WS(ctx echo.Context) error {
-	conn, err := service.Upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	loginChallenge := ctx.QueryParam("login_challenge")
-
-	srv := s.registry.LauncherServer()
-	c := service.NewLauncherClient(loginChallenge, conn, srv)
-
-	srv.Register(c)
-
-	go c.Read()
-	go c.Write()
-
-	t := &models.LauncherToken{}
-	s.registry.LauncherTokenService().Get(loginChallenge, t)
-	switch t.Status {
-	case "in_progress":
-		srv.InProgress(loginChallenge)
-	case "success":
-		srv.Success(loginChallenge, t.URL)
-	default:
-		// void
-	}
-
-	// wait till the ws will be closed
-	c.Await()
-
-	return nil
-}
-
 func (s *Social) Confirm(ctx echo.Context) error {
 	var (
 		challenge = ctx.QueryParam("login_challenge")
-		url       = ""
 	)
 
 	t := &models.LauncherToken{}
 	err := s.registry.LauncherTokenService().Get(challenge, t)
 	if err != nil {
-		if err == apierror.NotFound {
-			return ctx.JSON(http.StatusOK, map[string]string{
-				"status": "expired",
-			})
-		}
 		return err
 	}
 
-	if t.Status == models.LauncherAuth_Canceled {
-		return ctx.JSON(http.StatusOK, map[string]string{
-			"status": "canceled",
-		})
+	err = s.registry.CentrifugoService().Success(challenge, t.URL)
+	if err != nil {
+		return err
 	}
 
-	db := ctx.Get("database").(database.MgoSession)
-	m := manager.NewLoginManager(db, s.registry)
-
-	if t.UserIdentity != nil {
-		// accept login and redirect
-		url, err = m.Accept(ctx, t.UserIdentity, t.Name, t.Challenge)
-		if err != nil {
-			return err
-		}
-	} else {
-		// UserIdentity does not exist: link or sign up
-		url, err = m.SocialLogin(t.UserIdentitySocial, "", t.Name, t.Challenge)
-		if err != nil {
-			return err
-		}
-	}
-
-	s.registry.LauncherServer().Success(challenge, url)
-
-	t.Status = models.LauncherAuth_Success
-	t.URL = url
+	t.Status = "success"
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
 	if err != nil {
 		return err
 	}
-
-	return ctx.JSON(http.StatusOK, map[string]string{
-		"status": "success",
-	})
-}
-
-func (s *Social) Cancel(ctx echo.Context) error {
-	var (
-		challenge = ctx.QueryParam("login_challenge")
-	)
-
-	t := &models.LauncherToken{}
-	err := s.registry.LauncherTokenService().Get(challenge, t)
-	if err != nil {
-		if err == apierror.NotFound {
-			return ctx.JSON(http.StatusOK, map[string]string{
-				"status": "expired",
-			})
-		}
-		return err
-	}
-
-	t.Status = models.LauncherAuth_Canceled
-	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
-	if err != nil {
-		return err
-	}
-
 	return ctx.JSON(http.StatusOK, map[string]string{
 		"status": "success",
 	})
