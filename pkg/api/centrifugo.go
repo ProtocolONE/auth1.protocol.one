@@ -15,7 +15,6 @@ import (
 func InitCentrifugo(cfg *Server) error {
 	c := NewCentrifugo(cfg)
 
-	cfg.Echo.GET("/api/ws", c.Html)
 	cfg.Echo.POST("/centrifugo/auth", c.Authentication)
 	cfg.Echo.POST("/centrifugo/refresh", c.Refresh)
 
@@ -33,32 +32,6 @@ func NewCentrifugo(cfg *Server) *Centrifugo {
 		registry: cfg.Registry,
 		config:   cfg.Centrifugo,
 	}
-}
-
-func (c *Centrifugo) Html(ctx echo.Context) error {
-	ch := ctx.QueryParam("ch")
-	return ctx.HTML(http.StatusOK, `<html>
-<head>
-
-</head>
-<body onload="onLoad()">
-<script src="https://cdn.rawgit.com/centrifugal/centrifuge-js/2.4.0/dist/centrifuge.min.js"></script>
-<script type="application/javascript">
-    function onLoad() {
-        document.cookie = "login_challenge=`+ch+`; path=/";
-        var centrifuge = new Centrifuge('ws://localhost:7001/centrifugo/websocket',{
-            debug: true
-        });
-        centrifuge.subscribe("launcher#`+ch+`", function(message) {
-            console.log(message);
-        });
-
-        centrifuge.connect();
-    }
-</script>
-</body>
-</html>
-`)
 }
 
 func (c *Centrifugo) Authentication(ctx echo.Context) error {
