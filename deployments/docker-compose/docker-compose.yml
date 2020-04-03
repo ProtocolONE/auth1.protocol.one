@@ -168,6 +168,7 @@ services:
       - AUTHONE_CENTRIFUGO_API_KEY=insecure
       - AUTHONE_CENTRIFUGO_HMAC_SECRET=insecure
       - AUTHONE_CENTRIFUGO_SESSION_TTL=1200
+      - AUTHONE_CENTRIFUGO_LAUNCHER_CHANNEL=launcher
 
 volumes:
   auth1-mongo:
