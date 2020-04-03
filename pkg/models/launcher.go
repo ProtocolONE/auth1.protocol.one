@@ -21,6 +21,8 @@ type LauncherToken struct {
 	UserIdentitySocial *UserIdentitySocial `json:"uis"`
 	// Name is the name of social provider
 	Name string `json:"name"`
+	// Domain stores domain name
+	Domain string `json:"domain"`
 	// Status stores state of the login process
 	Status string `json:"status"`
 	// URL to finish

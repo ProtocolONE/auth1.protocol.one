@@ -200,6 +200,7 @@ func (s *Social) Callback(ctx echo.Context) error {
 			return err
 		}
 
+		t.Domain = domain
 		t.UserIdentity = ui
 		t.UserIdentitySocial = uis
 
@@ -211,16 +212,20 @@ func (s *Social) Callback(ctx echo.Context) error {
 	}
 
 	// For Web
-	if ui != nil && err != mgo.ErrNotFound {
-		// accept login and redirect
-		url, err := m.Accept(ctx, ui, name, state.Challenge)
-		if err != nil {
-			return err
-		}
-		return ctx.Redirect(http.StatusTemporaryRedirect, url)
-	}
-	// UserIdentity does not exist: link or sign up
-	url, err := m.SocialLogin(uis, domain, name, state.Challenge)
+	//if ui != nil && err != mgo.ErrNotFound {
+	//	// accept login and redirect
+	//	url, err := m.Accept(ctx, ui, name, state.Challenge)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return ctx.Redirect(http.StatusTemporaryRedirect, url)
+	//}
+	//// UserIdentity does not exist: link or sign up
+	//url, err := m.SocialLogin(uis, domain, name, state.Challenge)
+	//if err != nil {
+	//	return err
+	//}
+	url, err := s.accept(ctx, m, ui, uis, name, domain, state.Challenge)
 	if err != nil {
 		return err
 	}
@@ -286,12 +291,21 @@ func (s *Social) Confirm(ctx echo.Context) error {
 		return err
 	}
 
-	err = s.registry.CentrifugoService().Success(challenge, t.URL)
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	url, err := s.accept(ctx, m, t.UserIdentity, t.UserIdentitySocial, t.Name, t.Domain, t.Challenge)
+	if err != nil {
+		return err
+	}
+
+	err = s.registry.CentrifugoService().Success(challenge, url)
 	if err != nil {
 		return err
 	}
 
 	t.Status = "success"
+	t.URL = url
 	err = s.registry.LauncherTokenService().Set(challenge, t, &models.LauncherTokenSettings{TTL: 600})
 	if err != nil {
 		return err
@@ -299,4 +313,13 @@ func (s *Social) Confirm(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]string{
 		"status": "success",
 	})
+}
+
+func (s *Social) accept(ctx echo.Context, m manager.LoginManagerInterface, ui *models.UserIdentity, uis *models.UserIdentitySocial, name, domain, challenge string) (string, error) {
+	if ui != nil {
+		// accept login and redirect
+		return m.Accept(ctx, ui, name, challenge)
+	}
+	// UserIdentity does not exist: link or sign up
+	return m.SocialLogin(uis, domain, name, challenge)
 }
