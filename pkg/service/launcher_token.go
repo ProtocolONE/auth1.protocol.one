@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/go-redis/redis"
 )
@@ -57,7 +56,7 @@ func (s *LauncherTokenService) Get(key string, obj interface{}) error {
 	res, err := s.Redis.Get(fmt.Sprintf(LauncherTokenStoragePattern, key)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
-			return apierror.NotFound
+			return models.LauncherToken_NotFound
 		}
 		return err
 	}

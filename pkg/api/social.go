@@ -263,6 +263,9 @@ func (s *Social) Check(ctx echo.Context) error {
 
 	err := s.registry.LauncherTokenService().Get(loginChallenge, t)
 	if err != nil {
+		if err != models.LauncherToken_NotFound {
+			ctx.Logger().Error(err.Error())
+		}
 		return ctx.JSON(http.StatusOK, response{
 			Status: "expired",
 		})

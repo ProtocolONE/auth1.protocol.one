@@ -1,5 +1,7 @@
 package models
 
+import "errors"
+
 // LauncherTokenSettings contains settings for stored launcher token.
 type LauncherTokenSettings struct {
 	//TTL is the expiration time for the token.
@@ -28,3 +30,5 @@ type LauncherToken struct {
 	// URL to finish
 	URL string `json:"url"`
 }
+
+var LauncherToken_NotFound = errors.New("launcher token not found")
