@@ -103,6 +103,9 @@ type Server struct {
 
 	// MailTemplates
 	MailTemplates *config.MailTemplates
+
+	// Centrifugo
+	Centrifugo *config.Centrifugo
 }
 
 // Template is used to display HTML pages.
@@ -131,6 +134,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		Recaptcha:     captcha.NewRecaptcha(c.Recaptcha.Key, c.Recaptcha.Secret, c.Recaptcha.Hostname),
 		WebHooks:      webhooks.NewWebhooks(),
 		MailTemplates: c.MailTemplates,
+		Centrifugo:    c.Centrifugo,
 	}
 
 	t := &Template{

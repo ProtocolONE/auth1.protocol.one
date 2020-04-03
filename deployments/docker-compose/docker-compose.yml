@@ -125,7 +125,7 @@ services:
       - subnet
 
   centrifugo:
-    image: centrifugo/centrifugo
+    image: centrifugo/centrifugo:v2.4.0
     container_name: centrifugo
     restart: unless-stopped
     networks:
