@@ -29,6 +29,9 @@ type Config struct {
 
 	MailTemplates MailTemplates
 
+	// Centrifugo settings to connect to centrifugo
+	Centrifugo Centrifugo
+
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
@@ -98,6 +101,15 @@ type MailTemplates struct {
 	PlatformUrl       string `envconfig:"PLATFORM_URL" required:"true" default:"http://localhost:7001"`
 	PlatformName      string `envconfig:"PLATFORM_NAME" required:"true" default:"Auth1"`
 	SupportPortalUrl  string `envconfig:"SUPPORT_PORTAL_URL" required:"true" default:"http://localhost:7001"`
+}
+
+// Centrifugo settings
+type Centrifugo struct {
+	Addr            string `envconfig:"ADDR" required:"true" default:""`
+	ApiKey          string `envconfig:"API_KEY" default:""`
+	HMACSecret      string `envconfig:"HMAC_SECRET" required:"true" default:""`
+	SessionTTL      int    `envconfig:"SESSION_TTL" required:"true" default:"1200"`
+	LauncherChannel string `envconfig:"LAUNCHER_CHANNEL" required:"true" default:"launcher"`
 }
 
 func Load() (*Config, error) {

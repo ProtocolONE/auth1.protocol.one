@@ -144,6 +144,10 @@ func (s *Social) Forward(ctx echo.Context) error {
 		if err != nil {
 			return err
 		}
+		err = s.registry.CentrifugoService().InProgress(challenge)
+		if err != nil {
+			return err
+		}
 	}
 
 	return ctx.Redirect(http.StatusPermanentRedirect, url)
@@ -258,6 +262,11 @@ func (s *Social) Confirm(ctx echo.Context) error {
 
 	t := &models.LauncherToken{}
 	err := s.registry.LauncherTokenService().Get(challenge, t)
+	if err != nil {
+		return err
+	}
+
+	err = s.registry.CentrifugoService().Success(challenge, t.URL)
 	if err != nil {
 		return err
 	}
