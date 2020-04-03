@@ -60,7 +60,6 @@ func (c *Centrifugo) Token(ctx echo.Context) error {
 func (c *Centrifugo) Authentication(ctx echo.Context) error {
 	challenge, err := ctx.Request().Cookie("login_challenge")
 	if err != nil {
-		println("error: " + err.Error())
 		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 			"result": map[string]string{
 				"error": err.Error(),
@@ -73,7 +72,7 @@ func (c *Centrifugo) Authentication(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"result": map[string]interface{}{
 			"user":      challenge.Value,
-			"expire_at": time.Now().Add(time.Minute * 15).Unix(),
+			"expire_at": time.Now().Add(time.Second * time.Duration(c.config.SessionTTL)).Unix(),
 		},
 	})
 }
@@ -81,7 +80,6 @@ func (c *Centrifugo) Authentication(ctx echo.Context) error {
 func (c *Centrifugo) Refresh(ctx echo.Context) error {
 	challenge, err := ctx.Request().Cookie("login_challenge")
 	if err != nil {
-		println("error: " + err.Error())
 		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 			"result": map[string]string{
 				"error": err.Error(),
@@ -103,7 +101,7 @@ func (c *Centrifugo) Refresh(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"result": map[string]interface{}{
-			"expire_at": time.Now().Add(time.Minute * 6).Unix(),
+			"expire_at": time.Now().Add(time.Second * time.Duration(c.config.SessionTTL)).Unix(),
 		},
 	})
 }
