@@ -32,8 +32,14 @@ type LoginManagerInterface interface {
 	// ForwardUrl returns url for forwarding user to id provider
 	ForwardUrl(challenge, provider, domain, launcher string) (string, error)
 
-	// Callback handles auth_code returned by id provider
-	Callback(ctx echo.Context, provider, code, state, domain string) (string, error)
+	// Get user's identity and social identity
+	GetUserIdentities(challenge, provider, domain, code string) (UserIdentity *models.UserIdentity, UserIdentitySocial *models.UserIdentitySocial, err error)
+
+	// Accept accepts login request
+	Accept(ctx echo.Context, ui *models.UserIdentity, provider, challenge string) (string, error)
+
+	// SocialLogin
+	SocialLogin(uis *models.UserIdentitySocial, domain, provider, challenge string) (string, error)
 
 	// Providers returns list of available id providers for authentication
 	Providers(challenge string) ([]*models.AppIdentityProvider, error)
@@ -120,13 +126,68 @@ func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvide
 	return ips, nil
 }
 
-func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain string) (string, error) {
-	s, err := DecodeState(state)
+func (m *LoginManager) GetUserIdentities(challenge, provider, domain, code string) (UserIdentity *models.UserIdentity, UserIdentitySocial *models.UserIdentitySocial, err error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
-		return "", err
+		return nil, nil, errors.Wrap(err, "can't get challenge data")
 	}
 
-	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: s.Challenge, Context: context.TODO()})
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return nil, nil, errors.New("identity provider not found")
+	}
+
+	clientProfile, err := m.identityProviderService.GetSocialProfile(context.TODO(), domain, code, ip)
+	if err != nil || clientProfile == nil || clientProfile.ID == "" {
+		if err == nil {
+			err = errors.New("unable to load identity profile data")
+		}
+		return nil, nil, err
+	}
+
+	userIdentity, err := m.userIdentityService.Get(app, ip, clientProfile.ID)
+	if err != nil && err != mgo.ErrNotFound {
+		return nil, nil, errors.Wrap(err, "can't get user data")
+	}
+
+	return userIdentity, clientProfile, err
+}
+
+func (m *LoginManager) Accept(ctx echo.Context, ui *models.UserIdentity, provider, challenge string) (string, error) {
+	app, err := m.r.ApplicationService().Get(ui.ApplicationID)
+	if err != nil {
+		return "", errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return "", errors.New("identity provider not found")
+	}
+
+	if err := m.authLogService.Add(ctx, service.ActionAuth, ui, app, ip); err != nil {
+		return "", errors.Wrap(err, "unable to add auth log")
+	}
+
+	id := ui.UserID.Hex()
+	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
+		Context:        context.TODO(),
+		LoginChallenge: challenge,
+		Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: true, RememberFor: RememberTime},
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to accept login challenge")
+	}
+
+	return reqACL.Payload.RedirectTo, nil
+}
+
+func (m *LoginManager) SocialLogin(clientProfile *models.UserIdentitySocial, domain, provider, challenge string) (string, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return "", errors.Wrap(err, "can't get challenge data")
 	}
@@ -139,39 +200,6 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
 	if ip == nil {
 		return "", errors.New("identity provider not found")
-	}
-
-	clientProfile, err := m.identityProviderService.GetSocialProfile(context.TODO(), domain, code, ip)
-	if err != nil || clientProfile == nil || clientProfile.ID == "" {
-		if err == nil {
-			err = errors.New("unable to load identity profile data")
-		}
-		return "", err
-	}
-
-	userIdentity, err := m.userIdentityService.Get(app, ip, clientProfile.ID)
-	if err != nil && err != mgo.ErrNotFound {
-		return "", errors.Wrap(err, "can't get user data")
-	}
-
-	if userIdentity != nil && err != mgo.ErrNotFound {
-
-		if err := m.authLogService.Add(ctx, service.ActionAuth, userIdentity, app, ip); err != nil {
-			return "", errors.Wrap(err, "unable to add auth log")
-		}
-
-		id := userIdentity.UserID.Hex()
-		// TODO sucessfully login
-		reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
-			Context:        context.TODO(),
-			LoginChallenge: s.Challenge,
-			Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: true, RememberFor: RememberTime},
-		})
-		if err != nil {
-			return "", errors.Wrap(err, "unable to accept login challenge")
-		}
-
-		return reqACL.Payload.RedirectTo, nil
 	}
 
 	if clientProfile.Email != "" {
@@ -195,7 +223,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 				return "", errors.Wrap(err, "unable to create one time link token")
 			}
 
-			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
+			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s&token=%s", domain, provider, challenge, ott.Token), nil
 		}
 	}
 
@@ -207,7 +235,7 @@ func (m *LoginManager) Callback(ctx echo.Context, provider, code, state, domain 
 		return "", errors.Wrap(err, "unable to create one time link token")
 	}
 
-	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, s.Challenge, ott.Token), nil
+	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, challenge, ott.Token), nil
 }
 
 func (m *LoginManager) ForwardUrl(challenge, provider, domain, launcher string) (string, error) {

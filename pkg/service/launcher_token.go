@@ -55,6 +55,9 @@ func (s *LauncherTokenService) Set(key string, obj interface{}, settings *models
 func (s *LauncherTokenService) Get(key string, obj interface{}) error {
 	res, err := s.Redis.Get(fmt.Sprintf(LauncherTokenStoragePattern, key)).Bytes()
 	if err != nil {
+		if err == redis.Nil {
+			return models.LauncherToken_NotFound
+		}
 		return err
 	}
 
