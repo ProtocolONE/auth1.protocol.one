@@ -292,7 +292,18 @@ func (s *Social) Confirm(ctx echo.Context) error {
 	t := &models.LauncherToken{}
 	err := s.registry.LauncherTokenService().Get(challenge, t)
 	if err != nil {
+		if err == models.LauncherToken_NotFound {
+			return ctx.JSON(http.StatusOK, map[string]string{
+				"status": "canceled",
+			})
+		}
 		return err
+	}
+
+	if t.Status == models.LauncherAuth_Canceled {
+		return ctx.JSON(http.StatusOK, map[string]string{
+			"status": "canceled",
+		})
 	}
 
 	db := ctx.Get("database").(database.MgoSession)
