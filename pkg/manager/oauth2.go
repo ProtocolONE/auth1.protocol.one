@@ -303,21 +303,23 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get consent challenge")}
 	}
-
 	user, err := m.userService.Get(bson.ObjectIdHex(reqGCR.Payload.Subject))
 	if err != nil {
 		return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
 	}
-
 	remember := true
 	if reqGCR.Payload.Skip == true {
 		r, err := m.session.Get(ctx, loginRememberKey)
 		if err != nil {
 			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get session")}
 		}
-		remember = r.(bool)
+		okRemember, ok := r.(bool)
+		if !ok {
+			remember = false
+		} else {
+			remember = okRemember
+		}
 	}
-
 	userInfo := map[string]interface{}{
 		"email":                 user.Email,
 		"email_verified":        user.EmailVerified,
@@ -339,7 +341,6 @@ func (m *OauthManager) ConsentSubmit(ctx echo.Context, form *models.Oauth2Consen
 	if err != nil {
 		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept consent challenge")}
 	}
-
 	return reqACR.Payload.RedirectTo, nil
 }
 
