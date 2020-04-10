@@ -153,7 +153,7 @@ func (s *Social) Forward(ctx echo.Context) error {
 		}
 	}
 
-	return ctx.Redirect(http.StatusPermanentRedirect, url)
+	return ctx.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func (s *Social) Callback(ctx echo.Context) error {
