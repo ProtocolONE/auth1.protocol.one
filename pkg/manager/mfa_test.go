@@ -22,8 +22,12 @@ func TestMFAManager(t *testing.T) {
 }
 
 func mockIntRegistry() *mocks.InternalRegistry {
+	spaces := &mocks.SpaceServiceInterface{}
+	spaces.On("GetSpace", mock.Anything).Return(&models.Space{}, nil)
+
 	r := &mocks.InternalRegistry{}
 	r.On("GeoIpService").Return(nil)
+	r.On("SpaceService").Return(spaces)
 	return r
 }
 

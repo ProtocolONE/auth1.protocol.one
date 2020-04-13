@@ -62,7 +62,7 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
-	ui, err := m.userIdentityService.Get(app, ipc, form.Email)
+	ui, err := m.userIdentityService.Get(ipc, form.Email)
 	if err != nil {
 		return &models.GeneralError{Code: "email", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity by email")}
 	}
@@ -139,7 +139,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
 	}
 
-	ui, err := m.userIdentityService.Get(app, ipc, ts.Email)
+	ui, err := m.userIdentityService.Get(ipc, ts.Email)
 	if err != nil || ui.ID == "" {
 		if err == nil {
 			err = errors.New("User identity not found")

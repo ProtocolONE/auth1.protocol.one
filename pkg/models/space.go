@@ -1,18 +1,26 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 type Space struct {
-	Id          bson.ObjectId `bson:"_id" json:"id"`                        // unique space identifier
+	ID          bson.ObjectId `bson:"_id" json:"id"`                        // unique space identifier
 	Name        string        `bson:"name" json:"name" validate:"required"` // space name
 	Description string        `bson:"description" json:"description"`       // space description
 	IsActive    bool          `bson:"is_active" json:"is_active"`           // is space active
-	CreatedAt   time.Time     `bson:"created_at" json:"-"`                  // date of create space
-	UpdatedAt   time.Time     `bson:"updated_at" json:"-"`                  // date of update space
+
+	// UniqueUsernames determines whether app users must have unique usernames
+	UniqueUsernames bool `bson:"unique_usernames" json:"unique_usernames"`
+
+	// RequiresCaptcha determines whether app users must have complete captcha verification
+	RequiresCaptcha bool `bson:"requires_captcha" json:"requires_captcha"`
+
+	CreatedAt time.Time `bson:"created_at" json:"-"` // date of create space
+	UpdatedAt time.Time `bson:"updated_at" json:"-"` // date of update space
 }
 
 type SpaceForm struct {
@@ -22,7 +30,7 @@ type SpaceForm struct {
 }
 
 func (s *Space) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("id", s.Id.String())
+	enc.AddString("id", s.ID.String())
 	enc.AddString("name", s.Name)
 	enc.AddString("description", s.Name)
 	enc.AddBool("isActive", s.IsActive)

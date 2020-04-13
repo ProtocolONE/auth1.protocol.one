@@ -30,7 +30,7 @@ func (ss SpaceService) CreateSpace(space *models.Space) error {
 }
 
 func (ss SpaceService) UpdateSpace(space *models.Space) error {
-	if err := ss.db.C(database.TableSpace).UpdateId(space.Id, space); err != nil {
+	if err := ss.db.C(database.TableSpace).UpdateId(space.ID, space); err != nil {
 		return err
 	}
 

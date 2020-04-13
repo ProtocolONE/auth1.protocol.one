@@ -35,7 +35,7 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 
 func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
 	s := &models.Space{
-		Id:          bson.NewObjectId(),
+		ID:          bson.NewObjectId(),
 		Name:        form.Name,
 		Description: form.Description,
 		IsActive:    form.IsActive,
@@ -88,7 +88,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	appID := bson.NewObjectId()
 	app := &models.Application{
 		ID:                     appID,
-		SpaceId:                s.Id,
+		SpaceId:                s.ID,
 		Name:                   form.Application.Name,
 		Description:            form.Application.Description,
 		IsActive:               form.Application.IsActive,
