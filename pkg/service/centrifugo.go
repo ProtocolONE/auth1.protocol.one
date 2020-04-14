@@ -12,6 +12,7 @@ import (
 type CentrifugoServiceInterface interface {
 	InProgress(loginChallenge string) error
 	Success(loginChallenge, url string) error
+	Expired(loginChallenge string) error
 }
 
 type Centrifugo struct {
@@ -44,6 +45,15 @@ func (c *Centrifugo) Success(loginChallenge, url string) error {
 	data, _ := json.Marshal(map[string]string{
 		"status": "success",
 		"url":    url,
+	})
+
+	return c.client.Publish(ctx, fmt.Sprintf("%s#%s", c.config.LauncherChannel, loginChallenge), data)
+}
+
+func (c *Centrifugo) Expired(loginChallenge string) error {
+	ctx := context.Background()
+	data, _ := json.Marshal(map[string]string{
+		"status": "expired",
 	})
 
 	return c.client.Publish(ctx, fmt.Sprintf("%s#%s", c.config.LauncherChannel, loginChallenge), data)
