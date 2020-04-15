@@ -1,18 +1,26 @@
-# AuthOne Introduction
+# AuthOne
 
-AuthOne is an open source authorization server that supports the OAuth 2.0 and OpenID 1.0 Connect paradigm, created on 
-the basis of the [ORY Hydra](https://github.com/ory/hydra) open source protected and certified application. 
-The server is not integrated into your application, but is used as an external service according to OAuth authorization 
-standards.
-
-[![Build Status](https://travis-ci.org/ProtocolONE/auth1.protocol.one.svg?branch=master)](https://travis-ci.org/ProtocolONE/auth1.protocol.one)
-[![codecov](https://codecov.io/gh/ProtocolONE/auth1.protocol.one/branch/master/graph/badge.svg)](https://codecov.io/gh/ProtocolONE/auth1.protocol.one)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Build Status](https://travis-ci.com/ProtocolONE/auth1.protocol.one.svg?branch=develop)](https://travis-ci.com/ProtocolONE/auth1.protocol.one)
+[![codecov](https://codecov.io/gh/ProtocolONE/auth1.protocol.one/branch/develop/graph/badge.svg)](https://codecov.io/gh/ProtocolONE/auth1.protocol.one)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ProtocolONE/auth1.protocol.one)](https://goreportcard.com/report/github.com/ProtocolONE/auth1.protocol.one)
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/ProtocolONE/auth1.protocol.one)
+
+Qilin is an open-source digital distribution platform for game developers and publishers. Our mission is to distribute games by minimizing the effort of contracting, sharing documentation and providing comprehensive real-time statistics.
+
+Our solution is part of Protocol One IAAS and is actively used in the Storefront constructor. Qilin can be used as a component in an existing P1-independent system, using its hardware or cloud platforms.
+
+**Qilin architecture schema**
+
+![Qilin architecture schema](qilin-schema.png)
+
+**AuthOne** is an open-source authorization server that supports the OAuth 2.0 and OpenID 1.0 Connect paradigm, created based on the [ORY Hydra](https://github.com/ory/hydra) open source protected and certified application. 
+The server is used as an external service according to OAuth authorization standards.
 
 ---
 
-### Table of Contents
+## Table of Contents
+
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
@@ -21,12 +29,13 @@ standards.
 - [License](#license)
 
 ## Installation
+
 For the authorization server to work, you will need:
-* [Go](https://golang.org/)
-* [MongoDB](https://www.mongodb.com/)
-* [Redis](https://redis.io/)
-* [ORY Hydra](https://github.com/ory/hydra) and its dependencies.
-* Server to send mail
+- [Go](https://golang.org/)
+- [MongoDB](https://www.mongodb.com/)
+- [Redis](https://redis.io/)
+- [ORY Hydra](https://github.com/ory/hydra) and its dependencies.
+- Server to send mail
 
 You can install all services separately, or use the prepared Docker for a comprehensive installation of all components. 
 The docker-compose file contains the basic configuration of the application, which you can modify to suit your needs. 
@@ -38,7 +47,8 @@ access is provided only to public methods (see the configuration example in the 
 Calls to administrative methods are available only from the internal subnet for security purposes.
 
 ## Configuration
-To start the application, you can use the following configuration parameters in the environment variables:
+
+To start the application, configure the following environment variables:
 
 | Variable                         | Default               | Description                                                                                                                                |
 |----------------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
@@ -71,8 +81,8 @@ To start the application, you can use the following configuration parameters in 
 | AUTHONE_MIGRATION_DIRECT         |                       | Used to migrate a database. If not specified, no migration is used. Acceptable values of up and down.                                      |
 | AUTHONE_AUTH_WEB_FORM_SDK_URL    |                       | URL to the java-script file with SDK authorization.                                                                                        |
 
-***Attention!*** Do not forget that ORY Hydra provides its configuration parameters that also need to be configured. 
-For more information on this, see the project website - https://github.com/ory/hydra.
+> **Attention!** Do not forget that ORY Hydra provides its configuration parameters that also need to be configured. 
+For more information on this, see the [ORY Hydra project website](https://github.com/ory/hydra).
 
 ## Usage
 
@@ -83,7 +93,7 @@ Compile the application into an executable file and run it with the `server` key
 Using the [API](#api), you need to create a space, an application and, if necessary, adjust its parameters (criteria for 
 passwords, the duration and expiration of one-time tokens, identity providers for user accounts, etc.).
 
-Space? What is it and why is it needed?
+### What is Space?
 
 Space is the union of one or more applications within a single ecosystem.
 This can often be required to separate users in different projects (for example, site A and site B) for sharing access 
@@ -116,21 +126,18 @@ See an example of use in the demo application located in the
 [AuthOne JWT](https://github.com/ProtocolONE/authone-jwt-verifier-golang) project.
 
 ## Getting Started
+
 Here you will find instructions on how to launch an authorization server in a few steps, create an application and 
 start registering and authorizing users.
 
 - Start the authorization server using the docker-compose: `docker-compose up`
 - Using API and Postman create space.
 ![Create space](public/images/docs/postman_create-space.png)
-- Using the resulting space ID, create an application. In the auth_redirect_urls parameter, specify the address to 
-which the user will be redirected after successful registration or authorization.
+- Using the resulting space ID, create an application. In the auth_redirect_urls parameter, specify the address to which the user will be redirected after successful registration or authorization.
 ![Create space](public/images/docs/postman_create-app.png)
-- In your application (for example, you have a website located at http://localhost:1323) place a link to registration 
-and authorization, using the previously received application identifier and URL to return: 
+- In your application (for example, you have a website located at http://localhost:1323) place a link to registration and authorization, using the previously received application identifier and URL to return: 
 `http://localhost/oauth2/auth?response_type=code&client_id=5cde2f3252ad75007610fa1e&redirect_uri=http%3A%2F%2Flocalhost%3A1323%2Fauth%2Fcallback&state=customstate`. 
-- Prepare a page to which the user will go after the end of registration or authorization (the URL that was previously 
-listed as redirected - `http://localhost:1323/auth/callback`). With the help of any oauth library, implement code 
-verification and exchange for access tokens.
+- Prepare a page to which the user will go after the end of registration or authorization (the URL that was previously listed as redirected - `http://localhost:1323/auth/callback`). With the help of any OAuth library, implement code verification and exchange for access tokens.
 ```
 import "golang.org/x/oauth2"
 
@@ -191,6 +198,7 @@ fmt.Println(body)
 - Is done. Open the site and go to the registration.
 
 ## API
+
 The application management API supports the following functionality:
 - Adding, editing and receiving information about the space;
 - Adding, editing and receiving information about the application;
@@ -198,13 +206,12 @@ The application management API supports the following functionality:
 - Adding, editing and receiving information about the identity of the provider for the application;
 - Getting active for the application identity providers;
 - Getting a list of templates for identity providers;
-- Adding MFA provider for the application;
- 
+- Adding MFA provider for the application.
+
 For convenience, all API requests are prepared as a [collection](spec/postman_collection) for [Postman](https://www.getpostman.com/)
 application where you can see a list of methods, parameters, their description and try to execute them for your copy of 
 the authorization server.
 
 ## License
-Apache License 2.0
 
-For the whole copyright, see the [LICENSE](LICENSE) file distributed with this source code.
+The project is available as open source under the terms of the [Apache-2.0 License](https://opensource.org/licenses/Apache-2.0).
