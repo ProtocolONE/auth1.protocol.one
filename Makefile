@@ -1,3 +1,4 @@
+
 .PHONY: dev-build-up
 dev-build-up: ## build for docker, build docker image and run docker-compose
 	@env GOOS="linux" GOARCH=amd64 go build -o ./auth1 main.go
@@ -11,6 +12,10 @@ dev-build-down: ## docker-compose down
 .PHONY: gen-mocks
 gen-mocks: ## gen mocks for interfaces from pkg/service
 	@mockery -dir pkg/service -all -output ./pkg/mocks
+
+.PHONY: gen-grpc
+gen-grpc: ## gen grpc, needs protoc, protoc-gen-go, protoc-gen-micro
+	@protoc --proto_path=. --micro_out=. --go_out=. ./internal/handler/proto/service.proto
 
 .PHONY: down
 down: ## stops containers

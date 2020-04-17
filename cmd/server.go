@@ -5,7 +5,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/app"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
@@ -19,7 +23,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
-	"github.com/micro/go-plugins/client/selector/static"
+
+	//"github.com/micro/go-plugins/client/selector/static"
 	"github.com/ory/hydra-client-go/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -63,10 +68,10 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	var options []micro.Option
 
-	if os.Getenv("MICRO_SELECTOR") == "static" {
-		zap.L().Info("Use micro selector `static`")
-		options = append(options, micro.Selector(static.NewSelector()))
-	}
+	//if os.Getenv("MICRO_SELECTOR") == "static" {
+	//	zap.L().Info("Use micro selector `static`")
+	//	options = append(options, micro.Selector(static.NewSelector()))
+	//}
 
 	zap.L().Info("Initialize micro service")
 
@@ -110,13 +115,40 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	server, err := api.NewServer(&serverConfig)
 	if err != nil {
-		zap.L().Fatal("Failed to create server", zap.Error(err))
+		zap.L().Fatal("Failed to create HTTP server", zap.Error(err))
 	}
 
-	zap.L().Info("Starting up server")
-	if err = server.Start(); err != nil {
-		zap.L().Fatal("Error running server", zap.Error(err))
+	app, err := app.New(db.DB(""))
+	if err != nil {
+		zap.L().Fatal("Cannot create app", zap.Error(err))
 	}
+	err = app.Init()
+	if err != nil {
+		zap.L().Fatal("Cannot init app", zap.Error(err))
+	}
+
+	// shutdown channel
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		zap.L().Info("Starting up HTTP server")
+		if err = server.Start(shutdown); err != nil {
+			zap.L().Fatal("Error running server", zap.Error(err))
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		zap.L().Info("Starting up gRPC server")
+		if err := app.Run(); err != nil {
+			zap.L().Fatal("Failed to run gRPC server", zap.Error(err))
+		}
+	}()
+
+	wg.Wait()
 }
 
 func createDatabase(cfg *config.Database) database.MgoSession {
