@@ -28,15 +28,15 @@ func InitManage(cfg *Server) error {
 	g.POST("/space", createSpace)
 	g.PUT("/space/:id", updateSpace)
 	g.GET("/space/:id", getSpace)
+	g.GET("/space/:id/identity", getIdentityProviders)
+	g.POST("/space/:id/identity", addIdentityProvider)
+	g.PUT("/space/:space_id/identity/:id", updateIdentityProvider)
+	g.GET("/space/:space_id/identity/:id", getIdentityProvider)
 	g.POST("/app", createApplication)
 	g.PUT("/app/:id", updateApplication)
 	g.GET("/app/:id", getApplication)
 	g.POST("/app/:id/password", setPasswordSettings)
 	g.GET("/app/:id/password", getPasswordSettings)
-	g.POST("/app/:id/identity", addIdentityProvider)
-	g.PUT("/app/:app_id/identity/:id", updateIdentityProvider)
-	g.GET("/app/:app_id/identity/:id", getIdentityProvider)
-	g.GET("/app/:id/identity", getIdentityProviders)
 	g.GET("/identity/templates", getIdentityProviderTemplates)
 	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
@@ -313,6 +313,7 @@ func getPasswordSettings(ctx echo.Context) error {
 }
 
 func addIdentityProvider(ctx echo.Context) error {
+	id := ctx.Param("id")
 	form := &models.AppIdentityProvider{}
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
@@ -334,7 +335,7 @@ func addIdentityProvider(ctx echo.Context) error {
 		return helper.JsonError(ctx, e)
 	}
 
-	if err := m.AddAppIdentityProvider(ctx, form); err != nil {
+	if err := m.AddAppIdentityProvider(id, form); err != nil {
 		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
 	}
@@ -343,11 +344,11 @@ func addIdentityProvider(ctx echo.Context) error {
 }
 
 func getIdentityProvider(ctx echo.Context) error {
-	appID := ctx.Param("app_id")
+	spaceID := ctx.Param("space_id")
 	id := ctx.Param("id")
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	ip, err := m.GetIdentityProvider(ctx, appID, id)
+	ip, err := m.GetIdentityProvider(ctx, spaceID, id)
 	if err != nil {
 		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Identity provider not exists")
@@ -357,10 +358,10 @@ func getIdentityProvider(ctx echo.Context) error {
 }
 
 func getIdentityProviders(ctx echo.Context) error {
-	appID := ctx.Param("id")
+	spaceID := ctx.Param("id")
 
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	list, err := m.GetIdentityProviders(ctx, appID)
+	list, err := m.GetIdentityProviders(ctx, spaceID)
 	if err != nil {
 		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to give identity providers")
@@ -376,6 +377,7 @@ func getIdentityProviderTemplates(ctx echo.Context) error {
 
 func updateIdentityProvider(ctx echo.Context) error {
 	id := ctx.Param("id")
+	spaceID := ctx.Param("space_id")
 	form := &models.AppIdentityProvider{}
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 
@@ -397,7 +399,7 @@ func updateIdentityProvider(ctx echo.Context) error {
 		return helper.JsonError(ctx, e)
 	}
 
-	if err := m.UpdateAppIdentityProvider(ctx, id, form); err != nil {
+	if err := m.UpdateAppIdentityProvider(spaceID, id, form); err != nil {
 		ctx.Error(err.Err)
 		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
 	}

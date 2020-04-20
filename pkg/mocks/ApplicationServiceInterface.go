@@ -14,20 +14,6 @@ type ApplicationServiceInterface struct {
 	mock.Mock
 }
 
-// AddIdentityProvider provides a mock function with given fields: _a0, _a1
-func (_m *ApplicationServiceInterface) AddIdentityProvider(_a0 *models.Application, _a1 *models.AppIdentityProvider) error {
-	ret := _m.Called(_a0, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*models.Application, *models.AppIdentityProvider) error); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Create provides a mock function with given fields: _a0
 func (_m *ApplicationServiceInterface) Create(_a0 *models.Application) error {
 	ret := _m.Called(_a0)
@@ -118,20 +104,6 @@ func (_m *ApplicationServiceInterface) Update(_a0 *models.Application) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*models.Application) error); ok {
 		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateIdentityProvider provides a mock function with given fields: _a0, _a1
-func (_m *ApplicationServiceInterface) UpdateIdentityProvider(_a0 *models.Application, _a1 *models.AppIdentityProvider) error {
-	ret := _m.Called(_a0, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*models.Application, *models.AppIdentityProvider) error); ok {
-		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}

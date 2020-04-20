@@ -49,6 +49,22 @@ func (_m *AppIdentityProviderServiceInterface) FindByTypeAndName(_a0 *models.App
 	return r0
 }
 
+// FindByTypeAndNameSpace provides a mock function with given fields: space, connType, name
+func (_m *AppIdentityProviderServiceInterface) FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider {
+	ret := _m.Called(space, connType, name)
+
+	var r0 *models.AppIdentityProvider
+	if rf, ok := ret.Get(0).(func(*models.Space, string, string) *models.AppIdentityProvider); ok {
+		r0 = rf(space, connType, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.AppIdentityProvider)
+		}
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: _a0, _a1
 func (_m *AppIdentityProviderServiceInterface) Get(_a0 *models.Application, _a1 bson.ObjectId) *models.AppIdentityProvider {
 	ret := _m.Called(_a0, _a1)
@@ -139,6 +155,22 @@ func (_m *AppIdentityProviderServiceInterface) GetSocialProfile(_a0 context.Cont
 	}
 
 	return r0, r1
+}
+
+// GetSpace provides a mock function with given fields: space, id
+func (_m *AppIdentityProviderServiceInterface) GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider {
+	ret := _m.Called(space, id)
+
+	var r0 *models.AppIdentityProvider
+	if rf, ok := ret.Get(0).(func(*models.Space, bson.ObjectId) *models.AppIdentityProvider); ok {
+		r0 = rf(space, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.AppIdentityProvider)
+		}
+	}
+
+	return r0
 }
 
 // GetTemplate provides a mock function with given fields: _a0

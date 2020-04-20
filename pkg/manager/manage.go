@@ -26,7 +26,7 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 	m := &ManageManager{
 		spaceService:            service.NewSpaceService(db),
 		mfaService:              service.NewMfaService(db),
-		identityProviderService: service.NewAppIdentityProviderService(),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
 		r:                       r,
 	}
 
@@ -35,12 +35,20 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 
 func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
 	s := &models.Space{
-		ID:          bson.NewObjectId(),
-		Name:        form.Name,
-		Description: form.Description,
-		IsActive:    form.IsActive,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:              bson.NewObjectId(),
+		Name:            form.Name,
+		Description:     form.Description,
+		IsActive:        form.IsActive,
+		RequiresCaptcha: form.RequiresCaptcha,
+		UniqueUsernames: form.UniqueUsernames,
+		IdentityProviders: []*models.AppIdentityProvider{{
+			ID:          bson.NewObjectId(),
+			Type:        models.AppIdentityProviderTypePassword,
+			Name:        models.AppIdentityProviderNameDefault,
+			DisplayName: models.AppIdentityProviderDisplayNameDefault,
+		}},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	if err := m.spaceService.CreateSpace(s); err != nil {
@@ -114,13 +122,6 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			Length: 64,
 			TTL:    3600,
 		},
-		IdentityProviders: []*models.AppIdentityProvider{{
-			ID:            bson.NewObjectId(),
-			ApplicationID: appID,
-			Type:          models.AppIdentityProviderTypePassword,
-			Name:          models.AppIdentityProviderNameDefault,
-			DisplayName:   models.AppIdentityProviderDisplayNameDefault,
-		}},
 		WebHooks: form.Application.Webhooks,
 	}
 
@@ -255,8 +256,8 @@ func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (
 	return p, nil
 }
 
-func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.AppIdentityProvider) *models.GeneralError {
-	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+func (m *ManageManager) AddAppIdentityProvider(spaceID string, form *models.AppIdentityProvider) *models.GeneralError {
+	space, err := m.r.SpaceService().GetSpace(bson.ObjectIdHex(spaceID))
 	if err != nil {
 		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
@@ -268,29 +269,26 @@ func (m *ManageManager) AddAppIdentityProvider(ctx echo.Context, form *models.Ap
 		}
 	}
 
-	if ip := m.identityProviderService.FindByTypeAndName(app, form.Type, form.Name); ip != nil {
+	if ip := m.identityProviderService.FindByTypeAndNameSpace(space, form.Type, form.Name); ip != nil {
 		return &models.GeneralError{Message: "Identity provider already exists", Err: errors.New("Identity provider already exists")}
 	}
 
-	if err := m.r.ApplicationService().AddIdentityProvider(app, form); err != nil {
+	if err := m.r.SpaceService().AddIdentityProvider(space, form); err != nil {
 		return &models.GeneralError{Message: "Unable to create identity provider", Err: errors.Wrap(err, "Unable to create identity provider")}
 	}
 
 	return nil
 }
 
-func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, form *models.AppIdentityProvider) *models.GeneralError {
-	app, err := m.r.ApplicationService().Get(form.ApplicationID)
+func (m *ManageManager) UpdateAppIdentityProvider(spaceID string, id string, form *models.AppIdentityProvider) *models.GeneralError {
+	space, err := m.r.SpaceService().GetSpace(bson.ObjectIdHex(spaceID))
 	if err != nil {
 		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
 
-	ip := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	ip := m.identityProviderService.GetSpace(space, bson.ObjectIdHex(id))
 	if ip == nil {
 		return &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
-	}
-	if ip.ApplicationID != form.ApplicationID {
-		return &models.GeneralError{Message: "Application not owned this identity provider", Err: errors.New("Application not owned this identity provider")}
 	}
 
 	form.ID = ip.ID
@@ -300,25 +298,22 @@ func (m *ManageManager) UpdateAppIdentityProvider(ctx echo.Context, id string, f
 		}
 	}
 
-	if err := m.r.ApplicationService().UpdateIdentityProvider(app, form); err != nil {
+	if err := m.r.SpaceService().UpdateIdentityProvider(space, form); err != nil {
 		return &models.GeneralError{Message: "Unable to update identity provider", Err: errors.Wrap(err, "Unable to update identity provider")}
 	}
 
 	return nil
 }
 
-func (m *ManageManager) GetIdentityProvider(ctx echo.Context, appId string, id string) (*models.AppIdentityProvider, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
+func (m *ManageManager) GetIdentityProvider(ctx echo.Context, spaceId string, id string) (*models.AppIdentityProvider, *models.GeneralError) {
+	space, err := m.r.SpaceService().GetSpace(bson.ObjectIdHex(spaceId))
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
 
-	ipc := m.identityProviderService.Get(app, bson.ObjectIdHex(id))
+	ipc := m.identityProviderService.GetSpace(space, bson.ObjectIdHex(id))
 	if ipc == nil {
 		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
-	}
-	if ipc.ApplicationID.Hex() != appId {
-		return nil, &models.GeneralError{Message: "Wrong application id for the identity provider", Err: errors.New("Wrong application id for the identity provider")}
 	}
 
 	return ipc, nil

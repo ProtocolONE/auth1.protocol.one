@@ -44,7 +44,7 @@ func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistr
 		TplCfg:                  tplCfg,
 		r:                       ir,
 		userIdentityService:     service.NewUserIdentityService(db),
-		identityProviderService: service.NewAppIdentityProviderService(),
+		identityProviderService: service.NewAppIdentityProviderService(ir.SpaceService()),
 	}
 
 	return m

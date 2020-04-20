@@ -14,6 +14,20 @@ type SpaceServiceInterface struct {
 	mock.Mock
 }
 
+// AddIdentityProvider provides a mock function with given fields: space, ip
+func (_m *SpaceServiceInterface) AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
+	ret := _m.Called(space, ip)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*models.Space, *models.AppIdentityProvider) error); ok {
+		r0 = rf(space, ip)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateSpace provides a mock function with given fields: _a0
 func (_m *SpaceServiceInterface) CreateSpace(_a0 *models.Space) error {
 	ret := _m.Called(_a0)
@@ -49,6 +63,20 @@ func (_m *SpaceServiceInterface) GetSpace(_a0 bson.ObjectId) (*models.Space, err
 	}
 
 	return r0, r1
+}
+
+// UpdateIdentityProvider provides a mock function with given fields: space, ip
+func (_m *SpaceServiceInterface) UpdateIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
+	ret := _m.Called(space, ip)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*models.Space, *models.AppIdentityProvider) error); ok {
+		r0 = rf(space, ip)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // UpdateSpace provides a mock function with given fields: _a0

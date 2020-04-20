@@ -11,6 +11,8 @@ type SpaceServiceInterface interface {
 	CreateSpace(*models.Space) error
 	UpdateSpace(*models.Space) error
 	GetSpace(bson.ObjectId) (*models.Space, error)
+	AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error
+	UpdateIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error
 }
 
 type SpaceService struct {
@@ -46,4 +48,21 @@ func (ss SpaceService) GetSpace(id bson.ObjectId) (*models.Space, error) {
 	}
 
 	return s, nil
+}
+
+func (ss SpaceService) AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
+	space.IdentityProviders = append(space.IdentityProviders, ip)
+
+	return ss.UpdateSpace(space)
+}
+
+func (ss SpaceService) UpdateIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
+	for index, provider := range space.IdentityProviders {
+		if provider.ID == ip.ID {
+			space.IdentityProviders[index] = ip
+			return ss.UpdateSpace(space)
+		}
+	}
+
+	return nil
 }
