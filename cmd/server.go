@@ -8,10 +8,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app"
-	c2 "github.com/ProtocolONE/auth1.protocol.one/internal/grpc/cli"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
@@ -148,11 +146,6 @@ func runServer(cmd *cobra.Command, args []string) {
 		if err := app.Run(); err != nil {
 			zap.L().Fatal("Failed to run gRPC server", zap.Error(err))
 		}
-	}()
-
-	go func() { // todo: remove
-		time.Sleep(time.Second * 5)
-		c2.Cli()
 	}()
 
 	wg.Wait()
