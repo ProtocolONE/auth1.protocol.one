@@ -3,8 +3,8 @@ package micro
 import (
 	"time"
 
-	grpc2 "github.com/ProtocolONE/auth1.protocol.one/internal/handler/grpc"
-	"github.com/ProtocolONE/auth1.protocol.one/internal/handler/proto"
+	grpc2 "github.com/ProtocolONE/auth1.protocol.one/internal/grpc/handler"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/proto"
 	"github.com/micro/go-micro/v2/service"
 	"github.com/micro/go-micro/v2/service/grpc"
 	"go.uber.org/fx"

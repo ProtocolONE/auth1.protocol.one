@@ -22,10 +22,11 @@ func New(env *env.Mongo) UserRepository {
 	}
 }
 
-func (r UserRepository) SetPassword(ctx context.Context, i *entity.User) error {
-	return nil
-}
-
 func (r UserRepository) FindByID(ctx context.Context, id string) (*entity.User, error) {
-	return nil, nil
+	p := &model{}
+	if err := r.db.C(collection).FindId(id).One(&p); err != nil {
+		return nil, err
+	}
+
+	return p.Convert(), nil
 }

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package proto;
 
+import "google/protobuf/timestamp.proto";
+
 service Service {
     rpc GetProfile(GetProfileRequest) returns (ProfileResponse) {}
     rpc SetProfile(SetProfileRequest) returns (ProfileResponse) {}
@@ -24,7 +26,7 @@ message SetProfileRequest {
     string PhotoURL = 8;
     string FirstName = 9;
     string LastName = 10;
-    uint32 BirthDate = 11;
+    google.protobuf.Timestamp BirthDate = 11;
     //
     string Language = 12;
 }
@@ -42,7 +44,7 @@ message ProfileResponse {
     string PhotoURL = 8;
     string FirstName = 9;
     string LastName = 10;
-    uint32 BirthDate = 11;
+    google.protobuf.Timestamp BirthDate = 11;
     //
     string Language = 12;
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 )
@@ -12,7 +13,7 @@ type ProfileService interface {
 	Delete(ctx context.Context, id string) error
 
 	GetByID(ctx context.Context, id string) (*entity.Profile, error)
-	GetByUserID(ctx context.Context, user_id string) (*entity.Profile, error)
+	GetByUserID(ctx context.Context, userID string) (*entity.Profile, error)
 }
 
 type CreateProfileData struct {
@@ -28,7 +29,7 @@ type CreateProfileData struct {
 	PhotoURL  string
 	FirstName string
 	LastName  string
-	BirthDate uint32
+	BirthDate time.Time
 	//
 	Language string
 }
@@ -47,7 +48,7 @@ type UpdateProfileData struct {
 	PhotoURL  string
 	FirstName string
 	LastName  string
-	BirthDate uint32
+	BirthDate time.Time
 	//
 	Language string
 }

@@ -7,5 +7,6 @@ import (
 )
 
 type UserIdentityRepository interface {
-	GetSocialProfiles(ctx context.Context, userID string) ([]*entity.SocialProfile, error)
+	FindSocialProfile(ctx context.Context, userID, provider string) ([]*entity.SocialProfile, error)
+	FindSocialProfiles(ctx context.Context, userID string) ([]*entity.SocialProfile, error)
 }

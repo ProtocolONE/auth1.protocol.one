@@ -7,6 +7,5 @@ import (
 )
 
 type UserService interface {
-	Get(ctx context.Context, ID string) (*entity.User, error)
-	//SetPassword(ctx context.Context, userID, passwOld, passNew string) error
+	GetByID(ctx context.Context, ID string) (*entity.User, error)
 }

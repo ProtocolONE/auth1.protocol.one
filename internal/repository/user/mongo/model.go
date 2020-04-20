@@ -1,8 +1,10 @@
 package mongo
 
 import (
+	"errors"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -57,4 +59,54 @@ type model struct {
 
 	// UpdatedAt returns the timestamp of the last update.
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+func (m model) Convert() *entity.User {
+	return &entity.User{
+		ID:             m.ID.Hex(),
+		AppID:          m.AppID.Hex(),
+		Email:          m.Email,
+		EmailVerified:  m.EmailVerified,
+		Phone:          m.PhoneNumber,
+		PhoneVerified:  m.PhoneVerified,
+		Username:       m.Username,
+		UniqueUsername: m.UniqueUsername,
+		Name:           m.Name,
+		Picture:        m.Picture,
+		LastIp:         m.LastIp,
+		LastLogin:      m.LastLogin,
+		LoginsCount:    m.LoginsCount,
+		Blocked:        m.Blocked,
+		DeviceID:       m.DeviceID,
+		CreatedAt:      m.CreatedAt,
+		UpdatedAt:      m.UpdatedAt,
+	}
+}
+
+func newModel(i *entity.User) (*model, error) {
+	if i.ID == "" {
+		return nil, errors.New("User.ID is empty")
+	}
+	if i.AppID == "" {
+		return nil, errors.New("User.AppID is empty")
+	}
+	return &model{
+		ID:             bson.ObjectIdHex(i.ID),
+		AppID:          bson.ObjectIdHex(i.AppID),
+		Email:          i.Email,
+		EmailVerified:  i.EmailVerified,
+		PhoneNumber:    i.Phone,
+		PhoneVerified:  i.PhoneVerified,
+		Username:       i.Username,
+		UniqueUsername: i.UniqueUsername,
+		Name:           i.Name,
+		Picture:        i.Picture,
+		LastIp:         i.LastIp,
+		LastLogin:      i.LastLogin,
+		LoginsCount:    i.LoginsCount,
+		Blocked:        i.Blocked,
+		DeviceID:       i.DeviceID,
+		CreatedAt:      i.CreatedAt,
+		UpdatedAt:      i.UpdatedAt,
+	}, nil
 }

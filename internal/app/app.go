@@ -7,7 +7,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/handler"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/service"
-	"github.com/ProtocolONE/auth1.protocol.one/internal/handler/micro"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/micro"
 	"github.com/globalsign/mgo"
 	microService "github.com/micro/go-micro/v2/service"
 	"go.uber.org/fx"
@@ -20,12 +20,6 @@ type App struct {
 
 func New(db *mgo.Database) (*App, error) {
 	var app = new(App)
-
-	//app.grpc = grpc.NewService(
-	//	micro.Name("go.micro.srv.grpc"),        // todo: rename
-	//	micro.RegisterTTL(time.Second*30),      // todo: load from config
-	//	micro.RegisterInterval(time.Second*10), // todo: load from config
-	//)
 
 	app.FxProvides(
 		env.New,

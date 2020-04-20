@@ -61,7 +61,10 @@ func (r ProfileRepository) FindByID(ctx context.Context, id string) (*entity.Pro
 
 func (r ProfileRepository) FindByUserID(ctx context.Context, userID string) (*entity.Profile, error) {
 	p := &model{}
-	if err := r.db.C(collection).Find(bson.M{"user_id": userID}).One(&p); err != nil {
+	if err := r.db.C(collection).Find(bson.M{"user_id": bson.ObjectIdHex(userID)}).One(p); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 

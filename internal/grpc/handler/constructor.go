@@ -1,4 +1,4 @@
-package grpc
+package handler
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/service"
