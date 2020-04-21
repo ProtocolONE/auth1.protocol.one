@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/centrifugal/gocent"
 	"github.com/labstack/echo/v4"
@@ -65,21 +63,12 @@ func (c *Centrifugo) Refresh(ctx echo.Context) error {
 		})
 	}
 
-	t := &models.LauncherToken{}
-	err = c.registry.LauncherTokenService().Get(challenge.Value, t)
-	if err != nil {
-		if err == apierror.NotFound {
-			return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
-				"result": map[string]string{
-					"error": err.Error(),
-				},
-			})
-		}
-	}
-
+	c.registry.CentrifugoService().Expired(challenge.Value)
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
-		"result": map[string]interface{}{
-			"expire_at": time.Now().Add(time.Second * time.Duration(c.config.SessionTTL)).Unix(),
+		"disconnect": map[string]interface{}{
+			"code":      4404,
+			"reconnect": false,
+			"reason":    "expired",
 		},
 	})
 }
