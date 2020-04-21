@@ -12,8 +12,8 @@ type ProfileService interface {
 	Update(ctx context.Context, data *UpdateProfileData) (*entity.Profile, error)
 	Delete(ctx context.Context, id string) error
 
-	GetByID(ctx context.Context, id string) (*entity.Profile, error)
-	GetByUserID(ctx context.Context, userID string) (*entity.Profile, error)
+	GetExistByID(ctx context.Context, id string) (*entity.Profile, error)
+	GetExistByUserID(ctx context.Context, userID string) (*entity.Profile, error)
 }
 
 type CreateProfileData struct {

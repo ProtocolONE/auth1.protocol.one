@@ -17,7 +17,7 @@ type Handler struct {
 
 // GET /v1/profile
 func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest, w *proto.ProfileResponse) error {
-	p, err := h.profile.GetByUserID(ctx, r.UserID)
+	p, err := h.profile.GetExistByUserID(ctx, r.UserID)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest, w 
 }
 
 func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w *proto.ProfileResponse) error {
-	p, err := h.profile.GetByUserID(ctx, r.UserID)
+	p, err := h.profile.GetExistByUserID(ctx, r.UserID)
 	if err != nil && err != profile.ErrProfileNotFound {
 		return err
 	}
@@ -98,10 +98,5 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w 
 		}
 	}
 
-	return nil
-}
-
-func (h *Handler) GetSocialProfiles(ctx context.Context, r *proto.GetProfileRequest, w *proto.ProfileResponse) error {
-	//
 	return nil
 }
