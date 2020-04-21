@@ -1,22 +1,10 @@
-FROM golang:1.13-alpine AS builder
+FROM alpine:3.10
 
-RUN apk add bash ca-certificates git
+WORKDIR /app
 
-WORKDIR /application
-
-COPY go.mod.cache go.mod
-RUN go mod download
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy all files in currend directiry into home directory
-COPY . ./
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o ./bin/auth1_auth .
-
-FROM alpine:3.9
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-WORKDIR /application
-COPY --from=builder /application .
 
-ENTRYPOINT /application/bin/auth1_auth migration && /application/bin/auth1_auth server
+COPY ./public ./public
+COPY ./auth1 auth1
+
+CMD /app/auth1 migration && /app/auth1 server
