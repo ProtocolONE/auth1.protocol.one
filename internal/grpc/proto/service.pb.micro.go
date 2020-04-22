@@ -48,7 +48,7 @@ type Service interface {
 	//
 	SetPassword(ctx context.Context, in *SetPasswordRequest, opts ...client.CallOption) (*SetPasswordResponse, error)
 	//
-	GetUserIdentities(ctx context.Context, in *GetUserIdentitiesRequest, opts ...client.CallOption) (*UserIdentitiesResponse, error)
+	GetUserSocialIdentities(ctx context.Context, in *GetUserSocialIdentitiesRequest, opts ...client.CallOption) (*UserSocialIdentitiesResponse, error)
 }
 
 type service struct {
@@ -93,9 +93,9 @@ func (c *service) SetPassword(ctx context.Context, in *SetPasswordRequest, opts 
 	return out, nil
 }
 
-func (c *service) GetUserIdentities(ctx context.Context, in *GetUserIdentitiesRequest, opts ...client.CallOption) (*UserIdentitiesResponse, error) {
-	req := c.c.NewRequest(c.name, "Service.GetUserIdentities", in)
-	out := new(UserIdentitiesResponse)
+func (c *service) GetUserSocialIdentities(ctx context.Context, in *GetUserSocialIdentitiesRequest, opts ...client.CallOption) (*UserSocialIdentitiesResponse, error) {
+	req := c.c.NewRequest(c.name, "Service.GetUserSocialIdentities", in)
+	out := new(UserSocialIdentitiesResponse)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ type ServiceHandler interface {
 	//
 	SetPassword(context.Context, *SetPasswordRequest, *SetPasswordResponse) error
 	//
-	GetUserIdentities(context.Context, *GetUserIdentitiesRequest, *UserIdentitiesResponse) error
+	GetUserSocialIdentities(context.Context, *GetUserSocialIdentitiesRequest, *UserSocialIdentitiesResponse) error
 }
 
 func RegisterServiceHandler(s server.Server, hdlr ServiceHandler, opts ...server.HandlerOption) error {
@@ -119,7 +119,7 @@ func RegisterServiceHandler(s server.Server, hdlr ServiceHandler, opts ...server
 		GetProfile(ctx context.Context, in *GetProfileRequest, out *ProfileResponse) error
 		SetProfile(ctx context.Context, in *SetProfileRequest, out *ProfileResponse) error
 		SetPassword(ctx context.Context, in *SetPasswordRequest, out *SetPasswordResponse) error
-		GetUserIdentities(ctx context.Context, in *GetUserIdentitiesRequest, out *UserIdentitiesResponse) error
+		GetUserSocialIdentities(ctx context.Context, in *GetUserSocialIdentitiesRequest, out *UserSocialIdentitiesResponse) error
 	}
 	type Service struct {
 		service
@@ -144,6 +144,6 @@ func (h *serviceHandler) SetPassword(ctx context.Context, in *SetPasswordRequest
 	return h.ServiceHandler.SetPassword(ctx, in, out)
 }
 
-func (h *serviceHandler) GetUserIdentities(ctx context.Context, in *GetUserIdentitiesRequest, out *UserIdentitiesResponse) error {
-	return h.ServiceHandler.GetUserIdentities(ctx, in, out)
+func (h *serviceHandler) GetUserSocialIdentities(ctx context.Context, in *GetUserSocialIdentitiesRequest, out *UserSocialIdentitiesResponse) error {
+	return h.ServiceHandler.GetUserSocialIdentities(ctx, in, out)
 }

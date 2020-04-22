@@ -10,7 +10,7 @@ service Service {
     //
     rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse) {}
     //
-    rpc GetUserIdentities(GetUserIdentitiesRequest) returns (UserIdentitiesResponse) {}
+    rpc GetUserSocialIdentities(GetUserSocialIdentitiesRequest) returns (UserSocialIdentitiesResponse) {}
 }
 
 message GetProfileRequest {
@@ -73,7 +73,7 @@ message SetPasswordResponse {
     bool success = 3;
 }
 
-message GetUserIdentitiesRequest {
+message GetUserSocialIdentitiesRequest {
     string appID = 1;
     string userID = 2;
 }
@@ -86,6 +86,6 @@ message UserIdentity {
     string name = 5;
 }
 
-message UserIdentitiesResponse {
+message UserSocialIdentitiesResponse {
     repeated UserIdentity identities = 1;
 }

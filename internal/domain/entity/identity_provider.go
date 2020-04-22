@@ -1,5 +1,12 @@
 package entity
 
+const (
+	AppIdentityProviderTypePassword = "password"
+	AppIdentityProviderTypeSocial   = "social"
+
+	AppIdentityProviderNameDefault = "initial"
+)
+
 type IdentityProvider struct {
 	// ID is the id of provider.
 	ID string

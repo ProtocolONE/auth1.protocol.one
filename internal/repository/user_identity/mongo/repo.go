@@ -23,6 +23,18 @@ func New(env *env.Mongo) UserIdentityRepository {
 	}
 }
 
+func (r UserIdentityRepository) GetByID(ctx context.Context, id string) (*entity.UserIdentity, error) {
+	m := &model{}
+	if err := r.db.C(collection).FindId(bson.ObjectIdHex(id)).One(m); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return m.Convert(), nil
+}
+
 func (r UserIdentityRepository) FindIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error) {
 	var list []*model
 	if err := r.db.C(collection).Find(bson.M{
@@ -46,6 +58,9 @@ func (r UserIdentityRepository) FindIdentity(ctx context.Context, appID, identit
 		"identity_provider_id": bson.ObjectIdHex(identityProviderID),
 		"user_id":              bson.ObjectIdHex(userID),
 	}).One(ui); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 

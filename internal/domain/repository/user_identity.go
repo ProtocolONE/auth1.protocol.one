@@ -15,6 +15,7 @@ const (
 type UserIdentityRepository interface {
 	Update(ctx context.Context, i *entity.UserIdentity) error
 	//
+	GetByID(ctx context.Context, id string) (*entity.UserIdentity, error)
 	FindIdentity(ctx context.Context, appID, identityProviderID, userID string) (*entity.UserIdentity, error)
 	FindIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error)
 }

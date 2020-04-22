@@ -11,6 +11,7 @@ type Params struct {
 	ProfileService      service.ProfileService
 	UserService         service.UserService
 	UserIdentityService service.UserIdentityService
+	UserPasswordService service.UserPasswordService
 	ApplicationService  service.ApplicationService
 }
 
@@ -19,6 +20,7 @@ func New(params Params) *Handler {
 		profile:      params.ProfileService,
 		user:         params.UserService,
 		userIdentity: params.UserIdentityService,
+		userPassword: params.UserPasswordService,
 		app:          params.ApplicationService,
 	}
 }

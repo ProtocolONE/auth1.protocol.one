@@ -16,6 +16,7 @@ type Handler struct {
 	profile      service.ProfileService
 	user         service.UserService
 	userIdentity service.UserIdentityService
+	userPassword service.UserPasswordService
 	app          service.ApplicationService
 }
 
@@ -83,11 +84,26 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w 
 }
 
 func (h *Handler) SetPassword(ctx context.Context, r *proto.SetPasswordRequest, w *proto.SetPasswordResponse) error {
+	if err := h.userPassword.SetPassword(ctx, service.SetPasswordData{
+		AppID:       r.AppID,
+		UserID:      r.UserID,
+		PasswordOld: r.PasswordOld,
+		PasswordNew: r.PasswordNew,
+	}); err != nil {
+		w.AppID = r.AppID
+		w.UserID = r.UserID
+		w.Success = false
+		return err
+	}
+
+	w.AppID = r.AppID
+	w.UserID = r.UserID
+	w.Success = true
 	return nil
 }
 
 //
-func (h *Handler) GetUserIdentities(ctx context.Context, r *proto.GetUserIdentitiesRequest, w *proto.UserIdentitiesResponse) error {
+func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserSocialIdentitiesRequest, w *proto.UserSocialIdentitiesResponse) error {
 	app, err := h.app.GetByID(ctx, r.AppID)
 	if err != nil {
 		return err
@@ -98,7 +114,7 @@ func (h *Handler) GetUserIdentities(ctx context.Context, r *proto.GetUserIdentit
 		providers[provider.ID] = provider
 	}
 
-	ids, err := h.userIdentity.GetUserIdentities(ctx, r.AppID, r.UserID)
+	ids, err := h.userIdentity.GetIdentities(ctx, r.AppID, r.UserID)
 	if err != nil {
 		return err
 	}
