@@ -8,13 +8,17 @@ import (
 type Params struct {
 	fx.In
 
-	ProfileService service.ProfileService
-	UserService    service.UserService
+	ProfileService      service.ProfileService
+	UserService         service.UserService
+	UserIdentityService service.UserIdentityService
+	ApplicationService  service.ApplicationService
 }
 
 func New(params Params) *Handler {
 	return &Handler{
-		profile: params.ProfileService,
-		user:    params.UserService,
+		profile:      params.ProfileService,
+		user:         params.UserService,
+		userIdentity: params.UserIdentityService,
+		app:          params.ApplicationService,
 	}
 }

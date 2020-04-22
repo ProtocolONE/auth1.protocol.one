@@ -52,7 +52,7 @@ func (r ProfileRepository) Update(ctx context.Context, i *entity.Profile) error 
 
 func (r ProfileRepository) FindByID(ctx context.Context, id string) (*entity.Profile, error) {
 	p := &model{}
-	if err := r.db.C(collection).FindId(id).One(&p); err != nil {
+	if err := r.db.C(collection).FindId(id).One(p); err != nil {
 		return nil, err
 	}
 

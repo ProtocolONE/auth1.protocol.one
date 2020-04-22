@@ -24,7 +24,7 @@ func New(env *env.Mongo) UserRepository {
 
 func (r UserRepository) FindByID(ctx context.Context, id string) (*entity.User, error) {
 	p := &model{}
-	if err := r.db.C(collection).FindId(id).One(&p); err != nil {
+	if err := r.db.C(collection).FindId(id).One(p); err != nil {
 		return nil, err
 	}
 

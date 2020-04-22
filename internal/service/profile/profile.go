@@ -39,7 +39,7 @@ func (s Service) Create(ctx context.Context, data *service.CreateProfileData) (*
 }
 
 func (s Service) Update(ctx context.Context, data *service.UpdateProfileData) (*entity.Profile, error) {
-	profile, err := s.GetExistByUserID(ctx, data.UserId)
+	profile, err := s.GetByUserID(ctx, data.UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s Service) Delete(ctx context.Context, id string) error {
 	panic("not implemented") // TODO
 }
 
-func (s Service) GetExistByID(ctx context.Context, id string) (*entity.Profile, error) {
+func (s Service) GetByID(ctx context.Context, id string) (*entity.Profile, error) {
 	profile, err := s.ProfileRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (s Service) GetExistByID(ctx context.Context, id string) (*entity.Profile, 
 	return profile, nil
 }
 
-func (s Service) GetExistByUserID(ctx context.Context, user_id string) (*entity.Profile, error) {
+func (s Service) GetByUserID(ctx context.Context, user_id string) (*entity.Profile, error) {
 	profile, err := s.ProfileRepo.FindByUserID(ctx, user_id)
 	if err != nil {
 		return nil, err
