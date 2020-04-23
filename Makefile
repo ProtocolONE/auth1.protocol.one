@@ -16,7 +16,7 @@ down: ## stops containers
 
 .PHONY: up
 up: ## pull, runs service and all deps
-	docker-compose pull && docker-compose up -d
+	docker-compose pull && docker-compose up --build -d
 
 .PHONY: upfast
 upfast: ## runs service without updating images
