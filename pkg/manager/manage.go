@@ -319,13 +319,13 @@ func (m *ManageManager) GetIdentityProvider(ctx echo.Context, spaceId string, id
 	return ipc, nil
 }
 
-func (m *ManageManager) GetIdentityProviders(ctx echo.Context, appId string) ([]*models.AppIdentityProvider, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appId))
+func (m *ManageManager) GetIdentityProviders(ctx echo.Context, spaceID string) ([]*models.AppIdentityProvider, *models.GeneralError) {
+	space, err := m.r.SpaceService().GetSpace(bson.ObjectIdHex(spaceID))
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
 	}
 
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
+	ipc := m.identityProviderService.FindByTypeSpace(space, models.AppIdentityProviderTypeSocial)
 	if ipc == nil && len(ipc) > 0 {
 		return nil, &models.GeneralError{Message: "Unable to get identity provider", Err: errors.New("Unable to get identity provider")}
 	}

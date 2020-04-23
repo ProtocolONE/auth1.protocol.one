@@ -31,6 +31,7 @@ type AppIdentityProviderServiceInterface interface {
 
 	// FindByType find and return list of identity providers by type.
 	FindByType(*models.Application, string) []*models.AppIdentityProvider
+	FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
 
 	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
@@ -98,9 +99,16 @@ func (s AppIdentityProviderService) GetSpace(space *models.Space, id bson.Object
 }
 
 func (s AppIdentityProviderService) FindByType(app *models.Application, connType string) []*models.AppIdentityProvider {
+	space, err := s.spaces.GetSpace(app.SpaceId)
+	if err != nil {
+		panic(err)
+	}
+	return s.FindByTypeSpace(space, connType)
+}
+
+func (s AppIdentityProviderService) FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider {
 	var ipc []*models.AppIdentityProvider
-	providers := s.providers(app)
-	for _, ip := range providers {
+	for _, ip := range space.IdentityProviders {
 		if ip.Type == connType {
 			ipc = append(ipc, ip)
 		}

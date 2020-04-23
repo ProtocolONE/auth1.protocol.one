@@ -12,6 +12,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/pkg/errors"
 )
 
 func InitManage(cfg *Server) error {
@@ -336,8 +337,7 @@ func addIdentityProvider(ctx echo.Context) error {
 	}
 
 	if err := m.AddAppIdentityProvider(id, form); err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to add the identity provider to the application")
+		return errors.Wrap(err, "unable to add the identity provider")
 	}
 
 	return ctx.JSON(http.StatusOK, form)
@@ -350,8 +350,7 @@ func getIdentityProvider(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	ip, err := m.GetIdentityProvider(ctx, spaceID, id)
 	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Identity provider not exists")
+		return errors.Wrap(err, "unable to get identity provider")
 	}
 
 	return ctx.JSON(http.StatusOK, ip)
@@ -363,8 +362,7 @@ func getIdentityProviders(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	list, err := m.GetIdentityProviders(ctx, spaceID)
 	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to give identity providers")
+		return errors.Wrap(err, "unable to get identity providers")
 	}
 
 	return ctx.JSON(http.StatusOK, list)
