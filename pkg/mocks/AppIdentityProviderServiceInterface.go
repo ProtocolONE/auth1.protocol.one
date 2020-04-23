@@ -65,6 +65,22 @@ func (_m *AppIdentityProviderServiceInterface) FindByTypeAndNameSpace(space *mod
 	return r0
 }
 
+// FindByTypeSpace provides a mock function with given fields: space, connType
+func (_m *AppIdentityProviderServiceInterface) FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider {
+	ret := _m.Called(space, connType)
+
+	var r0 []*models.AppIdentityProvider
+	if rf, ok := ret.Get(0).(func(*models.Space, string) []*models.AppIdentityProvider); ok {
+		r0 = rf(space, connType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.AppIdentityProvider)
+		}
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: _a0, _a1
 func (_m *AppIdentityProviderServiceInterface) Get(_a0 *models.Application, _a1 bson.ObjectId) *models.AppIdentityProvider {
 	ret := _m.Called(_a0, _a1)
