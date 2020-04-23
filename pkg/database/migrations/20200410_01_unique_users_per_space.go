@@ -20,7 +20,7 @@ func init() {
 				return errors.Wrapf(err, "Unable to get applications")
 			}
 
-			iter := db.C(database.TableUser).Repair()
+			iter := db.C(database.TableUser).Find(bson.M{}).Iter()
 			var user models.User
 			for iter.Next(&user) {
 				var app = findapp(apps, user.AppID)
@@ -34,7 +34,7 @@ func init() {
 
 
 
-			if err := db.C(database.TableUserIdentity).DropIndex("username", "app_id"); err != nil {
+			if err := db.C(database.TableUser).DropIndexName("Idx-Username-AppId"); err != nil {
 				return errors.Wrapf(err, "Drop user identity collection `Idx-Username-AppId` index failed")
 			}
 

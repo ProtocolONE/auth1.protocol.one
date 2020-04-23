@@ -504,6 +504,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	user := &models.User{
 		ID:             bson.NewObjectId(),
 		SpaceID:        app.SpaceId,
+		AppID: 			app.ID,
 		Username:       form.Username,
 		UniqueUsername: app.UniqueUsernames,
 		Email:          form.Email,

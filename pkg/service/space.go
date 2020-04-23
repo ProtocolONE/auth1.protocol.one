@@ -40,14 +40,14 @@ func (ss SpaceService) UpdateSpace(space *models.Space) error {
 }
 
 func (ss SpaceService) GetSpace(id bson.ObjectId) (*models.Space, error) {
-	s := &models.Space{}
+	var s models.Space
 	if err := ss.db.C(database.TableSpace).
 		FindId(id).
 		One(&s); err != nil {
 		return nil, err
 	}
 
-	return s, nil
+	return &s, nil
 }
 
 func (ss SpaceService) AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
