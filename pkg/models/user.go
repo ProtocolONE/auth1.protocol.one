@@ -12,7 +12,10 @@ type User struct {
 	// ID is the id of user.
 	ID bson.ObjectId `bson:"_id" json:"id"`
 
-	// AppID is the id of the application.
+	// SpaceID is the id of space to which user belongs
+	SpaceID bson.ObjectId `bson:"space_id" json:"space_id"`
+
+	// AppID is the id of the application. DEPRICATED
 	AppID bson.ObjectId `bson:"app_id" json:"app_id"`
 
 	// Email is the email address of the user.
@@ -142,7 +145,7 @@ type LoginPageForm struct {
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", a.ID.String())
-	enc.AddString("ApplicationID", a.AppID.String())
+	enc.AddString("SpaceID", a.SpaceID.String())
 	enc.AddString("Email", a.Email)
 	enc.AddBool("EmailVerified", a.EmailVerified)
 	enc.AddTime("CreatedAt", a.CreatedAt)

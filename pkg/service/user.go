@@ -19,7 +19,7 @@ type UserServiceInterface interface {
 	Get(bson.ObjectId) (*models.User, error)
 
 	// IsUsernameFree checks if username is available for signup
-	IsUsernameFree(username string, appID bson.ObjectId) (bool, error)
+	IsUsernameFree(username string, spaceID bson.ObjectId) (bool, error)
 }
 
 // UserService is the user service.
@@ -59,8 +59,8 @@ func (us UserService) Get(id bson.ObjectId) (*models.User, error) {
 	return u, nil
 }
 
-func (us UserService) IsUsernameFree(username string, appID bson.ObjectId) (bool, error) {
+func (us UserService) IsUsernameFree(username string, spaceID bson.ObjectId) (bool, error) {
 	// TODO: Optimize for case when multiple same username allowed
-	n, err := us.db.C(database.TableUser).Find(bson.M{"username": username, "app_id": appID}).Count()
+	n, err := us.db.C(database.TableUser).Find(bson.M{"username": username, "space_id": spaceID}).Count()
 	return n == 0, err
 }

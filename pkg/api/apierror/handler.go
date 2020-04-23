@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/labstack/echo/v4"
@@ -27,7 +27,7 @@ func Middleware() echo.MiddlewareFunc {
 					if !ok {
 						err = fmt.Errorf("%v", r)
 					}
-					Handler(err, c)
+					Handler(errors.WithStack(err), c)
 				}
 			}()
 			err := next(c)
