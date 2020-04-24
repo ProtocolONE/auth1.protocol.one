@@ -17,8 +17,8 @@ import (
 func InitLogin(cfg *Server) error {
 	ctl := &Login{cfg}
 
-	cfg.Echo.POST("/api/login", ctl.login, apierror.Redirect("/error"))
-	cfg.Echo.GET("/api/login", ctl.check)
+	cfg.Echo.POST("/api/login", ctl.login)
+	cfg.Echo.GET("/api/login", ctl.check, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/login/hint", ctl.hint)
 	cfg.Echo.GET("/api/logout", ctl.logout, apierror.Redirect("/error"))
 
