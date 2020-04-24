@@ -12,14 +12,15 @@ import (
 )
 
 func InitOauth2(cfg *Server) error {
-	g := cfg.Echo.Group("/oauth2", func(next echo.HandlerFunc) echo.HandlerFunc {
+	middleware := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			db := c.Get("database").(database.MgoSession)
 			c.Set("oauth_manager", manager.NewOauthManager(db, cfg.Registry, cfg.SessionConfig, cfg.HydraConfig, cfg.ServerConfig, cfg.Recaptcha))
 
 			return next(c)
 		}
-	})
+	}
+	g := cfg.Echo.Group("/oauth2", middleware)
 
 	g.GET("/login", oauthLogin)
 	g.POST("/login", oauthLoginSubmit)
@@ -29,7 +30,9 @@ func InitOauth2(cfg *Server) error {
 	g.POST("/checkUsername", oauthCheckUsername)
 	g.POST("/introspect", oauthIntrospect)
 	g.GET("/callback", oauthCallback)
-	g.GET("/logout", oauthLogout)
+
+	cfg.Echo.POST("/api/signup", oauthSignUp, middleware)
+	cfg.Echo.POST("/api/checkUsername", oauthCheckUsername, middleware)
 
 	return nil
 }
@@ -242,29 +245,5 @@ func oauthCallback(ctx echo.Context) error {
 		"AccessToken":       response.AccessToken,
 		"ExpiresIn":         response.ExpiresIn,
 		"IdToken":           response.IdToken,
-	})
-}
-
-func oauthLogout(ctx echo.Context) error {
-	form := new(models.Oauth2LogoutForm)
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
-	if err := ctx.Bind(form); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
-	}
-
-	url, err := m.Logout(ctx, form)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, err.Message)
-	}
-
-	if url != "" {
-		return ctx.Redirect(http.StatusFound, url)
-	}
-
-	return ctx.Render(http.StatusOK, "oauth_logout.html", map[string]interface{}{
-		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
 	})
 }
