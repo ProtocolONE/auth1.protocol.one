@@ -411,7 +411,12 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 		return false, errors.Wrap(err, "unable to load application")
 	}
 
-	if !app.UniqueUsernames {
+	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to load space")
+	}
+
+	if !space.UniqueUsernames {
 		return true, nil
 	}
 
