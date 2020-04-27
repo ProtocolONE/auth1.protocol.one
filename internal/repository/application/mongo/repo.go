@@ -10,24 +10,23 @@ import (
 )
 
 const (
-	collection = "user"
+	collection = "application"
 )
 
-type UserRepository struct {
+type ApplicationRepository struct {
 	db *mgo.Database
 }
 
-func New(env *env.Mongo) UserRepository {
-	return UserRepository{
+func New(env *env.Mongo) ApplicationRepository {
+	return ApplicationRepository{
 		db: env.DB,
 	}
 }
 
-func (r UserRepository) FindByID(ctx context.Context, id string) (*entity.User, error) {
+func (r ApplicationRepository) FindByID(ctx context.Context, id string) (*entity.Application, error) {
 	p := &model{}
 	if err := r.db.C(collection).FindId(bson.ObjectIdHex(id)).One(p); err != nil {
 		return nil, err
 	}
-
 	return p.Convert(), nil
 }

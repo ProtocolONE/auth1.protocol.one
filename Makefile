@@ -15,7 +15,7 @@ gen-mocks: ## gen mocks for interfaces from pkg/service
 
 .PHONY: gen-grpc
 gen-grpc: ## gen grpc, needs protoc, protoc-gen-go, protoc-gen-micro
-	@protoc --proto_path=. --micro_out=. --go_out=. ./internal/handler/proto/service.proto
+	@protoc --proto_path=. --micro_out=. --go_out=. ./internal/grpc/proto/service.proto
 
 .PHONY: down
 down: ## stops containers

@@ -6,7 +6,16 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 )
 
+const (
+	UserIdentity_Password = "password"
+	UserIdentity_Social   = "social"
+)
+
+//go:generate mockgen -destination=../mocks/user_identity_repository.go -package=mocks github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository UserIdentityRepository
 type UserIdentityRepository interface {
-	FindSocialProfile(ctx context.Context, userID, provider string) ([]*entity.SocialProfile, error)
-	FindSocialProfiles(ctx context.Context, userID string) ([]*entity.SocialProfile, error)
+	Update(ctx context.Context, i *entity.UserIdentity) error
+	//
+	GetByID(ctx context.Context, id string) (*entity.UserIdentity, error)
+	FindIdentity(ctx context.Context, appID, identityProviderID, userID string) (*entity.UserIdentity, error)
+	FindIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error)
 }
