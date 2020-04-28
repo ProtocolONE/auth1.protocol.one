@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,6 +29,7 @@ func InitSocial(cfg *Server) error {
 	// redirect based apis
 	cfg.Echo.GET("/api/providers/:name/forward", s.Forward, apierror.Redirect("/error"))
 	cfg.Echo.GET("/api/providers/:name/callback", s.Callback, apierror.Redirect("/error"))
+	cfg.Echo.GET("/api/providers/:name/complete-auth", s.CompleteAuth, apierror.Redirect("/error"))
 
 	return nil
 }
@@ -309,9 +311,13 @@ func (s *Social) Confirm(ctx echo.Context) error {
 	db := ctx.Get("database").(database.MgoSession)
 	m := manager.NewLoginManager(db, s.registry)
 
-	url, err := s.accept(ctx, m, t.UserIdentity, t.UserIdentitySocial, t.Name, t.Domain, t.Challenge)
-	if err != nil {
-		return err
+	// if UserIdentity found, launcher must complete auth process via follow url
+	var url = t.Domain + "/api/providers/" + t.Name + "/complete-auth?login_challenge=" + t.Challenge
+	if t.UserIdentity == nil {
+		url, err = s.accept(ctx, m, t.UserIdentity, t.UserIdentitySocial, t.Name, t.Domain, t.Challenge)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = s.registry.CentrifugoService().Success(challenge, url)
@@ -356,6 +362,36 @@ func (s *Social) Cancel(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]string{
 		"status": "success",
 	})
+}
+
+func (s *Social) CompleteAuth(ctx echo.Context) error {
+	var (
+		challenge = ctx.QueryParam("login_challenge")
+	)
+
+	var t models.LauncherToken
+	err := s.registry.LauncherTokenService().Get(challenge, &t)
+	if err != nil {
+		return err
+	}
+
+	if t.Status != models.LauncherAuth_Success {
+		return errors.New("invalid token state: not successful")
+	}
+
+	if t.UserIdentity == nil {
+		return errors.New("invalid token state: no user identity")
+	}
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewLoginManager(db, s.registry)
+
+	url, err := m.Accept(ctx, t.UserIdentity, t.Name, t.Challenge)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func (s *Social) accept(ctx echo.Context, m manager.LoginManagerInterface, ui *models.UserIdentity, uis *models.UserIdentitySocial, name, domain, challenge string) (string, error) {
