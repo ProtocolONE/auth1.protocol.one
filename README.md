@@ -1,9 +1,9 @@
 # AuthOne
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Build Status](https://travis-ci.com/ProtocolONE/auth1.protocol.one.svg?branch=develop)](https://travis-ci.com/ProtocolONE/auth1.protocol.one)
-[![codecov](https://codecov.io/gh/ProtocolONE/auth1.protocol.one/branch/develop/graph/badge.svg)](https://codecov.io/gh/ProtocolONE/auth1.protocol.one)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ProtocolONE/auth1.protocol.one)](https://goreportcard.com/report/github.com/ProtocolONE/auth1.protocol.one)
+[![Build Status](https://travis-ci.com/qilin/auth1.protocol.one.svg?branch=master)](https://travis-ci.com/qilin/auth1.protocol.one)
+[![codecov](https://codecov.io/gh/qilin/auth1.protocol.one/branch/master/graph/badge.svg)](https://codecov.io/gh/qilin/auth1.protocol.one)
+[![Go Report Card](https://goreportcard.com/badge/github.com/qilin/auth1.protocol.one)](https://goreportcard.com/report/github.com/qilin/auth1.protocol.one)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/ProtocolONE/auth1.protocol.one)
 
 Qilin is an open-source digital distribution platform for game developers and publishers. Our mission is to distribute games by minimizing the effort of contracting, sharing documentation and providing comprehensive real-time statistics.
