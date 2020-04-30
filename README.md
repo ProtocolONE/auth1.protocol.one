@@ -8,8 +8,6 @@
 
 Qilin is an open-source digital distribution platform for game developers and publishers. Our mission is to distribute games by minimizing the effort of contracting, sharing documentation and providing comprehensive real-time statistics.
 
-Our solution is part of Protocol One IAAS and is actively used in the Storefront constructor. Qilin can be used as a component in an existing P1-independent system, using its hardware or cloud platforms.
-
 **Qilin architecture schema**
 
 ![Qilin architecture schema](qilin-schema.png)
