@@ -2,13 +2,14 @@
 # Declare variables to be passed into your templates.
 
 enableRedis: true
-enableMongo: true
-enableHydra: true
+enableMongo: false
+enableHydra: false
 enableCertIssuer: true
 enableHydraDebug: false
 
 ingress:
   hostname: auth1.tst.protocol.one
+  stgHostname: auth.stg.protocol.one
   hostnamePrefix:
   path: /
 
