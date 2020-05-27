@@ -41,6 +41,11 @@ require (
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 )
 
+require (
+	github.com/micro/go-plugins v2.0.1+incompatible
+	github.com/micro/go-plugins/client/selector/static v0.0.0-20200119172437-4fe21aa238fd
+)
+
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.0

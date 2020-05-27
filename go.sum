@@ -747,6 +747,8 @@ github.com/micro/go-micro/v2 v2.7.0 h1:oWmCoA81Z7kCk26hiRGNrlJ8TWmpb3/ImO0EYdhoX
 github.com/micro/go-micro/v2 v2.7.0/go.mod h1:bImBPfyXthPdQeVSik9sACGUxuxDE7jY8g5K7xZZV4c=
 github.com/micro/go-plugins v1.2.0 h1:/p9EzqJUiKkldzhANbu4hgKOaQufSBBwusQyhhvfjv8=
 github.com/micro/go-plugins v1.2.0/go.mod h1:N2UCiG7ExrTZ1N1dq1PF9bOgtuBOlUVEc86rfNGqxFQ=
+github.com/micro/go-plugins v2.0.1+incompatible h1:WYNrIeBhv+84ASevN22Z6ijGJf8bfMsdYUuuh9C8JOc=
+github.com/micro/go-plugins v2.0.1+incompatible/go.mod h1:dNzFjp55RfRhGm7zC6tPPzbdnAPo8+Yq4DbgEWdx6gc=
 github.com/micro/go-plugins/client/selector/static v0.0.0-20200119172437-4fe21aa238fd h1:630xxJkK385NN7SjxDdXQJlVpQ3T/oOWEeBhNOyjmjY=
 github.com/micro/go-plugins/client/selector/static v0.0.0-20200119172437-4fe21aa238fd/go.mod h1:4eBG31c1vKwTNUNslIuZ+XWxTkYLiCWCO3zjEQXXA7M=
 github.com/micro/go-rcache v0.0.0-20180418165751-a581a57b5133/go.mod h1:CBzgfnsCYHcyLg1qeTShF0iDErQmcLmSt+SdwjLkckI=

@@ -24,7 +24,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/micro/go-micro"
 
-	//"github.com/micro/go-plugins/client/selector/static"
+	"github.com/micro/go-plugins/client/selector/static"
 	"github.com/ory/hydra-client-go/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -68,10 +68,10 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	var options []micro.Option
 
-	//if os.Getenv("MICRO_SELECTOR") == "static" {
-	//	zap.L().Info("Use micro selector `static`")
-	//	options = append(options, micro.Selector(static.NewSelector()))
-	//}
+	if os.Getenv("MICRO_SELECTOR") == "static" {
+		zap.L().Info("Use micro selector `static`")
+		options = append(options, micro.Selector(static.NewSelector()))
+	}
 
 	zap.L().Info("Initialize micro service")
 
