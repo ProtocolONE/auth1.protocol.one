@@ -6,7 +6,6 @@ import (
 
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/service"
-	"github.com/globalsign/mgo/bson"
 )
 
 type Service struct {
@@ -17,7 +16,6 @@ var ErrProfileNotFound = errors.New("profile not found")
 
 func (s Service) Create(ctx context.Context, data *service.CreateProfileData) (*entity.Profile, error) {
 	profile := &entity.Profile{
-		ID:        bson.NewObjectId().Hex(),
 		UserID:    data.UserID,
 		Address1:  &data.Address1,
 		Address2:  &data.Address2,
@@ -58,7 +56,6 @@ func (s Service) Update(ctx context.Context, data *service.UpdateProfileData) (*
 	profile.Language = &data.Language
 
 	if err == ErrProfileNotFound {
-		profile.ID = bson.NewObjectId().Hex()
 		err = s.ProfileRepo.Create(ctx, profile)
 		if err != nil {
 			return nil, err

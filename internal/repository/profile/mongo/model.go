@@ -32,7 +32,6 @@ type model struct {
 
 func (m model) Convert() *entity.Profile {
 	return &entity.Profile{
-		ID:     m.ID.Hex(),
 		UserID: m.UserID.Hex(),
 		//
 		Address1: m.Address1,
@@ -52,14 +51,11 @@ func (m model) Convert() *entity.Profile {
 }
 
 func newModel(i *entity.Profile) (*model, error) {
-	if i.ID == "" {
-		return nil, errors.New("Profile.ID is empty")
-	}
 	if i.UserID == "" {
 		return nil, errors.New("Profile.UserID is empty")
 	}
 	return &model{
-		ID:     bson.ObjectIdHex(i.ID),
+		ID:     bson.ObjectIdHex(i.UserID),
 		UserID: bson.ObjectIdHex(i.UserID),
 		//
 		Address1: i.Address1,

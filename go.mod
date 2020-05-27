@@ -7,14 +7,13 @@ require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/centrifugal/gocent v2.1.0+incompatible
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-openapi/runtime v0.19.11
 	github.com/go-openapi/strfmt v0.19.4
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-redis/redis v6.15.2+incompatible
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.1
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -24,8 +23,6 @@ require (
 	github.com/labstack/echo/v4 v4.1.14
 	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro v1.18.0
-	github.com/micro/go-micro/v2 v2.4.1-0.20200415105401-9961ebb46e7b
-	github.com/micro/go-plugins/client/selector/static v0.0.0-20200119172437-4fe21aa238fd
 	github.com/ory/hydra-client-go v1.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/otp v1.2.0 // indirect
@@ -36,6 +33,8 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
+	google.golang.org/grpc v1.27.0
+	google.golang.org/protobuf v1.24.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
@@ -45,5 +44,7 @@ require (
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.0
+
+replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.13+incompatible
 
 go 1.13

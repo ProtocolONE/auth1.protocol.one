@@ -21,24 +21,29 @@ type Handler struct {
 }
 
 // GET /v1/profile
-func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest, w *proto.ProfileResponse) error {
+func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*proto.ProfileResponse, error) {
+	var w proto.ProfileResponse
+	w.UserID = r.UserID
 	p, err := h.profile.GetByUserID(ctx, r.UserID)
+	if err == profile.ErrProfileNotFound {
+		return &w, nil
+	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return fillProfileResponse(w, p)
+	return &w, fillProfileResponse(&w, p)
 }
 
-func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w *proto.ProfileResponse) error {
+func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*proto.ProfileResponse, error) {
 	p, err := h.profile.GetByUserID(ctx, r.UserID)
 	if err != nil && err != profile.ErrProfileNotFound {
-		return err
+		return nil, err
 	}
 
 	birthDate, err := ptypes.Timestamp(r.BirthDate)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err == profile.ErrProfileNotFound {
@@ -57,11 +62,10 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w 
 			Language:  r.Language,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		p, err = h.profile.Update(ctx, &service.UpdateProfileData{
-			ID:        p.ID,
 			UserId:    r.UserID,
 			Address1:  r.Address1,
 			Address2:  r.Address2,
@@ -76,14 +80,16 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest, w 
 			Language:  r.Language,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return fillProfileResponse(w, p)
+	var w proto.ProfileResponse
+	return &w, fillProfileResponse(&w, p)
 }
 
-func (h *Handler) SetPassword(ctx context.Context, r *proto.SetPasswordRequest, w *proto.SetPasswordResponse) error {
+func (h *Handler) SetPassword(ctx context.Context, r *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
+	var w proto.SetPasswordResponse
 	if err := h.userPassword.SetPassword(ctx, service.SetPasswordData{
 		AppID:       r.AppID,
 		UserID:      r.UserID,
@@ -93,20 +99,21 @@ func (h *Handler) SetPassword(ctx context.Context, r *proto.SetPasswordRequest, 
 		w.AppID = r.AppID
 		w.UserID = r.UserID
 		w.Success = false
-		return err
+		return &w, err
 	}
 
 	w.AppID = r.AppID
 	w.UserID = r.UserID
 	w.Success = true
-	return nil
+	return &w, nil
 }
 
 //
-func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserSocialIdentitiesRequest, w *proto.UserSocialIdentitiesResponse) error {
+func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserSocialIdentitiesRequest) (*proto.UserSocialIdentitiesResponse, error) {
+	var w proto.UserSocialIdentitiesResponse
 	app, err := h.app.GetByID(ctx, r.AppID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	providers := map[string]*entity.IdentityProvider{}
@@ -116,7 +123,7 @@ func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserS
 
 	ids, err := h.userIdentity.GetIdentities(ctx, r.AppID, r.UserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, id := range ids {
@@ -154,7 +161,7 @@ func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserS
 		})
 	}
 
-	return nil
+	return &w, nil
 }
 
 func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {

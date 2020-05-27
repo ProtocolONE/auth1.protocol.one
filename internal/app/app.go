@@ -7,15 +7,14 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/handler"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/app/container/service"
-	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/micro"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc"
 	"github.com/globalsign/mgo"
-	microService "github.com/micro/go-micro/v2/service"
 	"go.uber.org/fx"
 )
 
 type App struct {
 	fxOptions fx.Option
-	grpc      microService.Service
+	grpc      *grpc.Server
 }
 
 func New(db *mgo.Database) (*App, error) {
@@ -46,9 +45,9 @@ func (app *App) Init() error {
 		fx.NopLogger,
 
 		fx.Invoke(
-			func(params micro.Params) (microService.Service, error) {
+			func(params grpc.Params) (*grpc.Server, error) {
 				var err error
-				app.grpc, err = micro.New(params)
+				app.grpc, err = grpc.NewServer(params)
 				if err != nil {
 					return nil, err
 				}

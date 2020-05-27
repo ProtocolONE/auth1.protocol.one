@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package proto;
 
+option go_package = "internal/grpc/proto";
+
 import "google/protobuf/timestamp.proto";
 
 service Service {

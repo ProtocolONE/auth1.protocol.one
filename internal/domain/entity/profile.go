@@ -3,7 +3,6 @@ package entity
 import "time"
 
 type Profile struct {
-	ID     string
 	UserID string
 	//
 	Address1 *string

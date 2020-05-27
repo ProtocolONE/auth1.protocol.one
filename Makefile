@@ -7,9 +7,9 @@ dev-build-up: build ## build and run service
 	docker build -f Dockerfile.dev -t p1hub/qilinauth-qilin:master .
 	docker-compose up
 
-.PHONY: gen-grpc
-gen-grpc: ## gen grpc, needs protoc, protoc-gen-go, protoc-gen-micro
-	@protoc --proto_path=. --micro_out=. --go_out=. ./internal/grpc/proto/service.proto
+.PHONY: grpcgen
+grpcgen: ## generate grpc, needs protoc, protoc-gen-go
+	protoc internal/grpc/proto/*.proto --go_out=plugins=grpc:.
 
 .PHONY: down
 down: ## stops containers
