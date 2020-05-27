@@ -72,7 +72,7 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 		userIdentityService:     service.NewUserIdentityService(h),
 		mfaService:              service.NewMfaService(h),
 		authLogService:          service.NewAuthLogService(h, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
 	}
 
 	return m
@@ -150,7 +150,7 @@ func (m *LoginManager) GetUserIdentities(challenge, provider, domain, code strin
 		return nil, nil, err
 	}
 
-	userIdentity, err := m.userIdentityService.Get(app, ip, clientProfile.ID)
+	userIdentity, err := m.userIdentityService.Get(ip, clientProfile.ID)
 	if err != nil && err != mgo.ErrNotFound {
 		return nil, nil, errors.Wrap(err, "can't get user data")
 	}
@@ -208,7 +208,7 @@ func (m *LoginManager) SocialLogin(clientProfile *models.UserIdentitySocial, dom
 			return "", errors.New("default identity provider not found")
 		}
 
-		userIdentity, err := m.userIdentityService.Get(app, ipPass, clientProfile.Email)
+		userIdentity, err := m.userIdentityService.Get(ipPass, clientProfile.Email)
 		if err != nil && err != mgo.ErrNotFound {
 			return "", errors.Wrap(err, "unable to get user identity")
 		}
@@ -275,7 +275,7 @@ func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Appl
 	}
 
 	// check for already linked
-	_, err := m.userIdentityService.FindByUser(app, ip, userID)
+	_, err := m.userIdentityService.FindByUser(ip, userID)
 	if err != mgo.ErrNotFound {
 		if err != nil {
 			return errors.Wrap(err, "can't search user identity info")

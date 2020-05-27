@@ -139,6 +139,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		templates: template.Must(template.ParseGlob("public/templates/*.html")),
 	}
 	s := server.Echo
+	s.HideBanner = true
 	s.Renderer = t
 
 	// postprocessing middleware
@@ -161,6 +162,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		TokenLookup: "header:X-XSRF-TOKEN",
 		CookieName:  "_csrf",
 		Skipper:     csrfSkipper,
+		CookiePath:  "/",
 	}))
 	s.Use(session.Middleware(c.SessionStore))
 	s.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -271,5 +273,9 @@ func skip(urls ...string) middleware.Skipper {
 }
 
 func csrfSkipper(ctx echo.Context) bool {
-	return ctx.Path() != "/oauth2/login" && ctx.Path() != "/oauth2/signup"
+	if ctx.Request().Method == http.MethodGet {
+		return false
+	}
+	// TODO allow for all POST apis
+	return ctx.Path() != "/api/login" && ctx.Path() != "/oauth2/login" && ctx.Path() != "/oauth2/signup"
 }

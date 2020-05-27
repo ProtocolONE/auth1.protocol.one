@@ -129,7 +129,7 @@ func NewOauthManager(
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
 		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
 		lm:                      NewLoginManager(db, r),
@@ -223,7 +223,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", errors.New("unable to get identity provider")
 			}
 
-			userIdentity, err = m.userIdentityService.Get(app, ipc, form.Email)
+			userIdentity, err = m.userIdentityService.Get(ipc, form.Email)
 			if err != nil {
 				return "", apierror.InvalidCredentials
 			}
@@ -411,7 +411,12 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 		return false, errors.Wrap(err, "unable to load application")
 	}
 
-	if !app.UniqueUsernames {
+	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to load space")
+	}
+
+	if !space.UniqueUsernames {
 		return true, nil
 	}
 
@@ -438,7 +443,13 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
-	if app.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
+	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load space")
+	}
+	_ = space
+
+	if space.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
 		if form.CaptchaToken != "" {
 			ok, err := m.recaptcha.Verify(context.TODO(), form.CaptchaToken, form.CaptchaAction, "") // TODO ip
 			if err != nil {
@@ -458,9 +469,9 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		}
 	}
 
-	if app.UniqueUsernames {
+	if space.UniqueUsernames {
 
-		free, err := m.userService.IsUsernameFree(form.Username, app.ID)
+		free, err := m.userService.IsUsernameFree(form.Username, space.ID)
 		if err != nil {
 			return "", errors.Wrap(err, "Unable to check username availability")
 		}
@@ -486,7 +497,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.New("unable to get identity provider")
 	}
 
-	userIdentity, err := m.userIdentityService.Get(app, ipc, form.Email)
+	userIdentity, err := m.userIdentityService.Get(ipc, form.Email)
 	if err == nil {
 		return "", apierror.EmailRegistered
 	}
@@ -497,7 +508,8 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	user := &models.User{
 		ID:             bson.NewObjectId(),
-		AppID:          app.ID,
+		SpaceID:        app.SpaceId,
+		AppID: 			app.ID,
 		Username:       form.Username,
 		UniqueUsername: app.UniqueUsernames,
 		Email:          form.Email,

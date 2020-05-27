@@ -9,6 +9,20 @@ type CentrifugoServiceInterface struct {
 	mock.Mock
 }
 
+// Expired provides a mock function with given fields: loginChallenge
+func (_m *CentrifugoServiceInterface) Expired(loginChallenge string) error {
+	ret := _m.Called(loginChallenge)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(loginChallenge)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InProgress provides a mock function with given fields: loginChallenge
 func (_m *CentrifugoServiceInterface) InProgress(loginChallenge string) error {
 	ret := _m.Called(loginChallenge)
