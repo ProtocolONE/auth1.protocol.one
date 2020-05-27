@@ -20,6 +20,7 @@ backend:
   role: gobackend
   image: "p1hub/p1auth1"
   imageTag: latest
+  grpcApiPort: 5300
   port: 8080
   replicas: 1
   service:

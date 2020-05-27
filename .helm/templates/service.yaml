@@ -22,3 +22,27 @@ spec:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: {{ $deployment.role }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName }}-grpc
+  labels:
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: {{ $deployment.role }}
+spec:
+  type: {{ $deployment.service.type }}
+  ports:
+  - name: grpc
+    port: {{ $deployment.grpcApiPort }}
+    targetPort: {{ $deployment.grpcApiPort  }}
+    protocol: {{ $deployment.service.protocol }}
+  selector:
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: {{ $deployment.role }}
