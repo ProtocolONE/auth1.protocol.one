@@ -38,8 +38,12 @@ func (s Service) Create(ctx context.Context, data *service.CreateProfileData) (*
 
 func (s Service) Update(ctx context.Context, data *service.UpdateProfileData) (*entity.Profile, error) {
 	profile, err := s.GetByUserID(ctx, data.UserId)
-	if err != nil {
+	if err != nil && err != ErrProfileNotFound {
 		return nil, err
+	}
+
+	if err == ErrProfileNotFound {
+		profile = &entity.Profile{}
 	}
 
 	profile.UserID = data.UserId
