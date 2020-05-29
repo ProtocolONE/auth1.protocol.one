@@ -36,11 +36,12 @@ var serverCmd = &cobra.Command{
 	Run:   runServer,
 }
 
-func init() {
-	command.AddCommand(serverCmd)
-}
-
 func runServer(cmd *cobra.Command, args []string) {
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Fatal("Failed to load config", zap.Error(err))
+	}
+
 	db := createDatabase(&cfg.Database)
 	defer db.Close()
 
