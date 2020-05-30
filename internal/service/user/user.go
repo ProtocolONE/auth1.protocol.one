@@ -13,7 +13,7 @@ type Service struct {
 
 var ErrUserNotFound = errors.New("user not found")
 
-func (s Service) GetByID(ctx context.Context, id string) (*entity.User, error) {
+func (s Service) GetByID(ctx context.Context, id entity.UserID) (*entity.User, error) {
 	user, err := s.UserRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err

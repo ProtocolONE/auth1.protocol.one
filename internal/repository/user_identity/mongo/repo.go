@@ -9,37 +9,33 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const (
-	collection = "user_identity"
-)
-
 type UserIdentityRepository struct {
-	db *mgo.Database
+	col *mgo.Collection
 }
 
 func New(env *env.Mongo) UserIdentityRepository {
 	return UserIdentityRepository{
-		db: env.DB,
+		col: env.DB.C("user_identity"),
 	}
 }
 
-func (r UserIdentityRepository) GetByID(ctx context.Context, id string) (*entity.UserIdentity, error) {
-	m := &model{}
-	if err := r.db.C(collection).FindId(bson.ObjectIdHex(id)).One(m); err != nil {
+func (r UserIdentityRepository) FindByID(ctx context.Context, id entity.UserIdentityID) (*entity.UserIdentity, error) {
+	var result model
+	oid := bson.ObjectIdHex(string(id))
+	if err := r.col.FindId(oid).One(&result); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return m.Convert(), nil
+	return result.Convert(), nil
 }
 
-func (r UserIdentityRepository) FindIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error) {
+func (r UserIdentityRepository) FindForUser(ctx context.Context, userID entity.UserID) ([]*entity.UserIdentity, error) {
 	var list []*model
-	if err := r.db.C(collection).Find(bson.M{
-		"user_id": bson.ObjectIdHex(userID),
-		"app_id":  bson.ObjectIdHex(appID),
+	if err := r.col.Find(bson.M{
+		"user_id": bson.ObjectIdHex(string(userID)),
 	}).All(&list); err != nil {
 		return nil, err
 	}
@@ -51,12 +47,15 @@ func (r UserIdentityRepository) FindIdentities(ctx context.Context, appID, userI
 	return resp, nil
 }
 
-func (r UserIdentityRepository) FindIdentity(ctx context.Context, appID, identityProviderID, userID string) (*entity.UserIdentity, error) {
+func oid(v string) bson.ObjectId {
+	return bson.ObjectIdHex(v)
+}
+
+func (r UserIdentityRepository) FindByProviderAndUser(ctx context.Context, idProviderID entity.IdentityProviderID, userID entity.UserID) (*entity.UserIdentity, error) {
 	ui := &model{}
-	if err := r.db.C(collection).Find(bson.M{
-		"app_id":               bson.ObjectIdHex(appID),
-		"identity_provider_id": bson.ObjectIdHex(identityProviderID),
-		"user_id":              bson.ObjectIdHex(userID),
+	if err := r.col.Find(bson.M{
+		"identity_provider_id": bson.ObjectIdHex(string(idProviderID)),
+		"user_id":              bson.ObjectIdHex(string(userID)),
 	}).One(ui); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, nil
@@ -67,29 +66,12 @@ func (r UserIdentityRepository) FindIdentity(ctx context.Context, appID, identit
 	return ui.Convert(), nil
 }
 
-func (r UserIdentityRepository) FindIdentitiesWithType(ctx context.Context, appID, userID, identityType string) ([]*entity.UserIdentity, error) {
-	var list []*model
-	if err := r.db.C(collection).Find(bson.M{
-		"user_id": bson.ObjectIdHex(userID),
-		"app_id":  bson.ObjectIdHex(appID),
-		"type":    identityType,
-	}).All(&list); err != nil {
-		return nil, err
-	}
-	var resp []*entity.UserIdentity
-	for _, i := range list {
-		resp = append(resp, i.Convert())
-	}
-
-	return resp, nil
-}
-
 func (r UserIdentityRepository) Update(ctx context.Context, i *entity.UserIdentity) error {
 	model, err := newModel(i)
 	if err != nil {
 		return err
 	}
-	if err := r.db.C(collection).UpdateId(model.ID, model); err != nil {
+	if err := r.col.UpdateId(model.ID, model); err != nil {
 		return err
 	}
 

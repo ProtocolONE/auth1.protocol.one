@@ -10,7 +10,7 @@ service Service {
     rpc GetProfile(GetProfileRequest) returns (ProfileResponse) {}
     rpc SetProfile(SetProfileRequest) returns (ProfileResponse) {}
     //
-    rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
     //
     rpc GetUserSocialIdentities(GetUserSocialIdentitiesRequest) returns (UserSocialIdentitiesResponse) {}
 }
@@ -37,6 +37,7 @@ message SetProfileRequest {
     google.protobuf.Timestamp BirthDate = 12;
     //
     string Language = 13;
+    string Currency = 14;
 }
 
 message ProfileResponse {
@@ -60,19 +61,17 @@ message ProfileResponse {
     google.protobuf.Timestamp BirthDate = 14;
     //
     string Language = 15;
+    string Currency = 16;
 }
 
-message SetPasswordRequest {
-    string appID = 1;
-    string userID = 2;
-    string passwordOld = 3;
-    string passwordNew = 4;
+message ChangePasswordRequest {
+    string userID = 1;
+    string passwordOld = 2;
+    string passwordNew = 3;
 }
 
-message SetPasswordResponse {
-    string appID = 1;
-    string userID = 2;
-    bool success = 3;
+message ChangePasswordResponse {
+    bool success = 1;
 }
 
 message GetUserSocialIdentitiesRequest {

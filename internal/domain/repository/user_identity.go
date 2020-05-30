@@ -15,7 +15,7 @@ const (
 type UserIdentityRepository interface {
 	Update(ctx context.Context, i *entity.UserIdentity) error
 	//
-	GetByID(ctx context.Context, id string) (*entity.UserIdentity, error)
-	FindIdentity(ctx context.Context, appID, identityProviderID, userID string) (*entity.UserIdentity, error)
-	FindIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error)
+	FindByID(ctx context.Context, id entity.UserIdentityID) (*entity.UserIdentity, error)
+	FindByProviderAndUser(ctx context.Context, idProviderID entity.IdentityProviderID, userID entity.UserID) (*entity.UserIdentity, error)
+	FindForUser(ctx context.Context, userID entity.UserID) ([]*entity.UserIdentity, error)
 }
