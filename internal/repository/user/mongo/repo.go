@@ -9,23 +9,20 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const (
-	collection = "user"
-)
-
 type UserRepository struct {
-	db *mgo.Database
+	col *mgo.Collection
 }
 
 func New(env *env.Mongo) UserRepository {
 	return UserRepository{
-		db: env.DB,
+		col: env.DB.C("user"),
 	}
 }
 
-func (r UserRepository) FindByID(ctx context.Context, id string) (*entity.User, error) {
+func (r UserRepository) FindByID(ctx context.Context, id entity.UserID) (*entity.User, error) {
 	p := &model{}
-	if err := r.db.C(collection).FindId(bson.ObjectIdHex(id)).One(p); err != nil {
+	oid := bson.ObjectIdHex(string(id))
+	if err := r.col.FindId(oid).One(p); err != nil {
 		return nil, err
 	}
 

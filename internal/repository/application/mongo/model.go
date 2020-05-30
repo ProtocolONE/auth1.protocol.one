@@ -55,10 +55,6 @@ type model struct {
 	// OneTimeTokenSettings contains settings for storing one-time application tokens.
 	OneTimeTokenSettings *OneTimeTokenSettings `bson:"ott_settings" json:"ott_settings"`
 
-	// IdentityProviders contains a list of valid authorization providers for the application, for example using a
-	// local database, an external social authentication service (facebook, google and etc), SAML, and others.
-	IdentityProviders []*AppIdentityProvider `bson:"identity_providers" json:"identity_providers"`
-
 	// WebHook endpoint URLs
 	WebHooks []string `bson:"webhooks" json:"webhooks"`
 }
@@ -82,23 +78,6 @@ func (m model) Convert() *entity.Application {
 		otSettings.Length = m.OneTimeTokenSettings.Length
 	}
 
-	idProviders := []*entity.IdentityProvider{}
-	for _, provider := range m.IdentityProviders {
-		idProviders = append(idProviders, &entity.IdentityProvider{
-			ID:                  provider.ID.Hex(),
-			ApplicationID:       provider.ApplicationID.Hex(),
-			DisplayName:         provider.DisplayName,
-			Name:                provider.Name,
-			Type:                provider.Type,
-			ClientID:            provider.ClientID,
-			ClientSecret:        provider.ClientSecret,
-			ClientScopes:        provider.ClientScopes,
-			EndpointAuthURL:     provider.EndpointAuthURL,
-			EndpointTokenURL:    provider.EndpointTokenURL,
-			EndpointUserInfoURL: provider.EndpointUserInfoURL,
-		})
-	}
-
 	return &entity.Application{
 		ID:                     m.ID.Hex(),
 		SpaceId:                m.SpaceId.Hex(),
@@ -115,7 +94,6 @@ func (m model) Convert() *entity.Application {
 		RequiresCaptcha:        m.RequiresCaptcha,
 		PasswordSettings:       passSettings,
 		OneTimeTokenSettings:   otSettings,
-		IdentityProviders:      idProviders,
 		WebHooks:               m.WebHooks,
 	}
 

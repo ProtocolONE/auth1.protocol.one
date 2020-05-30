@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
-	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/service"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/proto"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/service/profile"
@@ -13,11 +12,11 @@ import (
 )
 
 type Handler struct {
-	profile      service.ProfileService
-	user         service.UserService
-	userIdentity service.UserIdentityService
-	userPassword service.UserPasswordService
-	app          service.ApplicationService
+	profile         service.ProfileService
+	user            service.UserService
+	userIdentity    service.UserIdentityService
+	passwordManager service.PasswordManager
+	app             service.ApplicationService
 }
 
 // GET /v1/profile
@@ -60,6 +59,7 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 			LastName:  r.LastName,
 			BirthDate: birthDate,
 			Language:  r.Language,
+			Currency:  r.Currency,
 		})
 		if err != nil {
 			return nil, err
@@ -78,6 +78,7 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 			LastName:  r.LastName,
 			BirthDate: birthDate,
 			Language:  r.Language,
+			Currency:  r.Currency,
 		})
 		if err != nil {
 			return nil, err
@@ -88,80 +89,62 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 	return &w, fillProfileResponse(&w, p)
 }
 
-func (h *Handler) SetPassword(ctx context.Context, r *proto.SetPasswordRequest) (*proto.SetPasswordResponse, error) {
-	var w proto.SetPasswordResponse
-	if err := h.userPassword.SetPassword(ctx, service.SetPasswordData{
-		AppID:       r.AppID,
-		UserID:      r.UserID,
-		PasswordOld: r.PasswordOld,
-		PasswordNew: r.PasswordNew,
-	}); err != nil {
-		w.AppID = r.AppID
-		w.UserID = r.UserID
-		w.Success = false
-		return &w, err
-	}
-
-	w.AppID = r.AppID
-	w.UserID = r.UserID
-	w.Success = true
-	return &w, nil
-}
-
 //
 func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserSocialIdentitiesRequest) (*proto.UserSocialIdentitiesResponse, error) {
-	var w proto.UserSocialIdentitiesResponse
-	app, err := h.app.GetByID(ctx, r.AppID)
-	if err != nil {
-		return nil, err
-	}
+	// var w proto.UserSocialIdentitiesResponse
+	// app, err := h.app.GetByID(ctx, r.AppID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	providers := map[string]*entity.IdentityProvider{}
-	for _, provider := range app.IdentityProviders {
-		providers[provider.ID] = provider
-	}
+	// providers := map[string]*entity.IdentityProvider{}
+	// for _, provider := range app.IdentityProviders {
+	// 	providers[provider.ID] = provider
+	// }
 
-	ids, err := h.userIdentity.GetIdentities(ctx, r.AppID, r.UserID)
-	if err != nil {
-		return nil, err
-	}
+	// ids, err := h.userIdentity.GetIdentities(ctx, r.AppID, r.UserID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	for _, id := range ids {
-		provider, ok := providers[id.IdentityProviderID]
-		if !ok {
-			continue
-		}
+	// for _, id := range ids {
+	// 	provider, ok := providers[id.IdentityProviderID]
+	// 	if !ok {
+	// 		continue
+	// 	}
 
-		if provider.Type != repository.UserIdentity_Social {
-			continue
-		}
+	// 	if provider.Type != repository.UserIdentity_Social {
+	// 		continue
+	// 	}
 
-		var (
-			email    string
-			username string
-			name     string
-		)
+	// 	var (
+	// 		email    string
+	// 		username string
+	// 		name     string
+	// 	)
 
-		if id.Email != nil {
-			email = *id.Email
-		}
-		if id.Username != nil {
-			username = *id.Username
-		}
-		if id.Name != nil {
-			name = *id.Name
-		}
+	// 	if id.Email != nil {
+	// 		email = *id.Email
+	// 	}
+	// 	if id.Username != nil {
+	// 		username = *id.Username
+	// 	}
+	// 	if id.Name != nil {
+	// 		name = *id.Name
+	// 	}
 
-		w.Identities = append(w.Identities, &proto.UserIdentity{
-			Provider:   provider.DisplayName,
-			ExternalID: id.ExternalID,
-			Email:      email,
-			Username:   username,
-			Name:       name,
-		})
-	}
+	// 	w.Identities = append(w.Identities, &proto.UserIdentity{
+	// 		Provider:   provider.DisplayName,
+	// 		ExternalID: id.ExternalID,
+	// 		Email:      email,
+	// 		Username:   username,
+	// 		Name:       name,
+	// 	})
+	// }
 
-	return &w, nil
+	// return &w, nil
+
+	return nil, nil
 }
 
 func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
@@ -191,6 +174,19 @@ func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
 	w.BirthDate = birthDate
 	//
 	w.Language = *p.Language
+	w.Language = *p.Currency
 
 	return nil
+}
+
+func (h *Handler) ChangePassword(ctx context.Context, r *proto.ChangePasswordRequest) (*proto.ChangePasswordResponse, error) {
+	if err := h.passwordManager.ChangePassword(ctx,
+		entity.UserID(r.UserID),
+		r.PasswordOld,
+		r.PasswordNew,
+	); err != nil {
+		return &proto.ChangePasswordResponse{Success: false}, err
+	}
+
+	return &proto.ChangePasswordResponse{Success: true}, nil
 }

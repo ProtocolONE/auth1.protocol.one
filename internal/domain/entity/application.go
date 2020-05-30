@@ -60,30 +60,3 @@ type Application struct {
 	// WebHook endpoint URLs
 	WebHooks []string
 }
-
-type PasswordSettings struct {
-	// BcryptCost determines the depth of password encryption for providers based on the database.
-	// CPU load and performance depend on the BCrypt cost.
-	BcryptCost int
-
-	// Min is the minimal length password.
-	Min int
-
-	// Max is the maximum length password.
-	Max int
-
-	// RequireNumber requires numbers in the password.
-	RequireNumber bool
-
-	// RequireUpper requires a capital letter in the password.
-	RequireUpper bool
-
-	// RequireSpecial requires special characters in the password (~,!, @, and the like).
-	RequireSpecial bool
-
-	// TokenLength determines the length of the token in the password change letter.
-	TokenLength int
-
-	// TokenTTL determines the token's lifetime in the password change letter.
-	TokenTTL int
-}

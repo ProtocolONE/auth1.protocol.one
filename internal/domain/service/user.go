@@ -7,5 +7,5 @@ import (
 )
 
 type UserService interface {
-	GetByID(ctx context.Context, ID string) (*entity.User, error)
+	GetByID(ctx context.Context, id entity.UserID) (*entity.User, error)
 }

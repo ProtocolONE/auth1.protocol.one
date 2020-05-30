@@ -11,16 +11,16 @@ type Params struct {
 	ProfileService      service.ProfileService
 	UserService         service.UserService
 	UserIdentityService service.UserIdentityService
-	UserPasswordService service.UserPasswordService
+	PasswordManager     service.PasswordManager
 	ApplicationService  service.ApplicationService
 }
 
 func New(params Params) *Handler {
 	return &Handler{
-		profile:      params.ProfileService,
-		user:         params.UserService,
-		userIdentity: params.UserIdentityService,
-		userPassword: params.UserPasswordService,
-		app:          params.ApplicationService,
+		profile:         params.ProfileService,
+		user:            params.UserService,
+		userIdentity:    params.UserIdentityService,
+		passwordManager: params.PasswordManager,
+		app:             params.ApplicationService,
 	}
 }

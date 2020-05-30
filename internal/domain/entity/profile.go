@@ -18,4 +18,5 @@ type Profile struct {
 	BirthDate *time.Time
 	//
 	Language *string
+	Currency *string
 }
