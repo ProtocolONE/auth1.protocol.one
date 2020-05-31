@@ -16,14 +16,14 @@ var migrationCmd = &cobra.Command{
 }
 
 func runMigration(cmd *cobra.Command, args []string) {
-	cfg, err := config.Load()
+	err := config.Load(&cfg)
 	if err != nil {
 		logger.Fatal("Failed to load config", zap.Error(err))
 	}
 
 	db, err := database.NewConnection(&cfg.Database)
 	if err != nil {
-		zap.L().Fatal("Name connection failed with error", zap.Error(err))
+		zap.L().Fatal("DB connection failed with error", zap.Error(err))
 	}
 	defer db.Close()
 

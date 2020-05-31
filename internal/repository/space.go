@@ -96,7 +96,7 @@ func (m *spaceModel) convert() *entity.Space {
 	}
 
 	return &entity.Space{
-		ID:                entity.SpaceID(m.ID),
+		ID:                entity.SpaceID(m.ID.Hex()),
 		Name:              m.Name,
 		Description:       m.Description,
 		UniqueUsernames:   m.UniqueUsernames,
@@ -120,6 +120,20 @@ func NewSpaceRepository(env *env.Mongo) *SpaceRepository {
 	return &SpaceRepository{
 		col: env.DB.C("space"),
 	}
+}
+
+func (r *SpaceRepository) Find(ctx context.Context) ([]*entity.Space, error) {
+	var m []spaceModel
+	if err := r.col.Find(nil).All(&m); err != nil {
+		return nil, err
+	}
+
+	var result []*entity.Space
+	for i := range m {
+		result = append(result, m[i].convert())
+	}
+
+	return result, nil
 }
 
 func (r *SpaceRepository) FindByID(ctx context.Context, id entity.SpaceID) (*entity.Space, error) {

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	cfg    *config.Config
+	cfg    config.Config
 	logger *zap.Logger
 )
 
@@ -23,7 +23,7 @@ func Execute() {
 	// administration server
 	root.AddCommand(adminCmd)
 
-	logger := appcore.InitLogger()
+	logger = appcore.InitLogger()
 	defer logger.Sync() // flushes buffer, if any
 
 	if err := root.Execute(); err != nil {
