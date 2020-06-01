@@ -5,7 +5,11 @@ build: ## build auth1 executable
 .PHONY: dev-build-up
 dev-build-up: build ## build and run service
 	docker build -f Dockerfile.dev -t p1hub/qilinauth-qilin:master .
-	docker-compose up -d
+	docker-compose up
+
+.PHONY: grpcgen
+grpcgen: ## generate grpc, needs protoc, protoc-gen-go
+	protoc internal/grpc/proto/*.proto --go_out=plugins=grpc:.
 
 .PHONY: down
 down: ## stops containers

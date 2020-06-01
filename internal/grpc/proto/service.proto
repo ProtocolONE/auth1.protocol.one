@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "internal/grpc/proto";
+
+import "google/protobuf/timestamp.proto";
+
+service Service {
+    rpc GetProfile(GetProfileRequest) returns (ProfileResponse) {}
+    rpc SetProfile(SetProfileRequest) returns (ProfileResponse) {}
+    //
+    rpc SetPassword(SetPasswordRequest) returns (SetPasswordResponse) {}
+    //
+    rpc GetUserSocialIdentities(GetUserSocialIdentitiesRequest) returns (UserSocialIdentitiesResponse) {}
+}
+
+message GetProfileRequest {
+    string AppID = 1;
+    string UserID = 2;
+}
+
+message SetProfileRequest {
+    string AppID = 1;
+    string UserID = 2;
+    //
+    string Address1 = 3;
+    string Address2 = 4;
+    string City = 5;
+    string State = 6;
+    string Country = 7;
+    string Zip = 8;
+    //
+    string PhotoURL = 9;
+    string FirstName = 10;
+    string LastName = 11;
+    google.protobuf.Timestamp BirthDate = 12;
+    //
+    string Language = 13;
+}
+
+message ProfileResponse {
+    string UserID = 1;
+    //
+    string Email = 2;
+    string Username = 3;
+    //
+    string Phone = 4;
+    //
+    string Address1 = 5;
+    string Address2 = 6;
+    string City = 7;
+    string State = 8;
+    string Country = 9;
+    string Zip = 10;
+    //
+    string PhotoURL = 11;
+    string FirstName = 12;
+    string LastName = 13;
+    google.protobuf.Timestamp BirthDate = 14;
+    //
+    string Language = 15;
+}
+
+message SetPasswordRequest {
+    string appID = 1;
+    string userID = 2;
+    string passwordOld = 3;
+    string passwordNew = 4;
+}
+
+message SetPasswordResponse {
+    string appID = 1;
+    string userID = 2;
+    bool success = 3;
+}
+
+message GetUserSocialIdentitiesRequest {
+    string appID = 1;
+    string userID = 2;
+}
+
+message UserIdentity {
+    string provider = 1;
+    string externalID = 2;
+    string email = 3;
+    string username = 4;
+    string name = 5;
+}
+
+message UserSocialIdentitiesResponse {
+    repeated UserIdentity identities = 1;
+}

@@ -6,11 +6,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/signal"
 	"reflect"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
@@ -203,16 +201,13 @@ func registerCustomValidator(e *echo.Echo) {
 	}
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(shutdown chan os.Signal) error {
 	go func() {
 		err := s.Echo.Start(":" + strconv.Itoa(s.ServerConfig.Port))
 		if err != nil {
 			zap.L().Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
-
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	select {
 	// wait on kill signal
