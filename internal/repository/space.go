@@ -146,6 +146,15 @@ func (r *SpaceRepository) FindByID(ctx context.Context, id entity.SpaceID) (*ent
 }
 
 func (r *SpaceRepository) Create(ctx context.Context, space *entity.Space) error {
+	if space.ID == "" {
+		space.ID = entity.SpaceID(bson.NewObjectId().Hex())
+	}
+	for i := range space.IdentityProviders {
+		if space.IdentityProviders[i].ID == "" {
+			space.IdentityProviders[i].ID = entity.IdentityProviderID(bson.NewObjectId().Hex())
+		}
+	}
+
 	m := newSpaceModel(space)
 	if err := r.col.Insert(m); err != nil {
 		return err

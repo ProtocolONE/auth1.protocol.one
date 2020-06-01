@@ -35,6 +35,8 @@ func runAdminServer(cmd *cobra.Command, args []string) error {
 			admin.NewServer,
 			admin.NewSpaceHandler,
 			admin.NewProvidersHandler,
+			admin.NewUsersHandler,
+			admin.NewApplicationsHandler,
 		),
 		fx.Invoke(func(s *admin.Server) {
 			//

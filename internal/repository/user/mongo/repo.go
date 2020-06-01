@@ -13,13 +13,27 @@ type UserRepository struct {
 	col *mgo.Collection
 }
 
-func New(env *env.Mongo) UserRepository {
-	return UserRepository{
+func New(env *env.Mongo) *UserRepository {
+	return &UserRepository{
 		col: env.DB.C("user"),
 	}
 }
 
-func (r UserRepository) FindByID(ctx context.Context, id entity.UserID) (*entity.User, error) {
+func (r *UserRepository) Find(ctx context.Context) ([]*entity.User, error) {
+	var m []model
+	if err := r.col.Find(nil).All(&m); err != nil {
+		return nil, err
+	}
+
+	var result []*entity.User
+	for i := range m {
+		result = append(result, m[i].Convert())
+	}
+
+	return result, nil
+}
+
+func (r *UserRepository) FindByID(ctx context.Context, id entity.UserID) (*entity.User, error) {
 	p := &model{}
 	oid := bson.ObjectIdHex(string(id))
 	if err := r.col.FindId(oid).One(p); err != nil {

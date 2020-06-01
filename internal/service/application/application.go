@@ -14,7 +14,7 @@ type Service struct {
 var ErrApplicationNotFound = errors.New("application not found")
 
 func (s Service) GetByID(ctx context.Context, id string) (*entity.Application, error) {
-	app, err := s.ApplicationRepo.FindByID(ctx, id)
+	app, err := s.ApplicationRepo.FindByID(ctx, entity.AppID(id))
 	if err != nil {
 		return nil, err
 	}
