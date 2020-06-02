@@ -57,19 +57,6 @@ spec:
         {{- end}}
         ports:
         - containerPort: {{$deployment.port}}
-      - name: {{ $deployment.name }}-admin
-        image: {{ $deployment.image }}:{{ $deployment.imageTag }}
-        command: ["/app/auth1"]
-        args: ["admin"]
-        {{- range .Values.backend.env}}
-        - name: {{.}}
-          valueFrom:
-            secretKeyRef:
-              name: {{ $deploymentName }}-env
-              key: {{.}}
-        {{- end}}        
-        ports:
-        - containerPort: {{ $deployment.adminPort }}        
         readinessProbe:
           httpGet:
             path: /health
@@ -85,5 +72,19 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 1
           failureThreshold: 2
-          periodSeconds: 5
+          periodSeconds: 5        
+      - name: {{ $deployment.name }}-admin
+        image: {{ $deployment.image }}:{{ $deployment.imageTag }}
+        command: ["/app/auth1"]
+        args: ["admin"]
+        env:        
+        {{- range .Values.backend.env}}
+        - name: {{.}}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $deploymentName }}-env
+              key: {{.}}
+        {{- end}}        
+        ports:
+        - containerPort: {{ $deployment.adminPort }}
 
