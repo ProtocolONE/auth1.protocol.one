@@ -13,9 +13,14 @@ metadata:
 spec:
   type: {{ $deployment.service.type }}
   ports:
-  - port: {{ $deployment.service.port }}
+  - name: auth1
+    port: {{ $deployment.service.port }}
     targetPort: {{ $deployment.port }}
     protocol: {{ $deployment.service.protocol }}
+  - name: auth1-admin
+    port: {{ $deployment.adminPort }}
+    targetPort: {{ $deployment.adminPort  }}
+    protocol: {{ $deployment.service.protocol }}    
   selector:
     app: {{ .Chart.Name }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

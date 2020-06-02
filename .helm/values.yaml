@@ -9,6 +9,7 @@ enableHydraDebug: false
 
 ingress:
   hostname: id.tst.qilin.super.com
+  adminHostname: admin-id.tst.qilin.super.com
   hostnamePrefix:
   path: /
 
@@ -21,6 +22,7 @@ backend:
   image: "p1hub/p1auth1"
   imageTag: latest
   grpcApiPort: 5300
+  adminPort: 8081
   port: 8080
   replicas: 1
   service:

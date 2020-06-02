@@ -57,6 +57,19 @@ spec:
         {{- end}}
         ports:
         - containerPort: {{$deployment.port}}
+      - name: {{ $deployment.name }}-admin
+        image: {{ $deployment.image }}:{{ $deployment.imageTag }}
+        command: ["/app/auth1"]
+        args: ["admin"]
+        {{- range .Values.backend.env}}
+        - name: {{.}}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $deploymentName }}-env
+              key: {{.}}
+        {{- end}}        
+        ports:
+        - containerPort: {{ $deployment.adminPort }}        
         readinessProbe:
           httpGet:
             path: /health
