@@ -1,18 +1,19 @@
 package entity
 
-const (
-	AppIdentityProviderTypePassword = "password"
-	AppIdentityProviderTypeSocial   = "social"
+type IdentityProviderID string
 
-	AppIdentityProviderNameDefault = "initial"
+type IDProviderType string
+
+const (
+	IDProviderTypePassword IDProviderType = "password"
+	IDProviderTypeSocial   IDProviderType = "social"
+
+	IDProviderNameDefault = "initial"
 )
 
 type IdentityProvider struct {
 	// ID is the id of provider.
-	ID string
-
-	// ApplicationID is the id of application.
-	ApplicationID string
+	ID IdentityProviderID
 
 	// DisplayName is the human-readable string name of the provider.
 	DisplayName string
@@ -21,7 +22,7 @@ type IdentityProvider struct {
 	Name string
 
 	// Type defines the type of provider, such as a password(password) or social authorization(social).
-	Type string
+	Type IDProviderType
 
 	// ClientID is the client identifier on external network. For example, the application ID in Facebook.
 	ClientID string
@@ -40,4 +41,8 @@ type IdentityProvider struct {
 
 	// EndpointUserInfoURL is the endpoint on external network for to get user information.
 	EndpointUserInfoURL string
+}
+
+func (p *IdentityProvider) IsDefault() bool {
+	return p.Type == IDProviderTypePassword && p.Name == IDProviderNameDefault
 }

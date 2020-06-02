@@ -32,6 +32,7 @@ type CreateProfileData struct {
 	BirthDate time.Time
 	//
 	Language string
+	Currency string
 }
 
 type UpdateProfileData struct {
@@ -51,4 +52,5 @@ type UpdateProfileData struct {
 	BirthDate time.Time
 	//
 	Language string
+	Currency string
 }

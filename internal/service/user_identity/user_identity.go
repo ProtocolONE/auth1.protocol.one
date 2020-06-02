@@ -14,8 +14,8 @@ type Service struct {
 
 var ErrUserIdentityNotFound = errors.New("user identity not found")
 
-func (s Service) GetByID(ctx context.Context, id string) (*entity.UserIdentity, error) {
-	ui, err := s.UserIdentityRepo.GetByID(ctx, id)
+func (s Service) GetByID(ctx context.Context, id entity.UserIdentityID) (*entity.UserIdentity, error) {
+	ui, err := s.UserIdentityRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func (s Service) GetByID(ctx context.Context, id string) (*entity.UserIdentity, 
 }
 
 func (s Service) UpdateCredential(ctx context.Context, data *service.UpdateUserIdentityCredentialData) error {
-	ui, err := s.UserIdentityRepo.GetByID(ctx, data.ID)
+	ui, err := s.UserIdentityRepo.FindByID(ctx, entity.UserIdentityID(data.ID))
 	if err != nil {
 		return err
 	}
@@ -37,8 +37,8 @@ func (s Service) UpdateCredential(ctx context.Context, data *service.UpdateUserI
 	return s.UserIdentityRepo.Update(ctx, ui)
 }
 
-func (s Service) GetIdentity(ctx context.Context, data *service.GetIdentityData) (*entity.UserIdentity, error) {
-	ui, err := s.UserIdentityRepo.FindIdentity(ctx, data.AppID, data.IdentityProviderID, data.UserID)
+func (s Service) GetIdentity(ctx context.Context, pid entity.IdentityProviderID, uid entity.UserID) (*entity.UserIdentity, error) {
+	ui, err := s.UserIdentityRepo.FindByProviderAndUser(ctx, pid, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func (s Service) GetIdentity(ctx context.Context, data *service.GetIdentityData)
 	return ui, nil
 }
 
-func (s Service) GetIdentities(ctx context.Context, appID, userID string) ([]*entity.UserIdentity, error) {
-	ids, err := s.UserIdentityRepo.FindIdentities(ctx, appID, userID)
+func (s Service) GetIdentities(ctx context.Context, userID entity.UserID) ([]*entity.UserIdentity, error) {
+	ids, err := s.UserIdentityRepo.FindForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
