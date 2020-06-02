@@ -183,10 +183,9 @@ services:
     networks:
       - subnet
     ports:
-      - 6001:8080
+      - 6001:8081
     environment:
       - AUTHONE_LOGGING_DEV=true
-      - AUTHONE_SERVER_PORT=8080
       - AUTHONE_DATABASE_HOST=auth1-mongo
       - AUTHONE_DATABASE_NAME=auth-one
       - AUTHONE_REDIS_ADDRESS=auth1-redis:6379
