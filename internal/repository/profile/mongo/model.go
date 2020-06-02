@@ -28,6 +28,7 @@ type model struct {
 	BirthDate *time.Time `bson:"birth_date" json:"birth_date"`
 	//
 	Language *string `bson:"language" json:"language"`
+	Currency *string `bson:"currency" json:"currency"`
 }
 
 func (m model) Convert() *entity.Profile {
@@ -47,6 +48,7 @@ func (m model) Convert() *entity.Profile {
 		BirthDate: m.BirthDate,
 		//
 		Language: m.Language,
+		Currency: m.Currency,
 	}
 }
 
@@ -71,5 +73,6 @@ func newModel(i *entity.Profile) (*model, error) {
 		BirthDate: i.BirthDate,
 		//
 		Language: i.Language,
+		Currency: i.Currency,
 	}, nil
 }

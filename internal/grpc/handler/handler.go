@@ -174,7 +174,7 @@ func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
 	w.BirthDate = birthDate
 	//
 	w.Language = *p.Language
-	w.Language = *p.Currency
+	w.Currency = *p.Currency
 
 	return nil
 }
