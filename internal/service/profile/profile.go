@@ -28,7 +28,9 @@ func (s Service) Create(ctx context.Context, data *service.CreateProfileData) (*
 		LastName:  &data.LastName,
 		BirthDate: &data.BirthDate,
 		Language:  &data.Language,
+		Currency:  &data.Currency,
 	}
+
 	if err := s.ProfileRepo.Create(ctx, profile); err != nil {
 		return nil, err
 	}
@@ -58,6 +60,7 @@ func (s Service) Update(ctx context.Context, data *service.UpdateProfileData) (*
 	profile.LastName = &data.LastName
 	profile.BirthDate = &data.BirthDate
 	profile.Language = &data.Language
+	profile.Currency = &data.Currency
 
 	if err == ErrProfileNotFound {
 		err = s.ProfileRepo.Create(ctx, profile)
