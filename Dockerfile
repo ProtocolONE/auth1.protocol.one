@@ -1,8 +1,9 @@
-FROM golang:1.13-alpine AS builder
+######################################################
+FROM golang:1.14-alpine AS builder
 
-RUN apk add bash ca-certificates git
 WORKDIR /app
 
+# advanced caching layer
 COPY go.mod.cache go.mod
 RUN go mod download
 
@@ -13,7 +14,22 @@ RUN go mod download
 COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o ./auth1 .
 
+######################################################
+# Admin UI
+FROM node:12.14.1-alpine as admin
 
+# RUN apk update && apk add git
+WORKDIR /data
+
+COPY admin/package.json admin/yarn.lock ./
+
+RUN yarn install
+
+COPY admin ./
+
+RUN yarn build
+
+######################################################
 # PRODUCTION IMAGE
 FROM alpine:3.10
 
@@ -23,5 +39,6 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 
 COPY --from=builder /app/auth1 auth1
 COPY --from=builder /app/public public
+COPY --from=admin /data/build admin/build
 
 CMD /app/auth1 migration && /app/auth1 server

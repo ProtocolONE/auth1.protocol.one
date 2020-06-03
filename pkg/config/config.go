@@ -4,6 +4,11 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+type Admin struct {
+	// Database contains settings for connection to the database.
+	Database Database
+}
+
 // Config is general configuration settings for the application.
 type Config struct {
 	// Server contains settings for http application.
@@ -112,7 +117,6 @@ type Centrifugo struct {
 	LauncherChannel string `envconfig:"LAUNCHER_CHANNEL" required:"true" default:"launcher"`
 }
 
-func Load() (*Config, error) {
-	config := &Config{}
-	return config, envconfig.Process("AUTHONE", config)
+func Load(v interface{}) error {
+	return envconfig.Process("AUTHONE", v)
 }

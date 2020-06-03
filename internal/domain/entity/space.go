@@ -40,6 +40,7 @@ type Space struct {
 
 // NewSpace creates space with default params
 func NewSpace() *Space {
+	now := time.Now()
 	return &Space{
 		Name:             "",
 		Description:      "",
@@ -49,7 +50,10 @@ func NewSpace() *Space {
 		IdentityProviders: []IdentityProvider{{
 			Type: IDProviderTypePassword,
 			Name: IDProviderNameDefault,
-		}}}
+		}},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 }
 
 func (s *Space) DefaultIDProvider() *IdentityProvider {

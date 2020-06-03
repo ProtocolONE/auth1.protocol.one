@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
 	"github.com/spf13/cobra"
 	"github.com/xakep666/mongo-migrate"
@@ -14,14 +15,15 @@ var migrationCmd = &cobra.Command{
 	Run:   runMigration,
 }
 
-func init() {
-	command.AddCommand(migrationCmd)
-}
-
 func runMigration(cmd *cobra.Command, args []string) {
+	err := config.Load(&cfg)
+	if err != nil {
+		logger.Fatal("Failed to load config", zap.Error(err))
+	}
+
 	db, err := database.NewConnection(&cfg.Database)
 	if err != nil {
-		zap.L().Fatal("Name connection failed with error", zap.Error(err))
+		zap.L().Fatal("DB connection failed with error", zap.Error(err))
 	}
 	defer db.Close()
 

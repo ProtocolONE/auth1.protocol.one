@@ -36,11 +36,11 @@ var serverCmd = &cobra.Command{
 	Run:   runServer,
 }
 
-func init() {
-	command.AddCommand(serverCmd)
-}
-
 func runServer(cmd *cobra.Command, args []string) {
+	if err := config.Load(&cfg); err != nil {
+		logger.Fatal("Failed to load config", zap.Error(err))
+	}
+
 	db := createDatabase(&cfg.Database)
 	defer db.Close()
 
@@ -154,7 +154,7 @@ func runServer(cmd *cobra.Command, args []string) {
 func createDatabase(cfg *config.Database) database.MgoSession {
 	db, err := database.NewConnection(cfg)
 	if err != nil {
-		zap.L().Fatal("Name connection failed with error", zap.Error(err))
+		zap.L().Fatal("DB connection failed with error", zap.Error(err), zap.String("addr", cfg.Dsn))
 	}
 
 	return db

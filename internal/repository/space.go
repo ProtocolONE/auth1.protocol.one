@@ -96,7 +96,7 @@ func (m *spaceModel) convert() *entity.Space {
 	}
 
 	return &entity.Space{
-		ID:                entity.SpaceID(m.ID),
+		ID:                entity.SpaceID(m.ID.Hex()),
 		Name:              m.Name,
 		Description:       m.Description,
 		UniqueUsernames:   m.UniqueUsernames,
@@ -122,6 +122,20 @@ func NewSpaceRepository(env *env.Mongo) *SpaceRepository {
 	}
 }
 
+func (r *SpaceRepository) Find(ctx context.Context) ([]*entity.Space, error) {
+	var m []spaceModel
+	if err := r.col.Find(nil).All(&m); err != nil {
+		return nil, err
+	}
+
+	var result []*entity.Space
+	for i := range m {
+		result = append(result, m[i].convert())
+	}
+
+	return result, nil
+}
+
 func (r *SpaceRepository) FindByID(ctx context.Context, id entity.SpaceID) (*entity.Space, error) {
 	var m spaceModel
 	oid := bson.ObjectIdHex(string(id))
@@ -132,6 +146,15 @@ func (r *SpaceRepository) FindByID(ctx context.Context, id entity.SpaceID) (*ent
 }
 
 func (r *SpaceRepository) Create(ctx context.Context, space *entity.Space) error {
+	if space.ID == "" {
+		space.ID = entity.SpaceID(bson.NewObjectId().Hex())
+	}
+	for i := range space.IdentityProviders {
+		if space.IdentityProviders[i].ID == "" {
+			space.IdentityProviders[i].ID = entity.IdentityProviderID(bson.NewObjectId().Hex())
+		}
+	}
+
 	m := newSpaceModel(space)
 	if err := r.col.Insert(m); err != nil {
 		return err

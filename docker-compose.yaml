@@ -132,10 +132,13 @@ services:
       - ./etc/centrifugo:/centrifugo
     command: "centrifugo -c config.yml"
 
-  auth1:
+  build:
     image: p1hub/qilinauth-qilin:master
     build: .
-    container_name: auth1
+    command: echo build successful
+
+  auth1:
+    image: p1hub/qilinauth-qilin:master
     restart: unless-stopped
     depends_on:
       - auth1-mongo
@@ -169,6 +172,23 @@ services:
       - AUTHONE_CENTRIFUGO_HMAC_SECRET=insecure
       - AUTHONE_CENTRIFUGO_SESSION_TTL=1200
       - AUTHONE_CENTRIFUGO_LAUNCHER_CHANNEL=launcher
+
+  admin:
+    image: p1hub/qilinauth-qilin:master
+    command: /app/auth1 admin
+    restart: unless-stopped
+    depends_on:
+      - auth1-mongo
+      - auth1-redis
+    networks:
+      - subnet
+    ports:
+      - 6001:8081
+    environment:
+      - AUTHONE_LOGGING_DEV=true
+      - AUTHONE_DATABASE_HOST=auth1-mongo
+      - AUTHONE_DATABASE_NAME=auth-one
+      - AUTHONE_REDIS_ADDRESS=auth1-redis:6379
 
 volumes:
   auth1-mongo:

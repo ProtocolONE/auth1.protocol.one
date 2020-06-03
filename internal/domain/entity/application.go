@@ -4,13 +4,15 @@ import (
 	"time"
 )
 
+type AppID string
+
 // Application describes a table for storing the basic properties and settings of the authorization application.
 type Application struct {
 	// ID is the id for application
-	ID string
+	ID AppID
 
 	// SpaceId is the identifier of the space to which the application belongs.
-	SpaceId string
+	SpaceID SpaceID
 
 	// Name is the human-readable string name of the application to be presented to the end-user during authorization.
 	Name string
@@ -36,26 +38,6 @@ type Application struct {
 
 	// PostLogoutRedirectUris is an array of allowed post logout redirect urls for the client.
 	PostLogoutRedirectUrls []string
-
-	// HasSharedUsers determines whether users are shared across the entire space or only within the application.
-	// If this option is set, then users from other applications (in space) will be able to log in to this application.
-	HasSharedUsers bool
-
-	// UniqueUsernames determines whether app users must have unique usernames
-	UniqueUsernames bool
-
-	// RequiresCaptcha determines whether app users must have complete captcha verification
-	RequiresCaptcha bool
-
-	// PasswordSettings contains settings for valid password criteria.
-	PasswordSettings *PasswordSettings
-
-	// OneTimeTokenSettings contains settings for storing one-time application tokens.
-	OneTimeTokenSettings *OneTimeTokenSettings
-
-	// IdentityProviders contains a list of valid authorization providers for the application, for example using a
-	// local database, an external social authentication service (facebook, google and etc), SAML, and others.
-	IdentityProviders []*IdentityProvider
 
 	// WebHook endpoint URLs
 	WebHooks []string
