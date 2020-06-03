@@ -33,57 +33,6 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 	return m
 }
 
-func (m *ManageManager) CreateSpace(ctx echo.Context, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
-	s := &models.Space{
-		ID:              bson.NewObjectId(),
-		Name:            form.Name,
-		Description:     form.Description,
-		IsActive:        form.IsActive,
-		RequiresCaptcha: form.RequiresCaptcha,
-		UniqueUsernames: form.UniqueUsernames,
-		IdentityProviders: []*models.AppIdentityProvider{{
-			ID:          bson.NewObjectId(),
-			Type:        models.AppIdentityProviderTypePassword,
-			Name:        models.AppIdentityProviderNameDefault,
-			DisplayName: models.AppIdentityProviderDisplayNameDefault,
-		}},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if err := m.spaceService.CreateSpace(s); err != nil {
-		return nil, &models.GeneralError{Message: "Unable to create space", Err: errors.Wrap(err, "Unable to create space")}
-	}
-
-	return s, nil
-}
-
-func (m *ManageManager) UpdateSpace(ctx echo.Context, id string, form *models.SpaceForm) (*models.Space, *models.GeneralError) {
-	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
-	if err != nil {
-		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
-	}
-
-	s.Name = form.Name
-	s.Description = form.Description
-	s.IsActive = form.IsActive
-
-	if err := m.spaceService.UpdateSpace(s); err != nil {
-		return nil, &models.GeneralError{Message: "Unable to update space", Err: errors.Wrap(err, "Unable to update space")}
-	}
-
-	return s, nil
-}
-
-func (m *ManageManager) GetSpace(ctx echo.Context, id string) (*models.Space, *models.GeneralError) {
-	s, err := m.spaceService.GetSpace(bson.ObjectIdHex(id))
-	if err != nil {
-		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
-	}
-
-	return s, nil
-}
-
 func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, *models.GeneralError) {
 	s, err := m.spaceService.GetSpace(form.SpaceId)
 	if err != nil {

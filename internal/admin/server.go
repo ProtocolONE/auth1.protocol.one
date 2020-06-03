@@ -33,6 +33,7 @@ func NewServer(p Params) *Server {
 		AllowOrigins:  []string{"http://localhost:3000", "http://localhost:6001"},
 		AllowMethods:  []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
+
 	engine.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Realm: "Auth1",
 		Validator: func(login, password string, ctx echo.Context) (bool, error) {
@@ -60,11 +61,6 @@ func NewServer(p Params) *Server {
 	engine.GET("/api/apps", p.Apps.List)
 	engine.GET("/api/apps/:id", p.Apps.Get)
 
-	// ui, err := url.Parse("http://192.168.1.64:3000")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// engine.GET("/*", echo.WrapHandler(httputil.NewSingleHostReverseProxy(ui)))
 	engine.Static("/", "admin/build")
 
 	s := &Server{

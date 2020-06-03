@@ -26,9 +26,6 @@ func InitManage(cfg *Server) error {
 		return u == "admin" && p == cfg.ServerConfig.ManageSecret, nil
 	}))
 
-	g.POST("/space", createSpace)
-	g.PUT("/space/:id", updateSpace)
-	g.GET("/space/:id", getSpace)
 	g.GET("/space/:id/identity", getIdentityProviders)
 	g.POST("/space/:id/identity", addIdentityProvider)
 	g.PUT("/space/:space_id/identity/:id", updateIdentityProvider)
@@ -83,82 +80,6 @@ func authlog(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, logs)
-}
-
-func createSpace(ctx echo.Context) error {
-	form := &models.SpaceForm{}
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	s, err := m.CreateSpace(ctx, form)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to create the space")
-	}
-
-	return ctx.JSON(http.StatusOK, s)
-}
-
-func getSpace(ctx echo.Context) error {
-	id := ctx.Param("id")
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	space, err := m.GetSpace(ctx, id)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Space not exists")
-	}
-
-	return ctx.JSON(http.StatusOK, space)
-}
-
-func updateSpace(ctx echo.Context) error {
-	id := ctx.Param("id")
-	form := &models.SpaceForm{}
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	space, err := m.UpdateSpace(ctx, id, form)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to update the space")
-	}
-
-	return ctx.JSON(http.StatusOK, space)
 }
 
 func createApplication(ctx echo.Context) error {
