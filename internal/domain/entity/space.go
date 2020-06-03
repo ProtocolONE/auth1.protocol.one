@@ -1,9 +1,12 @@
 package entity
 
 import (
+	"errors"
 	"time"
 	"unicode"
 )
+
+var ErrIdentityProviderNotFound = errors.New("identity provider not found")
 
 type SpaceID string
 
@@ -63,6 +66,15 @@ func (s *Space) DefaultIDProvider() *IdentityProvider {
 		}
 	}
 	panic("missing default identity provider")
+}
+
+func (s *Space) FindIDProvider(id IdentityProviderID) (*IdentityProvider, error) {
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].ID == id {
+			return &s.IdentityProviders[i], nil
+		}
+	}
+	return nil, ErrIdentityProviderNotFound
 }
 
 type PasswordSettings struct {

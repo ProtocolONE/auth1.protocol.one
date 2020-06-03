@@ -46,3 +46,7 @@ type IdentityProvider struct {
 func (p *IdentityProvider) IsDefault() bool {
 	return p.Type == IDProviderTypePassword && p.Name == IDProviderNameDefault
 }
+
+func (p *IdentityProvider) IsSocial() bool {
+	return p.Type == IDProviderTypeSocial
+}
