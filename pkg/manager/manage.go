@@ -16,7 +16,7 @@ import (
 )
 
 type ManageManager struct {
-	spaceService            service.SpaceServiceInterface
+	// spaceService            service.SpaceServiceInterface
 	mfaService              service.MfaServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
@@ -24,7 +24,7 @@ type ManageManager struct {
 
 func NewManageManager(db database.MgoSession, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
-		spaceService:            service.NewSpaceService(db),
+		// spaceService:            service.NewSpaceService(db),
 		mfaService:              service.NewMfaService(db),
 		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
 		r:                       r,
@@ -34,7 +34,7 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 }
 
 func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, *models.GeneralError) {
-	s, err := m.spaceService.GetSpace(form.SpaceId)
+	s, err := m.r.SpaceService().GetSpace(form.SpaceId)
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
 	}

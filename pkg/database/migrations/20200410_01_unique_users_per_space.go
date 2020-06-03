@@ -2,7 +2,7 @@ package migrations
 
 import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-		"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -31,8 +31,6 @@ func init() {
 			if err := iter.Close(); err != nil {
 				return errors.Wrap(err, "failed to close iterator")
 			}
-
-
 
 			if err := db.C(database.TableUser).DropIndexName("Idx-Username-AppId"); err != nil {
 				return errors.Wrapf(err, "Drop user identity collection `Idx-Username-AppId` index failed")
@@ -67,10 +65,9 @@ func init() {
 	}
 }
 
-
 func findapp(apps []*models.Application, id bson.ObjectId) *models.Application {
-	for _, a := range  apps {
-		if a.ID == id  {
+	for _, a := range apps {
+		if a.ID == id {
 			return a
 		}
 	}

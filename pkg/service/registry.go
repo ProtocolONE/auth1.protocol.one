@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 )
@@ -27,6 +28,8 @@ type InternalRegistry interface {
 
 	// SpaceService return instance of the space service.
 	SpaceService() SpaceServiceInterface
+
+	Spaces() repository.SpaceRepository
 
 	// OneTimeTokenService return instance of the one time token service.
 	OneTimeTokenService() OneTimeTokenServiceInterface

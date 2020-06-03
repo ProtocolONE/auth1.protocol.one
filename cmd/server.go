@@ -113,12 +113,12 @@ func runServer(cmd *cobra.Command, args []string) {
 		Centrifugo:    &cfg.Centrifugo,
 	}
 
-	server, err := api.NewServer(&serverConfig)
-	if err != nil {
-		zap.L().Fatal("Failed to create HTTP server", zap.Error(err))
-	}
+	// server, err := api.NewServer(&serverConfig)
+	// if err != nil {
+	// 	zap.L().Fatal("Failed to create HTTP server", zap.Error(err))
+	// }
 
-	app, err := app.New(db.DB(""))
+	app, server, err := app.New(db.DB(""), &serverConfig)
 	if err != nil {
 		zap.L().Fatal("Cannot create app", zap.Error(err))
 	}
