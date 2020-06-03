@@ -94,6 +94,32 @@ func (h *SpaceHandler) Create(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, h.view(space))
 }
 
+func (h *SpaceHandler) Update(ctx echo.Context) error {
+	id := entity.SpaceID(ctx.Param("id"))
+
+	space, err := h.spaces.FindByID(ctx.Request().Context(), id)
+	if err != nil {
+		return err
+	}
+
+	var request spaceView
+	if err := ctx.Bind(&request); err != nil {
+		return err
+	}
+
+	space.Name = request.Name
+	space.Description = request.Description
+	space.PasswordSettings = entity.PasswordSettings(request.PasswordSettings)
+	space.UniqueUsernames = request.UniqueUsernames
+	space.RequiresCaptcha = request.RequiresCaptcha
+
+	if err := h.spaces.Update(ctx.Request().Context(), space); err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, h.view(space))
+}
+
 func (h *SpaceHandler) view(s *entity.Space) spaceView {
 	return spaceView{
 		ID:               s.ID,

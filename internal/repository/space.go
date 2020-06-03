@@ -165,6 +165,7 @@ func (r *SpaceRepository) Create(ctx context.Context, space *entity.Space) error
 
 func (r *SpaceRepository) Update(ctx context.Context, space *entity.Space) error {
 	m := newSpaceModel(space)
+	m.UpdatedAt = time.Now()
 	if err := r.col.UpdateId(m.ID, m); err != nil {
 		return err
 	}

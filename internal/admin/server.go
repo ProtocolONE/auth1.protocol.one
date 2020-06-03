@@ -47,8 +47,9 @@ func NewServer(p Params) *Server {
 	}))
 
 	engine.GET("/api/spaces", p.Spaces.List)
-	engine.GET("/api/spaces/:id", p.Spaces.Get)
 	engine.POST("/api/spaces", p.Spaces.Create)
+	engine.GET("/api/spaces/:id", p.Spaces.Get)
+	engine.PUT("/api/spaces/:id", p.Spaces.Update)
 
 	engine.GET("/api/identity_providers", p.Providers.List)
 	engine.GET("/api/identity_providers/:id", p.Providers.Get)
