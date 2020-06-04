@@ -2,12 +2,13 @@ package admin
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/fx"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Params struct {
@@ -27,9 +28,12 @@ type Server struct {
 func NewServer(p Params) *Server {
 	var engine = echo.New()
 
+	engine.HideBanner = true
+	engine.Debug = true
+
 	engine.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		ExposeHeaders: []string{"X-Total-Count"},
-		AllowHeaders:  []string{"Content-Type"},
+		AllowHeaders:  []string{"Content-Type", "Authorization"},
 		AllowOrigins:  []string{"http://localhost:3000", "http://localhost:6001"},
 		AllowMethods:  []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
@@ -39,7 +43,9 @@ func NewServer(p Params) *Server {
 			if login != "admin" {
 				return false, nil
 			}
-			if bcrypt.CompareHashAndPassword([]byte("$2a$12$P30WliezzLW.gWFCZ3zkaeoNoj4njDGwlzYZyZ0cI61NjCCTYJTPe"), []byte(password)) != nil {
+
+			hash := sha256.Sum256([]byte(password + "&()123#^^"))
+			if hex.EncodeToString(hash[:]) != "ef778317fa2c077d63c8d49cb3adaffa3279d2976c3ce22ee3ca65aeb849fd61" {
 				return false, nil
 			}
 			return true, nil
@@ -52,7 +58,10 @@ func NewServer(p Params) *Server {
 	engine.PUT("/api/spaces/:id", p.Spaces.Update)
 
 	engine.GET("/api/identity_providers", p.Providers.List)
+	engine.POST("/api/identity_providers", p.Providers.Create)
 	engine.GET("/api/identity_providers/:id", p.Providers.Get)
+	engine.PUT("/api/identity_providers/:id", p.Providers.Update)
+	engine.DELETE("/api/identity_providers/:id", p.Providers.Delete)
 
 	engine.GET("/api/users", p.Users.List)
 	engine.GET("/api/users/:id", p.Users.Get)
@@ -60,11 +69,6 @@ func NewServer(p Params) *Server {
 	engine.GET("/api/apps", p.Apps.List)
 	engine.GET("/api/apps/:id", p.Apps.Get)
 
-	// ui, err := url.Parse("http://192.168.1.64:3000")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// engine.GET("/*", echo.WrapHandler(httputil.NewSingleHostReverseProxy(ui)))
 	engine.Static("/", "admin/build")
 
 	s := &Server{

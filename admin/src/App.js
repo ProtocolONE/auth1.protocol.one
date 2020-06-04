@@ -7,10 +7,11 @@ import { fetchUtils, Admin, Resource, ListGuesser, ShowGuesser, EditGuesser,
 import jsonServerProvider from 'ra-data-json-server';
 import simpleRestProvider from 'ra-data-simple-rest';
 import { createMuiTheme } from '@material-ui/core/styles';
-import ProvidersIcon from '@material-ui/icons/SyncAlt';
 import UsersIcon from '@material-ui/icons/PeopleAlt';
 import AppsIcon from '@material-ui/icons/Tablet';
-import { SpaceIcon,SpaceList,SpaceShow,SpaceEdit,SpaceCreate } from './resources/spaces.js'
+
+import { SpaceIcon, SpaceList, SpaceShow, SpaceEdit, SpaceCreate } from './components/spaces.jsx'
+import { ProvidersIcon, ProvidersList, ProvidersShow, ProvidersEdit, ProvidersCreate } from './components/providers.jsx'
 
 
 const theme = createMuiTheme({
@@ -34,7 +35,7 @@ const dataProvider = jsonServerProvider('/api', httpClient);
 const App = () => (
     <Admin dataProvider={dataProvider} theme={theme}>
         <Resource name="spaces" icon={SpaceIcon} list={SpaceList} show={SpaceShow} edit={SpaceEdit} create={SpaceCreate} />
-        <Resource name="identity_providers" icon={ProvidersIcon} list={ListGuesser} show={ShowGuesser} edit={EditGuesser} />
+        <Resource name="identity_providers" icon={ProvidersIcon} list={ProvidersList} show={ProvidersShow} edit={ProvidersEdit} create={ProvidersCreate} />
         <Resource name="users" icon={UsersIcon} list={ListGuesser} show={ShowGuesser} edit={EditGuesser} />
         <Resource name="apps" icon={AppsIcon} list={ListGuesser} show={ShowGuesser} edit={EditGuesser} />
     </Admin>

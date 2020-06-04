@@ -2,6 +2,8 @@ package entity
 
 import (
 	"errors"
+	"fmt"
+
 	"time"
 	"unicode"
 )
@@ -51,18 +53,19 @@ func NewSpace() *Space {
 		RequiresCaptcha:  false,
 		PasswordSettings: DefaultPasswordSettings,
 		IdentityProviders: []IdentityProvider{{
-			Type: IDProviderTypePassword,
-			Name: IDProviderNameDefault,
+			Type:        IDProviderTypePassword,
+			Name:        IDProviderNameDefault,
+			DisplayName: "Default connection",
 		}},
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 }
 
-func (s *Space) DefaultIDProvider() *IdentityProvider {
+func (s *Space) DefaultIDProvider() IdentityProvider {
 	for i := range s.IdentityProviders {
 		if s.IdentityProviders[i].IsDefault() {
-			return &s.IdentityProviders[i]
+			return s.IdentityProviders[i]
 		}
 	}
 	panic("missing default identity provider")
@@ -75,6 +78,84 @@ func (s *Space) FindIDProvider(id IdentityProviderID) (*IdentityProvider, error)
 		}
 	}
 	return nil, ErrIdentityProviderNotFound
+}
+
+func (s *Space) IDProvider(id IdentityProviderID) (IdentityProvider, bool) {
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].ID == id {
+			return s.IdentityProviders[i], true
+		}
+	}
+	return IdentityProvider{}, false
+}
+
+func (s *Space) IDProviderName(name string) (IdentityProvider, bool) {
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].Name == name {
+			return s.IdentityProviders[i], true
+		}
+	}
+	return IdentityProvider{}, false
+}
+
+func (s *Space) AddIDProvider(p IdentityProvider) error {
+	p.ID = ""
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].Name == p.Name {
+			return fmt.Errorf("id provider with name '%s' already exist", p.Name)
+		}
+	}
+
+	s.IdentityProviders = append(s.IdentityProviders, p)
+	return nil
+}
+
+func (s *Space) UpdateIDProvider(p IdentityProvider) error {
+	prev, ok := s.IDProvider(p.ID)
+	if !ok {
+		return fmt.Errorf("id provider with id '%s' not found", p.ID)
+	}
+	if prev.Type != p.Type {
+		return errors.New("can't update provider type")
+	}
+	if prev.IsDefault() {
+		if prev.Name != p.Name {
+			return errors.New("can't update default provider name")
+		}
+	}
+
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].ID != p.ID && s.IdentityProviders[i].Name == p.Name {
+			return fmt.Errorf("id provider with name '%s' already exist", p.Name)
+		}
+	}
+
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].ID == p.ID {
+			s.IdentityProviders[i] = p
+			return nil
+		}
+	}
+	panic("ups; never occurs")
+}
+
+func (s *Space) RemoveIDProvider(id IdentityProviderID) error {
+	prev, ok := s.IDProvider(id)
+	if !ok {
+		return fmt.Errorf("id provider with id '%s' not found", id)
+	}
+
+	if prev.IsDefault() {
+		return fmt.Errorf("can't remove default provider")
+	}
+
+	for i := range s.IdentityProviders {
+		if s.IdentityProviders[i].ID == id {
+			s.IdentityProviders = append(s.IdentityProviders[:i], s.IdentityProviders[i+1:]...)
+			return nil
+		}
+	}
+	panic("ups; never occurs")
 }
 
 type PasswordSettings struct {

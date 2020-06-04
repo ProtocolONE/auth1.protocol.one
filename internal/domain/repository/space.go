@@ -12,4 +12,5 @@ type SpaceRepository interface {
 
 	Find(ctx context.Context) ([]*entity.Space, error)
 	FindByID(ctx context.Context, id entity.SpaceID) (*entity.Space, error)
+	FindForProvider(ctx context.Context, id entity.IdentityProviderID) (*entity.Space, error)
 }
