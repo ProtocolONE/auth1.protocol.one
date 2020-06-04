@@ -22,12 +22,8 @@ func InitOauth2(cfg *Server) error {
 	}
 	g := cfg.Echo.Group("/oauth2", middleware)
 
-	g.GET("/login", oauthLogin)
-	g.POST("/login", oauthLoginSubmit)
 	g.GET("/consent", oauthConsent)
 	g.POST("/consent", oauthConsentSubmit)
-	g.POST("/signup", oauthSignUp)
-	g.POST("/checkUsername", oauthCheckUsername)
 	g.POST("/introspect", oauthIntrospect)
 	g.GET("/callback", oauthCallback)
 
@@ -35,66 +31,6 @@ func InitOauth2(cfg *Server) error {
 	cfg.Echo.POST("/api/checkUsername", oauthCheckUsername, middleware)
 
 	return nil
-}
-
-func oauthLogin(ctx echo.Context) error {
-	form := new(models.Oauth2LoginForm)
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
-	if err := ctx.Bind(form); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
-	}
-
-	previousLogin := ""
-	appID, user, providers, url, err := m.CheckAuth(ctx, form)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, err.Message)
-	}
-	if url != "" {
-		return ctx.Redirect(http.StatusFound, url)
-	}
-	if user != nil {
-		previousLogin = user.Email
-	}
-
-	socProviders := map[int]interface{}{}
-	if len(providers) > 0 {
-		for i, provider := range providers {
-			socProviders[i] = map[string]interface{}{
-				"Name":        provider.Name,
-				"DisplayName": provider.DisplayName,
-			}
-		}
-	}
-
-	return ctx.Render(http.StatusOK, "oauth_login.html", map[string]interface{}{
-		"AuthWebFormSdkUrl": m.ApiCfg.AuthWebFormSdkUrl,
-		"AuthDomain":        ctx.Scheme() + "://" + ctx.Request().Host,
-		"ClientID":          appID,
-		"PreviousLogin":     previousLogin,
-		"SocProviders":      socProviders,
-	})
-}
-
-func oauthLoginSubmit(ctx echo.Context) error {
-	form := new(models.Oauth2LoginSubmitForm)
-	m := ctx.Get("oauth_manager").(*manager.OauthManager)
-
-	if err := ctx.Bind(form); err != nil {
-		return apierror.InvalidRequest(err)
-	}
-	if err := ctx.Validate(form); err != nil {
-		return apierror.InvalidParameters(err)
-	}
-
-	url, err := m.Auth(ctx, form)
-	if err != nil {
-		return err
-	}
-
-	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
 }
 
 func oauthConsent(ctx echo.Context) error {

@@ -27,12 +27,12 @@ import (
 // AppIdentityProviderServiceInterface describes of methods for the AppIdentityProviderService.
 type AppIdentityProviderServiceInterface interface {
 	// Get return the identity provider by application and provider id.
-	Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
-	GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider
+	// Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+	// GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider
 
 	// FindByType find and return list of identity providers by type.
-	FindByType(*models.Application, string) []*models.AppIdentityProvider
-	FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
+	// FindByType(*models.Application, string) []*models.AppIdentityProvider
+	// FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
 
 	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider

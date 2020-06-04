@@ -38,17 +38,8 @@ var (
 
 // OauthManagerInterface describes of methods for the manager.
 type OauthManagerInterface interface {
-	// CheckAuth is a cookie based authentication check.
-	//
-	//  If the user has previously been authorized and selected the option "remember me",
-	//  then this method automatically authorizes the user.
-	//
-	//  If the user does not have an authorization session, his email address will be returned in order
-	//  to offer him authorization under the previous account.
-	//
-	//  If no authorization was found, then a list of social networks is returned (if available) in order to prompt
-	//  the user to log in through them, and not just by login and password.
-	CheckAuth(echo.Context, *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError)
+	// CheckAuth that user need autorize.
+	CheckAuth(echo.Context, *models.Oauth2LoginForm) (string, *models.GeneralError)
 
 	// Auth authorizes a user based on login and password, previous login or
 	// one-time authorization token (obtained after authorization through social networks).
@@ -138,29 +129,22 @@ func NewOauthManager(
 	return m
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.GeneralError) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: form.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
 	}
-
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
-	if err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
-	}
-
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 
 	if err := m.session.Set(ctx, clientIdSessionKey, req.Payload.Client.ClientID); err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
 
 	if req.Payload.Subject == "" {
-		return req.Payload.Client.ClientID, nil, ipc, "", nil
+		return "", nil
 	}
 
 	if err := m.session.Set(ctx, loginRememberKey, req.Payload.Skip == true); err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
 
 	if req.Payload.Skip == true {
@@ -170,18 +154,13 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			Body:           &models2.AcceptLoginRequest{Subject: &req.Payload.Subject},
 		})
 		if err != nil {
-			return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
 		}
 
-		return req.Payload.Client.ClientID, nil, nil, reqACL.Payload.RedirectTo, nil
+		return reqACL.Payload.RedirectTo, nil
 	}
 
-	user, err := m.userService.Get(bson.ObjectIdHex(req.Payload.Subject))
-	if err != nil {
-		return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user")}
-	}
-
-	return req.Payload.Client.ClientID, user, ipc, "", nil
+	return "", nil
 }
 
 func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {

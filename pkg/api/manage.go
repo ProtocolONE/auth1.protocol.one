@@ -12,7 +12,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/pkg/errors"
 )
 
 func InitManage(cfg *Server) error {
@@ -26,10 +25,6 @@ func InitManage(cfg *Server) error {
 		return u == "admin" && p == cfg.ServerConfig.ManageSecret, nil
 	}))
 
-	g.GET("/space/:id/identity", getIdentityProviders)
-	g.POST("/space/:id/identity", addIdentityProvider)
-	g.PUT("/space/:space_id/identity/:id", updateIdentityProvider)
-	g.GET("/space/:space_id/identity/:id", getIdentityProvider)
 	g.POST("/app", createApplication)
 	g.PUT("/app/:id", updateApplication)
 	g.GET("/app/:id", getApplication)
@@ -234,96 +229,9 @@ func getPasswordSettings(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, ps)
 }
 
-func addIdentityProvider(ctx echo.Context) error {
-	id := ctx.Param("id")
-	form := &models.AppIdentityProvider{}
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := m.AddAppIdentityProvider(id, form); err != nil {
-		return errors.Wrap(err, "unable to add the identity provider")
-	}
-
-	return ctx.JSON(http.StatusOK, form)
-}
-
-func getIdentityProvider(ctx echo.Context) error {
-	spaceID := ctx.Param("space_id")
-	id := ctx.Param("id")
-
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	ip, err := m.GetIdentityProvider(ctx, spaceID, id)
-	if err != nil {
-		return errors.Wrap(err, "unable to get identity provider")
-	}
-
-	return ctx.JSON(http.StatusOK, ip)
-}
-
-func getIdentityProviders(ctx echo.Context) error {
-	spaceID := ctx.Param("id")
-
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	list, err := m.GetIdentityProviders(ctx, spaceID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get identity providers")
-	}
-
-	return ctx.JSON(http.StatusOK, list)
-}
-
 func getIdentityProviderTemplates(ctx echo.Context) error {
 	m := ctx.Get("manage_manager").(*manager.ManageManager)
 	return ctx.JSON(http.StatusOK, m.GetIdentityProviderTemplates())
-}
-
-func updateIdentityProvider(ctx echo.Context) error {
-	id := ctx.Param("id")
-	spaceID := ctx.Param("space_id")
-	form := &models.AppIdentityProvider{}
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := m.UpdateAppIdentityProvider(spaceID, id, form); err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to update the identity provider to the application")
-	}
-
-	return ctx.JSON(http.StatusOK, form)
 }
 
 func setOneTimeTokenSettings(ctx echo.Context) error {

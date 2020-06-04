@@ -147,6 +147,16 @@ func (s *Space) RemoveIDProvider(id IdentityProviderID) error {
 	panic("ups; never occurs")
 }
 
+func (s *Space) SocialProviders() []IdentityProvider {
+	var result = make([]IdentityProvider, 0, len(s.IdentityProviders))
+	for _, p := range s.IdentityProviders {
+		if p.IsSocial() {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
 type PasswordSettings struct {
 	// BcryptCost determines the depth of password encryption for providers based on the database.
 	// CPU load and performance depend on the BCrypt cost.
