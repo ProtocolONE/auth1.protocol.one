@@ -97,13 +97,13 @@ func (h *SpaceHandler) Create(ctx echo.Context) error {
 func (h *SpaceHandler) Update(ctx echo.Context) error {
 	id := entity.SpaceID(ctx.Param("id"))
 
-	space, err := h.spaces.FindByID(ctx.Request().Context(), id)
-	if err != nil {
+	var request spaceView
+	if err := ctx.Bind(&request); err != nil {
 		return err
 	}
 
-	var request spaceView
-	if err := ctx.Bind(&request); err != nil {
+	space, err := h.spaces.FindByID(ctx.Request().Context(), id)
+	if err != nil {
 		return err
 	}
 

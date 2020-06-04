@@ -145,6 +145,15 @@ func (r *SpaceRepository) FindByID(ctx context.Context, id entity.SpaceID) (*ent
 	return m.convert(), nil
 }
 
+func (r *SpaceRepository) FindForProvider(ctx context.Context, id entity.IdentityProviderID) (*entity.Space, error) {
+	var m spaceModel
+	oid := bson.ObjectIdHex(string(id))
+	if err := r.col.Find(bson.M{"identity_providers._id": oid}).One(&m); err != nil {
+		return nil, err
+	}
+	return m.convert(), nil
+}
+
 func (r *SpaceRepository) Create(ctx context.Context, space *entity.Space) error {
 	if space.ID == "" {
 		space.ID = entity.SpaceID(bson.NewObjectId().Hex())
@@ -164,6 +173,12 @@ func (r *SpaceRepository) Create(ctx context.Context, space *entity.Space) error
 }
 
 func (r *SpaceRepository) Update(ctx context.Context, space *entity.Space) error {
+	for i := range space.IdentityProviders {
+		if space.IdentityProviders[i].ID == "" {
+			space.IdentityProviders[i].ID = entity.IdentityProviderID(bson.NewObjectId().Hex())
+		}
+	}
+
 	m := newSpaceModel(space)
 	m.UpdatedAt = time.Now()
 	if err := r.col.UpdateId(m.ID, m); err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/service"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/proto"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/service/profile"
@@ -13,10 +14,11 @@ import (
 
 type Handler struct {
 	profile         service.ProfileService
-	user            service.UserService
+	Users           repository.UserRepository
+	Spaces          repository.SpaceRepository
 	userIdentity    service.UserIdentityService
 	passwordManager service.PasswordManager
-	app             service.ApplicationService
+	// app             service.ApplicationService
 }
 
 // GET /v1/profile
@@ -91,60 +93,43 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 
 //
 func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserSocialIdentitiesRequest) (*proto.UserSocialIdentitiesResponse, error) {
-	// var w proto.UserSocialIdentitiesResponse
-	// app, err := h.app.GetByID(ctx, r.AppID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	user, err := h.Users.FindByID(ctx, entity.UserID(r.UserID))
+	if err != nil {
+		return nil, err
+	}
 
-	// providers := map[string]*entity.IdentityProvider{}
-	// for _, provider := range app.IdentityProviders {
-	// 	providers[provider.ID] = provider
-	// }
+	space, err := h.Spaces.FindByID(ctx, user.SpaceID)
+	if err != nil {
+		return nil, err
+	}
 
-	// ids, err := h.userIdentity.GetIdentities(ctx, r.AppID, r.UserID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	idents, err := h.userIdentity.GetIdentities(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
 
-	// for _, id := range ids {
-	// 	provider, ok := providers[id.IdentityProviderID]
-	// 	if !ok {
-	// 		continue
-	// 	}
+	var resp proto.UserSocialIdentitiesResponse
 
-	// 	if provider.Type != repository.UserIdentity_Social {
-	// 		continue
-	// 	}
+	for _, id := range idents {
+		provider, ok := space.IDProvider(id.IdentityProviderID)
+		if !ok {
+			continue
+		}
+		if !provider.IsSocial() {
+			continue
+		}
 
-	// 	var (
-	// 		email    string
-	// 		username string
-	// 		name     string
-	// 	)
+		resp.Identities = append(resp.Identities, &proto.UserIdentity{
+			Provider:   provider.DisplayName,
+			ExternalID: id.ExternalID,
+			Email:      id.Email,
+			Username:   id.Username,
+			Name:       id.Name,
+		})
 
-	// 	if id.Email != nil {
-	// 		email = *id.Email
-	// 	}
-	// 	if id.Username != nil {
-	// 		username = *id.Username
-	// 	}
-	// 	if id.Name != nil {
-	// 		name = *id.Name
-	// 	}
+	}
 
-	// 	w.Identities = append(w.Identities, &proto.UserIdentity{
-	// 		Provider:   provider.DisplayName,
-	// 		ExternalID: id.ExternalID,
-	// 		Email:      email,
-	// 		Username:   username,
-	// 		Name:       name,
-	// 	})
-	// }
-
-	// return &w, nil
-
-	return nil, nil
+	return &resp, nil
 }
 
 func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
