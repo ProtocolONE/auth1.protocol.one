@@ -72,7 +72,7 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 		userIdentityService:     service.NewUserIdentityService(h),
 		mfaService:              service.NewMfaService(h),
 		authLogService:          service.NewAuthLogService(h, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 	}
 
 	return m

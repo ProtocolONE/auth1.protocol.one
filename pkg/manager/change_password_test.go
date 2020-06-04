@@ -18,6 +18,7 @@ func TestChangePasswordManager(t *testing.T) {
 	s.On("DB", mock.Anything).Return(&mgo.Database{})
 	r := &mocks.InternalRegistry{}
 	r.On("SpaceService").Return(nil)
+	r.On("Spaces").Return(nil)
 	m := NewChangePasswordManager(s, r, nil, nil)
 	assert.Implements(t, (*ChangePasswordManagerInterface)(nil), m)
 }

@@ -28,20 +28,6 @@ func (_m *SpaceServiceInterface) AddIdentityProvider(space *models.Space, ip *mo
 	return r0
 }
 
-// CreateSpace provides a mock function with given fields: _a0
-func (_m *SpaceServiceInterface) CreateSpace(_a0 *models.Space) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*models.Space) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetSpace provides a mock function with given fields: _a0
 func (_m *SpaceServiceInterface) GetSpace(_a0 bson.ObjectId) (*models.Space, error) {
 	ret := _m.Called(_a0)
@@ -72,20 +58,6 @@ func (_m *SpaceServiceInterface) UpdateIdentityProvider(space *models.Space, ip 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*models.Space, *models.AppIdentityProvider) error); ok {
 		r0 = rf(space, ip)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateSpace provides a mock function with given fields: _a0
-func (_m *SpaceServiceInterface) UpdateSpace(_a0 *models.Space) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*models.Space) error); ok {
-		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}

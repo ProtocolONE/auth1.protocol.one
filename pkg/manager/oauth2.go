@@ -129,7 +129,7 @@ func NewOauthManager(
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
 		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
 		lm:                      NewLoginManager(db, r),

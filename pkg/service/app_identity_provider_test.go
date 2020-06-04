@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -41,42 +42,43 @@ func (m MemSpaces) UpdateIdentityProvider(space *models.Space, ip *models.AppIde
 }
 
 var spaces = MemSpaces{space.ID: space}
+var spacesNew repository.SpaceRepository
 
 func TestIdentityProviderGetReturnProvider(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	p := ip.Get(app, idp1.ID)
 	assert.Equal(t, idp1.ID, p.ID, "Incorrect identity provider")
 }
 
 func TestIdentityProviderGetReturnNil(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Nil(t, ip.Get(app, bson.NewObjectId()), "Identity provider must be empty")
 }
 
 func TestIdentityProvidersFindByTypeReturnProviders(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Len(t, ip.FindByType(app, "type1"), 1, "Invalid count providers")
 }
 
 func TestIdentityProvidersFindByTypeReturnEmptyProviders(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Len(t, ip.FindByType(app, "type3"), 0, "Invalid count providers")
 }
 
 func TestIdentityProvidersFindByTypeAndNameReturnProviders(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	p := ip.FindByTypeAndName(app, "type1", "name1")
 	assert.Equal(t, "type1", p.Type, 1, "Invalid provider type")
 	assert.Equal(t, "name1", p.Name, 1, "Invalid provider name")
 }
 
 func TestIdentityProvidersFindByTypeAndNameReturnEmptyProviders(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Nil(t, ip.FindByTypeAndName(app, "type1", "name2"), "Identity provider must be empty")
 }
 
 func TestIdentityProvidersGetTemplateReturnError(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	_, err := ip.GetTemplate("test")
 	if err == nil {
 		t.Error("Get unknown template must be return error")
@@ -86,17 +88,17 @@ func TestIdentityProvidersGetTemplateReturnError(t *testing.T) {
 }
 
 func TestIdentityProvidersGetAvailableTemplates(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Len(t, ip.GetAvailableTemplates(), 4, "Invalid count available templates")
 }
 
 func TestIdentityProvidersGetAllTemplates(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	assert.Len(t, ip.GetAllTemplates(), len(ip.GetAvailableTemplates()), "Invalid count available templates")
 }
 
 func TestIdentityProvidersNormalizeSocialConnectionReturnErrorByInvalidName(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	err := ip.NormalizeSocialConnection(&models.AppIdentityProvider{Name: "test"})
 	if err == nil {
 		t.Error("Normalize connection must be return error")
@@ -106,7 +108,7 @@ func TestIdentityProvidersNormalizeSocialConnectionReturnErrorByInvalidName(t *t
 }
 
 func TestIdentityProvidersNormalizeSocialConnectionSetDefaultValues(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	template, _ := ip.GetTemplate(models.AppIdentityProviderNameFacebook)
 	ipc := &models.AppIdentityProvider{Name: models.AppIdentityProviderNameFacebook}
 	ip.NormalizeSocialConnection(ipc)
@@ -119,7 +121,7 @@ func TestIdentityProvidersNormalizeSocialConnectionSetDefaultValues(t *testing.T
 }
 
 func TestIdentityProvidersNormalizeSocialConnectionInjectScopes(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	ipc := &models.AppIdentityProvider{Name: models.AppIdentityProviderNameFacebook, ClientScopes: []string{"scope1"}}
 	ip.NormalizeSocialConnection(ipc)
 
@@ -136,7 +138,7 @@ func TestIdentityProvidersNormalizeSocialConnectionInjectScopes(t *testing.T) {
 }
 
 func TestIdentityProvidersNormalizeSocialConnectionRemoveDuplicateScopes(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	template, _ := ip.GetTemplate(models.AppIdentityProviderNameFacebook)
 	ipc := &models.AppIdentityProvider{Name: models.AppIdentityProviderNameFacebook, ClientScopes: []string{"email"}}
 	ip.NormalizeSocialConnection(ipc)
@@ -145,7 +147,7 @@ func TestIdentityProvidersNormalizeSocialConnectionRemoveDuplicateScopes(t *test
 }
 
 func TestIdentityProvidersGetAuthUrlReturnWithScope(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	ipc := &models.AppIdentityProvider{ClientScopes: []string{"email"}}
 	url, _ := ip.GetAuthUrl("http://localhost", ipc, "")
 
@@ -153,7 +155,7 @@ func TestIdentityProvidersGetAuthUrlReturnWithScope(t *testing.T) {
 }
 
 func TestIdentityProvidersGetAuthUrlReturnImplodedUrlParameters(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	ipc := &models.AppIdentityProvider{EndpointAuthURL: "http://localhost/?param=value", ClientScopes: []string{"email"}}
 	url, _ := ip.GetAuthUrl("http://localhost", ipc, "")
 
@@ -161,7 +163,7 @@ func TestIdentityProvidersGetAuthUrlReturnImplodedUrlParameters(t *testing.T) {
 }
 
 func TestIdentityProvidersGetAuthUrl(t *testing.T) {
-	ip := NewAppIdentityProviderService(spaces)
+	ip := NewAppIdentityProviderService(spaces, spacesNew)
 	ipc := &models.AppIdentityProvider{EndpointAuthURL: "http://localhost/", ClientID: "1", Name: "google"}
 	url, _ := ip.GetAuthUrl("http://localhost", ipc, "")
 

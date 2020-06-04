@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -58,7 +59,8 @@ type AppIdentityProviderServiceInterface interface {
 
 // AppIdentityProviderService is the AppIdentityProvider service.
 type AppIdentityProviderService struct {
-	spaces SpaceServiceInterface
+	spaces    SpaceServiceInterface
+	spacesNew repository.SpaceRepository
 }
 
 var (
@@ -68,8 +70,8 @@ var (
 )
 
 // NewAppIdentityProviderService return new AppIdentityProvider service.
-func NewAppIdentityProviderService(spaces SpaceServiceInterface) *AppIdentityProviderService {
-	return &AppIdentityProviderService{spaces: spaces}
+func NewAppIdentityProviderService(spaces SpaceServiceInterface, spacesNew repository.SpaceRepository) *AppIdentityProviderService {
+	return &AppIdentityProviderService{spaces: spaces, spacesNew: spacesNew}
 }
 
 func (s AppIdentityProviderService) providers(app *models.Application) []*models.AppIdentityProvider {

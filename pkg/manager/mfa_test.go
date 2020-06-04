@@ -28,6 +28,7 @@ func mockIntRegistry() *mocks.InternalRegistry {
 	r := &mocks.InternalRegistry{}
 	r.On("GeoIpService").Return(nil)
 	r.On("SpaceService").Return(spaces)
+	r.On("Spaces").Return(nil)
 	return r
 }
 

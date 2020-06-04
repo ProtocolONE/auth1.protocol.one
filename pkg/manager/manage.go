@@ -16,7 +16,6 @@ import (
 )
 
 type ManageManager struct {
-	// spaceService            service.SpaceServiceInterface
 	mfaService              service.MfaServiceInterface
 	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
@@ -24,9 +23,8 @@ type ManageManager struct {
 
 func NewManageManager(db database.MgoSession, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
-		// spaceService:            service.NewSpaceService(db),
 		mfaService:              service.NewMfaService(db),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 		r:                       r,
 	}
 

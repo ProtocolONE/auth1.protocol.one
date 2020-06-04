@@ -8,6 +8,8 @@ import (
 
 	persist "github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 
+	repository "github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
+
 	service "github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 )
 
@@ -170,6 +172,22 @@ func (_m *InternalRegistry) SpaceService() service.SpaceServiceInterface {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(service.SpaceServiceInterface)
+		}
+	}
+
+	return r0
+}
+
+// Spaces provides a mock function with given fields:
+func (_m *InternalRegistry) Spaces() repository.SpaceRepository {
+	ret := _m.Called()
+
+	var r0 repository.SpaceRepository
+	if rf, ok := ret.Get(0).(func() repository.SpaceRepository); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(repository.SpaceRepository)
 		}
 	}
 
