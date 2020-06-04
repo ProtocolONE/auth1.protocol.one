@@ -8,8 +8,6 @@ import (
 	"unicode"
 )
 
-var ErrIdentityProviderNotFound = errors.New("identity provider not found")
-
 type SpaceID string
 
 // Space is authentication realm
@@ -69,15 +67,6 @@ func (s *Space) DefaultIDProvider() IdentityProvider {
 		}
 	}
 	panic("missing default identity provider")
-}
-
-func (s *Space) FindIDProvider(id IdentityProviderID) (*IdentityProvider, error) {
-	for i := range s.IdentityProviders {
-		if s.IdentityProviders[i].ID == id {
-			return &s.IdentityProviders[i], nil
-		}
-	}
-	return nil, ErrIdentityProviderNotFound
 }
 
 func (s *Space) IDProvider(id IdentityProviderID) (IdentityProvider, bool) {

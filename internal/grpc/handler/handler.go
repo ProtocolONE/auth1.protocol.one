@@ -111,8 +111,8 @@ func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserS
 	var resp proto.UserSocialIdentitiesResponse
 
 	for _, id := range idents {
-		provider, err := space.FindIDProvider(id.IdentityProviderID)
-		if err != nil {
+		provider, ok := space.IDProvider(id.IdentityProviderID)
+		if !ok {
 			continue
 		}
 		if !provider.IsSocial() {
