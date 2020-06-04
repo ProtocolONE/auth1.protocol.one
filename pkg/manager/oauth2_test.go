@@ -33,27 +33,10 @@ func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
 	r.On("HydraAdminApi").Return(h)
 
 	m := &OauthManager{r: r}
-	_, _, _, _, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorLoginChallenge, err.Message)
-}
-
-func TestCheckAuthReturnErrorWithIncorrectClient(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	app.On("Get", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{r: r}
-	_, _, _, _, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "client_id", err.Code)
-	assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
 }
 
 func TestCheckAuthReturnErrorWithUnableToSetClientIdToSession(t *testing.T) {
@@ -76,11 +59,10 @@ func TestCheckAuthReturnErrorWithUnableToSetClientIdToSession(t *testing.T) {
 		identityProviderService: ip,
 		session:                 sess,
 	}
-	cid, _, _, _, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
-	assert.Equal(t, "", cid)
 }
 
 func TestCheckAuthReturnSuccessWithEmptySubject(t *testing.T) {
@@ -103,11 +85,8 @@ func TestCheckAuthReturnSuccessWithEmptySubject(t *testing.T) {
 		identityProviderService: ip,
 		session:                 sess,
 	}
-	cid, user, providers, url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.Nil(t, err)
-	assert.Equal(t, clientId, cid)
-	assert.Nil(t, user)
-	assert.Equal(t, []*models.AppIdentityProvider{{}}, providers)
 	assert.Equal(t, "", url)
 }
 
@@ -132,11 +111,10 @@ func TestCheckAuthReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
 		identityProviderService: ip,
 		session:                 sess,
 	}
-	cid, _, _, _, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
-	assert.Equal(t, "", cid)
 }
 
 func TestCheckAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
@@ -161,13 +139,10 @@ func TestCheckAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
 		identityProviderService: ip,
 		session:                 sess,
 	}
-	cid, user, providers, url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	assert.Equal(t, "common", err.Code)
 	assert.Equal(t, models.ErrorUnknownError, err.Message)
-	assert.Equal(t, clientId, cid)
-	assert.Nil(t, user)
-	assert.Nil(t, providers)
 	assert.Equal(t, "", url)
 }
 
@@ -193,46 +168,9 @@ func TestCheckAuthReturnUrlForSkipStep(t *testing.T) {
 		identityProviderService: ip,
 		session:                 sess,
 	}
-	cid, user, providers, url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.Nil(t, err)
-	assert.Equal(t, clientId, cid)
-	assert.Nil(t, user)
-	assert.Nil(t, providers)
 	assert.Equal(t, "url", url)
-}
-
-func TestCheckAuthReturnErrorWithUnableToGetUser(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	us := &mocks.UserServiceInterface{}
-	r := mockIntRegistry()
-
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: false}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
-	us.On("Get", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
-		userService:             us,
-	}
-	cid, user, providers, url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorUnknownError, err.Message)
-	assert.Equal(t, clientId, cid)
-	assert.Nil(t, user)
-	assert.Nil(t, providers)
-	assert.Equal(t, "", url)
 }
 
 func TestCheckAuthReturnUserWithoutSkip(t *testing.T) {
@@ -259,11 +197,8 @@ func TestCheckAuthReturnUserWithoutSkip(t *testing.T) {
 		session:                 sess,
 		userService:             us,
 	}
-	cid, user, providers, url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.Nil(t, err)
-	assert.Equal(t, clientId, cid)
-	assert.Equal(t, &models.User{}, user)
-	assert.Equal(t, []*models.AppIdentityProvider{{}}, providers)
 	assert.Equal(t, "", url)
 }
 

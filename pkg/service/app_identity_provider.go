@@ -36,10 +36,10 @@ type AppIdentityProviderServiceInterface interface {
 
 	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
-	FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider
+	// FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider
 
 	// NormalizeSocialConnection fills in the default fields for social providers.
-	NormalizeSocialConnection(*models.AppIdentityProvider) error
+	// NormalizeSocialConnection(*models.AppIdentityProvider) error
 
 	// GetAvailableTemplates return list of string with available social networks.
 	GetAvailableTemplates() []string
