@@ -16,7 +16,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
@@ -81,18 +80,7 @@ func (s AppIdentityProviderService) FindByTypeAndName(app *models.Application, c
 	}
 	for _, p := range space.IdentityProviders {
 		if p.Name == name && string(p.Type) == connType {
-			return &models.AppIdentityProvider{
-				ID:                  bson.ObjectIdHex(string(p.ID)),
-				Name:                p.Name,
-				Type:                string(p.Type),
-				DisplayName:         p.DisplayName,
-				ClientID:            p.ClientID,
-				ClientSecret:        p.ClientSecret,
-				ClientScopes:        p.ClientScopes,
-				EndpointAuthURL:     p.EndpointAuthURL,
-				EndpointTokenURL:    p.EndpointTokenURL,
-				EndpointUserInfoURL: p.EndpointUserInfoURL,
-			}
+			return models.OldIDProvider(p)
 		}
 	}
 

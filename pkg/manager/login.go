@@ -166,12 +166,17 @@ func (m *LoginManager) Accept(ctx echo.Context, ui *models.UserIdentity, provide
 		return "", errors.Wrap(err, "can't get app data")
 	}
 
-	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
-	if ip == nil {
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load space")
+	}
+
+	ip, ok := space.IDProviderName(provider)
+	if !ok || !ip.IsSocial() {
 		return "", errors.New("identity provider not found")
 	}
 
-	if err := m.authLogService.Add(ctx, service.ActionAuth, ui, app, ip); err != nil {
+	if err := m.authLogService.Add(ctx, service.ActionAuth, ui, app, &ip); err != nil {
 		return "", errors.Wrap(err, "unable to add auth log")
 	}
 

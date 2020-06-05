@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 )
@@ -58,4 +59,19 @@ func (ipc *AppIdentityProvider) MarshalLogObject(enc zapcore.ObjectEncoder) erro
 	enc.AddString("EndpointUserInfoURL", ipc.EndpointUserInfoURL)
 
 	return nil
+}
+
+func OldIDProvider(p entity.IdentityProvider) *AppIdentityProvider {
+	return &AppIdentityProvider{
+		ID:                  bson.ObjectIdHex(string(p.ID)),
+		Name:                p.Name,
+		Type:                string(p.Type),
+		DisplayName:         p.DisplayName,
+		ClientID:            p.ClientID,
+		ClientSecret:        p.ClientSecret,
+		ClientScopes:        p.ClientScopes,
+		EndpointAuthURL:     p.EndpointAuthURL,
+		EndpointTokenURL:    p.EndpointTokenURL,
+		EndpointUserInfoURL: p.EndpointUserInfoURL,
+	}
 }
