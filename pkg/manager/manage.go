@@ -55,16 +55,6 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		HasSharedUsers:         form.Application.HasSharedUsers,
 		UniqueUsernames:        form.Application.UniqueUsernames,
 		RequiresCaptcha:        form.Application.RequiresCaptcha,
-		PasswordSettings: &models.PasswordSettings{
-			BcryptCost:     models.PasswordBcryptCostDefault,
-			Min:            models.PasswordMinDefault,
-			Max:            models.PasswordMaxDefault,
-			RequireNumber:  models.PasswordRequireNumberDefault,
-			RequireUpper:   models.PasswordRequireUpperDefault,
-			RequireSpecial: models.PasswordRequireSpecialDefault,
-			TokenLength:    models.PasswordTokenLengthDefault,
-			TokenTTL:       models.PasswordTokenTTLDefault,
-		},
 		OneTimeTokenSettings: &models.OneTimeTokenSettings{
 			Length: 64,
 			TTL:    3600,
@@ -153,38 +143,6 @@ func (m *ManageManager) GetApplication(ctx echo.Context, id string) (*models.App
 	}
 
 	return s, nil
-}
-
-func (m *ManageManager) SetPasswordSettings(ctx echo.Context, appID string, form *models.PasswordSettings) *models.GeneralError {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(appID))
-	if err != nil {
-		return &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
-	}
-
-	app.PasswordSettings = &models.PasswordSettings{
-		BcryptCost:     form.BcryptCost,
-		Min:            form.Min,
-		Max:            form.Max,
-		RequireNumber:  form.RequireNumber,
-		RequireUpper:   form.RequireUpper,
-		RequireSpecial: form.RequireSpecial,
-		TokenLength:    form.TokenLength,
-		TokenTTL:       form.TokenTTL,
-	}
-	if err := m.r.ApplicationService().Update(app); err != nil {
-		return &models.GeneralError{Message: "Unable to save application password", Err: errors.Wrap(err, "Unable to save application password")}
-	}
-
-	return nil
-}
-
-func (m *ManageManager) GetPasswordSettings(id string) (*models.PasswordSettings, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(id))
-	if err != nil {
-		return nil, &models.GeneralError{Message: "Unable to get application", Err: errors.Wrap(err, "Unable to get application")}
-	}
-
-	return app.PasswordSettings, nil
 }
 
 func (m *ManageManager) AddMFA(ctx echo.Context, f *models.MfaApplicationForm) (*models.MfaProvider, *models.GeneralError) {

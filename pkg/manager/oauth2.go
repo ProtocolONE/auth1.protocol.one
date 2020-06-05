@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -187,6 +187,11 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load space")
+	}
+
 	var ipc *models.AppIdentityProvider
 	userId := req.Payload.Subject
 	userIdentity := &models.UserIdentity{}
@@ -207,7 +212,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", apierror.InvalidCredentials
 			}
 
-			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: space.PasswordSettings.BcryptCost})
 			if err := encryptor.Compare(userIdentity.Credential, form.Password); err != nil {
 				return "", apierror.InvalidCredentials
 			}
@@ -422,11 +427,10 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
-	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to load space")
 	}
-	_ = space
 
 	if space.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
 		if form.CaptchaToken != "" {
@@ -450,7 +454,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	if space.UniqueUsernames {
 
-		free, err := m.userService.IsUsernameFree(form.Username, space.ID)
+		free, err := m.userService.IsUsernameFree(form.Username, bson.ObjectIdHex(string(space.ID)))
 		if err != nil {
 			return "", errors.Wrap(err, "Unable to check username availability")
 		}
@@ -459,14 +463,14 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		}
 	}
 
-	if false == validator.IsPasswordValid(app, form.Password) {
+	if false == space.PasswordSettings.IsValid(form.Password) {
 		return "", apierror.WeakPassword
 	}
 
 	encryptedPassword := ""
 	t, _ := tomb.WithContext(ctx.Request().Context())
 	t.Go(func() error {
-		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: space.PasswordSettings.BcryptCost})
 		encryptedPassword, err = encryptor.Digest(form.Password)
 		return err
 	})

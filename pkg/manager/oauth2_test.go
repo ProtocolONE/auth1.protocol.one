@@ -3,10 +3,10 @@ package manager
 import (
 	"testing"
 
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/mocks"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/ory/hydra-client-go/client/admin"
 	models2 "github.com/ory/hydra-client-go/models"
@@ -15,506 +15,308 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestOauthManager(t *testing.T) {
-	s := &mocks.MgoSession{}
-	s.On("DB", mock.Anything).Return(&mgo.Database{})
-	m := NewOauthManager(s, mockIntRegistry(), &config.Session{Name: ""}, &config.Hydra{}, nil, nil)
-	assert.Implements(t, (*OauthManagerInterface)(nil), m)
+type testOAuth2 struct {
+	app  *mocks.ApplicationServiceInterface
+	h    *mocks.HydraAdminApi
+	ip   *mocks.AppIdentityProviderServiceInterface
+	sess *mocks.SessionService
+	uis  *mocks.UserIdentityServiceInterface
+	us   *mocks.UserServiceInterface
+	ott  *mocks.OneTimeTokenServiceInterface
+	al   *mocks.AuthLogServiceInterface
+
+	r *mocks.InternalRegistry
+	m *OauthManager
+
+	space        *entity.Space
+	loginRequest *admin.GetLoginRequestOK
 }
 
-type TestAuth struct {
-}
+func newTestOAuth2() *testOAuth2 {
+	return &testOAuth2{
+		app:  &mocks.ApplicationServiceInterface{},
+		h:    &mocks.HydraAdminApi{},
+		ip:   &mocks.AppIdentityProviderServiceInterface{},
+		sess: &mocks.SessionService{},
+		uis:  &mocks.UserIdentityServiceInterface{},
+		us:   &mocks.UserServiceInterface{},
+		ott:  &mocks.OneTimeTokenServiceInterface{},
+		al:   &mocks.AuthLogServiceInterface{},
+		r:    mockIntRegistry(),
 
-func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
-
-	h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{r: r}
-	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorLoginChallenge, err.Message)
-}
-
-func TestCheckAuthReturnErrorWithUnableToSetClientIdToSession(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	r := mockIntRegistry()
-
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
+		space: &entity.Space{PasswordSettings: entity.PasswordSettings{Min: 1, Max: 8, BcryptCost: 4}},
+		loginRequest: &admin.GetLoginRequestOK{Payload: &models2.LoginRequest{
+			Client:  &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()},
+			Subject: "subj",
+		}},
 	}
-	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-func TestCheckAuthReturnSuccessWithEmptySubject(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	r := mockIntRegistry()
+func (test *testOAuth2) init() {
+	test.app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
+	test.h.On("GetLoginRequest", mock.Anything).Return(test.loginRequest, nil)
+	test.h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
 
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
+	test.ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
+	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
+
+	test.sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
+	test.sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
+
+	test.uis.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
+	// be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: test.space.PasswordSettings.BcryptCost})
+	// passHash, _ := be.Digest("1234")
+	// test.uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
+	test.uis.On("Create", mock.Anything).Return(nil)
+
+	test.us.On("Create", mock.Anything).Return(nil)
+	test.us.On("Get", mock.Anything).Return(&models.User{}, nil)
+	test.us.On("Update", mock.Anything).Return(nil)
+
+	test.ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
+
+	test.al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	test.r.On("OneTimeTokenService").Return(test.ott)
+	test.r.On("HydraAdminApi").Return(test.h)
+	test.r.On("ApplicationService").Return(test.app)
+	test.r.On("Spaces").Return(repository.OneSpaceRepo(test.space))
+
+	test.m = &OauthManager{
+		r:                       test.r,
+		identityProviderService: test.ip,
+		session:                 test.sess,
+		userService:             test.us,
+		userIdentityService:     test.uis,
+		authLogService:          test.al,
 	}
-	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.Nil(t, err)
-	assert.Equal(t, "", url)
 }
 
-func TestCheckAuthReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	r := mockIntRegistry()
+func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
+	test := newTestOAuth2()
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj"}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
-	}
-	_, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorUnknownError, err.Message)
-}
-
-func TestCheckAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	r := mockIntRegistry()
-
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj", Skip: true}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
-	}
-	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	assert.Equal(t, "common", err.Code)
-	assert.Equal(t, models.ErrorUnknownError, err.Message)
-	assert.Equal(t, "", url)
-}
-
-func TestCheckAuthReturnUrlForSkipStep(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	r := mockIntRegistry()
-
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: "subj", Skip: true}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
-	}
-	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.Nil(t, err)
 	assert.Equal(t, "url", url)
 }
 
-func TestCheckAuthReturnUserWithoutSkip(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	sess := &mocks.SessionService{}
-	us := &mocks.UserServiceInterface{}
-	r := mockIntRegistry()
+func TestCheckAuthReturnEmptyWithoutSkip(t *testing.T) {
+	test := newTestOAuth2()
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: false}}, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
-	sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
-	us.On("Get", mock.Anything).Return(&models.User{}, nil)
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		session:                 sess,
-		userService:             us,
-	}
-	url, err := m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	url, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
 	assert.Nil(t, err)
 	assert.Equal(t, "", url)
 }
 
+func TestCheckAuthReturnSuccessWithEmptySubject(t *testing.T) {
+	test := newTestOAuth2()
+	clientId := bson.NewObjectId().Hex()
+	test.h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
+	test.init()
+
+	url, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	assert.Nil(t, err)
+	assert.Equal(t, "", url)
+}
+
+func TestCheckAuthReturnUrlForSkipStep(t *testing.T) {
+	test := newTestOAuth2()
+	clientId := bson.NewObjectId().Hex()
+	test.h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: true}}, nil)
+	test.h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
+	test.init()
+
+	url, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	assert.Nil(t, err)
+	assert.Equal(t, "url", url)
+}
+
+func TestAuthReturnUrlToConsentRequest(t *testing.T) {
+	test := newTestOAuth2()
+	test.init()
+
+	url, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
+	assert.Nil(t, err)
+	assert.Equal(t, "url", url)
+}
+
+///////////////////////////////////////////////////////////////////////
+// Negative cases
+
+func TestCheckAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
+	test := newTestOAuth2()
+	test.h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
+
+	_, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	if assert.NotNil(t, err) {
+		assert.Equal(t, "common", err.Code)
+		assert.Equal(t, models.ErrorLoginChallenge, err.Message)
+	}
+}
+
+func TestCheckAuthReturnErrorWithUnableToSetClientIdToSession(t *testing.T) {
+	test := newTestOAuth2()
+	test.sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(errors.New(""))
+	test.init()
+
+	_, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	if assert.NotNil(t, err) {
+		assert.Equal(t, "common", err.Code)
+		assert.Equal(t, models.ErrorUnknownError, err.Message)
+	}
+}
+
+func TestCheckAuthReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
+	test := newTestOAuth2()
+	test.sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(errors.New(""))
+	test.init()
+
+	_, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	if assert.NotNil(t, err) {
+		assert.Equal(t, "common", err.Code)
+		assert.Equal(t, models.ErrorUnknownError, err.Message)
+	}
+}
+
+func TestCheckAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
+	test := newTestOAuth2()
+	clientId := bson.NewObjectId().Hex()
+	test.h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}, Subject: bson.NewObjectId().Hex(), Skip: true}}, nil)
+	test.h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
+
+	url, err := test.m.CheckAuth(getContext(), &models.Oauth2LoginForm{Challenge: "login_challenge"})
+	if assert.NotNil(t, err) {
+		assert.Equal(t, "common", err.Code)
+		assert.Equal(t, models.ErrorUnknownError, err.Message)
+	}
+	assert.Equal(t, "", url)
+}
+
 func TestAuthReturnErrorWithUnableToGetLoginRequest(t *testing.T) {
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{r: r}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorLoginChallenge, err.Message)
 }
 
 func TestAuthReturnErrorWithIncorrectToken(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.loginRequest.Payload.Subject = ""
+	test.ott.On("Use", "invalid_auth_token", mock.Anything).Return(errors.New(""))
+	test.init()
 
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{r: r}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Token: "invalid_auth_token"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Token: "invalid_auth_token"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorCannotUseToken, err.Message)
 }
 
 func TestAuthReturnErrorWithIncorrectClient(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.app.On("Get", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{r: r}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "client_id", err.Code)
 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
 }
 
 func TestAuthReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
+	test.init()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "client_id", err.Code)
 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
 }
 
 func TestAuthReturnErrorWithUnavailableUserIdentity(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	uis := &mocks.UserIdentityServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.uis.On("Get", mock.Anything, "invalid_email").Return(nil, errors.New(""))
+	test.init()
 
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	uis.On("Get", mock.Anything, "invalid_email").Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		userIdentityService:     uis,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "invalid_email"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "invalid_email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "email", err.Code)
 	// assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
 }
 
 func TestAuthReturnErrorWithComparePassword(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	uis := &mocks.UserIdentityServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: "1"}, nil)
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: "1"}, nil)
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		userIdentityService:     uis,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "password", err.Code)
 	// assert.Equal(t, models.ErrorPasswordIncorrect, err.Message)
 }
 
 func TestAuthReturnErrorWithUnableToGetUser(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	uis := &mocks.UserIdentityServiceInterface{}
-	us := &mocks.UserServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.us.On("Get", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
-	passHash, _ := be.Digest("1234")
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
-	us.On("Get", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		userIdentityService:     uis,
-		userService:             us,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "email", err.Code)
 	// assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
 }
 
 func TestAuthReturnErrorWithUnableToUpdateUser(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	uis := &mocks.UserIdentityServiceInterface{}
-	us := &mocks.UserServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.us.On("Update", mock.Anything).Return(errors.New(""))
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
-	passHash, _ := be.Digest("1234")
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
-	us.On("Get", mock.Anything).Return(&models.User{}, nil)
-	us.On("Update", mock.Anything).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		userIdentityService:     uis,
-		userService:             us,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUpdateUser, err.Message)
 }
 
 func TestAuthReturnErrorWithUnableToAddAuthLog(t *testing.T) {
-	app := &mocks.ApplicationServiceInterface{}
-	ott := &mocks.OneTimeTokenServiceInterface{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	uis := &mocks.UserIdentityServiceInterface{}
-	us := &mocks.UserServiceInterface{}
-	al := &mocks.AuthLogServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 1, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: passSettings.BcryptCost})
-	passHash, _ := be.Digest("1234")
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	ott.On("Use", "invalid_auth_token", mock.Anything).Return(nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{Credential: passHash}, nil)
-	us.On("Get", mock.Anything).Return(&models.User{}, nil)
-	us.On("Update", mock.Anything).Return(nil)
-	al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-	r.On("ApplicationService").Return(app)
-	r.On("OneTimeTokenService").Return(ott)
-
-	m := &OauthManager{
-		r:                       r,
-		identityProviderService: ip,
-		userIdentityService:     uis,
-		userService:             us,
-		authLogService:          al,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Email: "email", Password: "1234"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorAddAuthLog, err.Message)
 }
 
 func TestAuthReturnErrorWithUnableToSetSessionRemember(t *testing.T) {
-	h := &mocks.HydraAdminApi{}
-	s := &mocks.SessionService{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.sess.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
+	test.init()
 
-	app := &mocks.ApplicationServiceInterface{}
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	r.On("ApplicationService").Return(app)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
 func TestAuthReturnErrorWithUnableToAcceptLoginRequest(t *testing.T) {
-	h := &mocks.HydraAdminApi{}
-	s := &mocks.SessionService{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	app := &mocks.ApplicationServiceInterface{}
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	r.On("ApplicationService").Return(app)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
+	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorPasswordIncorrect, err.Message)
-}
-
-func TestAuthReturnUrlToConsentRequest(t *testing.T) {
-	h := &mocks.HydraAdminApi{}
-	s := &mocks.SessionService{}
-	r := mockIntRegistry()
-
-	app := &mocks.ApplicationServiceInterface{}
-	app.On("Get", mock.Anything).Return(&models.Application{}, nil)
-	r.On("ApplicationService").Return(app)
-
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}, Subject: "subj"}}, nil)
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	url, err := m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge", Remember: true, PreviousLogin: "subj"})
-	assert.Nil(t, err)
-	assert.Equal(t, "url", url)
 }
 
 func TestGetScopes(t *testing.T) {
@@ -740,405 +542,113 @@ func TestIntrospectReturnSuccess(t *testing.T) {
 }
 
 func TestSignUpReturnErrorWithUnableToSetRememberToSession(t *testing.T) {
-	s := &mocks.SessionService{}
+	test := newTestOAuth2()
+	test.sess.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
+	test.init()
 
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(errors.New(""))
-
-	m := &OauthManager{session: s}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
 }
 
-// GET APP FROM HYDRA NOT SESSION
-// func TestSignUpReturnErrorWithUnableToGetClientFromSession(t *testing.T) {
-// 	s := &mocks.SessionService{}
-// 	app := &mocks.ApplicationServiceInterface{}
-// 	r := mockIntRegistry()
-
-// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(nil, errors.New(""))
-// 	r.On("ApplicationService").Return(app)
-
-// 	m := &OauthManager{
-// 		r:       r,
-// 		session: s,
-// 	}
-// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
-// 	assert.NotNil(t, err)
-// 	// assert.Equal(t, "common", err.Code)
-// 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
-// }
-
-// GET APP FROM HYDRA NOT SESSION
-// func TestSignUpReturnErrorWithUnableToGetApplication(t *testing.T) {
-// 	s := &mocks.SessionService{}
-// 	app := &mocks.ApplicationServiceInterface{}
-// 	r := mockIntRegistry()
-
-// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-// 	app.On("Get", mock.Anything).Return(nil, errors.New(""))
-// 	r.On("ApplicationService").Return(app)
-
-// 	m := &OauthManager{
-// 		r:       r,
-// 		session: s,
-// 	}
-// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true})
-// 	assert.NotNil(t, err)
-// 	// assert.Equal(t, "client_id", err.Code)
-// 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-// }
-
 func TestSignUpReturnErrorWithInvalidPassword(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	r := mockIntRegistry()
-	h := &mocks.HydraAdminApi{}
+	test := newTestOAuth2()
+	test.space.PasswordSettings.Min = 2
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	r.On("ApplicationService").Return(app)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "1"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "1"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "password", err.Code)
 	// assert.Equal(t, models.ErrorPasswordIncorrect, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:       r,
-		session: s,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorLoginChallenge, err.Message)
 }
 
-// NOT POSSIBLE ANY MORE
-// func TestSignUpReturnErrorWithDifferentClientId(t *testing.T) {
-// 	s := &mocks.SessionService{}
-// 	app := &mocks.ApplicationServiceInterface{}
-// 	h := &mocks.HydraAdminApi{}
-// 	r := mockIntRegistry()
-
-// 	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-// 	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-// 	s.On("Get", mock.Anything, clientIdSessionKey).Return(bson.NewObjectId().Hex(), nil)
-// 	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-// 	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()}}}, nil)
-// 	r.On("ApplicationService").Return(app)
-// 	r.On("HydraAdminApi").Return(h)
-
-// 	m := &OauthManager{
-// 		r:       r,
-// 		session: s,
-// 	}
-// 	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", ClientID: "login_challenge"})
-
-// 	fmt.Println(err)
-// 	assert.NotNil(t, err)
-// 	// assert.Equal(t, "client_id", err.Code)
-// 	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-// }
-
 func TestSignUpReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "client_id", err.Code)
 	// assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToGetUserIdentity(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.uis.On("Get", mock.Anything, "email").Return(&models.UserIdentity{}, nil)
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(&models.UserIdentity{}, nil)
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "email", err.Code)
 	// assert.Equal(t, models.ErrorLoginIncorrect, err.Message)
 }
 
 func TestSignUpReturnErrorWithEncryptPassword(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.space.PasswordSettings.BcryptCost = 40
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 40}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "password", err.Code)
 	// assert.Equal(t, models.ErrorCryptPassword, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToCreateUser(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	u := &mocks.UserServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.us.On("Create", mock.Anything).Return(errors.New(""))
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	u.On("Create", mock.Anything).Return(errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-		userService:             u,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorCreateUser, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToCreateUserIdentity(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	u := &mocks.UserServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.uis.On("Create", mock.Anything).Return(errors.New(""))
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	u.On("Create", mock.Anything).Return(nil)
-	ui.On("Create", mock.Anything).Return(errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-		userService:             u,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorCreateUserIdentity, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToAddAuthLog(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	u := &mocks.UserServiceInterface{}
-	a := &mocks.AuthLogServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.al.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	u.On("Create", mock.Anything).Return(nil)
-	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-		userService:             u,
-		authLogService:          a,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorAddAuthLog, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToAcceptLoginChallenge(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	u := &mocks.UserServiceInterface{}
-	a := &mocks.AuthLogServiceInterface{}
-	r := mockIntRegistry()
+	test := newTestOAuth2()
+	test.h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
+	test.init()
 
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	u.On("Create", mock.Anything).Return(nil)
-	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(nil, errors.New(""))
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-		userService:             u,
-		authLogService:          a,
-	}
-	_, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
+	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorUnknownError, err.Message)
-}
-
-func TestSignUpReturnUrlOnSuccessResponse(t *testing.T) {
-	s := &mocks.SessionService{}
-	app := &mocks.ApplicationServiceInterface{}
-	h := &mocks.HydraAdminApi{}
-	ip := &mocks.AppIdentityProviderServiceInterface{}
-	ui := &mocks.UserIdentityServiceInterface{}
-	u := &mocks.UserServiceInterface{}
-	a := &mocks.AuthLogServiceInterface{}
-	r := mockIntRegistry()
-
-	clientId := bson.NewObjectId().Hex()
-	passSettings := &models.PasswordSettings{Min: 2, Max: 8, RequireSpecial: false, RequireUpper: false, RequireNumber: false, BcryptCost: 4}
-	s.On("Set", mock.Anything, loginRememberKey, true).Return(nil)
-	s.On("Get", mock.Anything, clientIdSessionKey).Return(clientId, nil)
-	app.On("Get", mock.Anything).Return(&models.Application{PasswordSettings: passSettings}, nil)
-	h.On("GetLoginRequest", mock.Anything).Return(&admin.GetLoginRequestOK{Payload: &models2.LoginRequest{Client: &models2.OAuth2Client{ClientID: clientId}}}, nil)
-	ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
-	ui.On("Get", mock.Anything, "email").Return(nil, errors.New(""))
-	u.On("Create", mock.Anything).Return(nil)
-	ui.On("Create", mock.Anything).Return(nil)
-	a.On("Add", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
-	r.On("ApplicationService").Return(app)
-	r.On("HydraAdminApi").Return(h)
-
-	m := &OauthManager{
-		r:                       r,
-		session:                 s,
-		identityProviderService: ip,
-		userIdentityService:     ui,
-		userService:             u,
-		authLogService:          a,
-	}
-	url, err := m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge", Email: "email"})
-	assert.Nil(t, err)
-	assert.Equal(t, "url", url)
 }
 
 func TestCallBackReturnErrorWithUnableToGetClientFromSession(t *testing.T) {

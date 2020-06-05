@@ -28,8 +28,6 @@ func InitManage(cfg *Server) error {
 	g.POST("/app", createApplication)
 	g.PUT("/app/:id", updateApplication)
 	g.GET("/app/:id", getApplication)
-	g.POST("/app/:id/password", setPasswordSettings)
-	g.GET("/app/:id/password", getPasswordSettings)
 	g.GET("/identity/templates", getIdentityProviderTemplates)
 	g.POST("/app/:id/ott", setOneTimeTokenSettings)
 	g.POST("/mfa", addMFA)
@@ -183,50 +181,6 @@ func addMFA(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, app)
-}
-
-func setPasswordSettings(ctx echo.Context) error {
-	id := ctx.Param("id")
-	form := &models.PasswordSettings{}
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := m.SetPasswordSettings(ctx, id, form); err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Unable to set password settings for the application")
-	}
-
-	return ctx.HTML(http.StatusOK, "")
-}
-
-func getPasswordSettings(ctx echo.Context) error {
-	id := ctx.Param("id")
-
-	m := ctx.Get("manage_manager").(*manager.ManageManager)
-	ps, err := m.GetPasswordSettings(id)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, "Application not exists")
-	}
-
-	return ctx.JSON(http.StatusOK, ps)
 }
 
 func getIdentityProviderTemplates(ctx echo.Context) error {

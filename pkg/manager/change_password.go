@@ -2,15 +2,16 @@ package manager
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"text/template"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 )
@@ -57,6 +58,11 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get application space")}
+	}
+
 	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
 	if ipc == nil {
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
@@ -73,8 +79,8 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 	}
 
 	ottSettings := &models.OneTimeTokenSettings{
-		Length: app.PasswordSettings.TokenLength,
-		TTL:    app.PasswordSettings.TokenTTL,
+		Length: space.PasswordSettings.TokenLength,
+		TTL:    space.PasswordSettings.TokenTTL,
 	}
 	token, err := m.r.OneTimeTokenService().Create(&models.ChangePasswordTokenSource{
 		Email:     form.Email,
@@ -130,7 +136,12 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
 	}
 
-	if false == validator.IsPasswordValid(app, form.Password) {
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get application space")}
+	}
+
+	if false == space.PasswordSettings.IsValid(form.Password) {
 		return &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 	}
 
@@ -147,7 +158,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
 	}
 
-	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+	be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: space.PasswordSettings.BcryptCost})
 	ui.Credential, err = be.Digest(form.Password)
 	if err != nil {
 		return &models.GeneralError{Code: "password", Message: models.ErrorCryptPassword, Err: errors.Wrap(err, "Unable to crypt password")}
