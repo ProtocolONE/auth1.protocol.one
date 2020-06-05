@@ -120,7 +120,7 @@ func NewOauthManager(
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
 		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
+		identityProviderService: service.NewAppIdentityProviderService(r.Spaces()),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
 		lm:                      NewLoginManager(db, r),
@@ -395,7 +395,7 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 		return false, errors.Wrap(err, "unable to load application")
 	}
 
-	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
 		return false, errors.Wrap(err, "unable to load space")
 	}

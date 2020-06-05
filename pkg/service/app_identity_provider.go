@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
@@ -59,8 +60,7 @@ type AppIdentityProviderServiceInterface interface {
 
 // AppIdentityProviderService is the AppIdentityProvider service.
 type AppIdentityProviderService struct {
-	spaces    SpaceServiceInterface
-	spacesNew repository.SpaceRepository
+	spaces repository.SpaceRepository
 }
 
 var (
@@ -70,97 +70,59 @@ var (
 )
 
 // NewAppIdentityProviderService return new AppIdentityProvider service.
-func NewAppIdentityProviderService(spaces SpaceServiceInterface, spacesNew repository.SpaceRepository) *AppIdentityProviderService {
-	return &AppIdentityProviderService{spaces: spaces, spacesNew: spacesNew}
-}
-
-func (s AppIdentityProviderService) providers(app *models.Application) []*models.AppIdentityProvider {
-	space, err := s.spaces.GetSpace(app.SpaceId)
-	if err != nil {
-		panic(err)
-	}
-	return space.IdentityProviders
-}
-
-func (s AppIdentityProviderService) Get(app *models.Application, id bson.ObjectId) *models.AppIdentityProvider {
-	space, err := s.spaces.GetSpace(app.SpaceId)
-	if err != nil {
-		panic(err)
-	}
-	return s.GetSpace(space, id)
-}
-
-func (s AppIdentityProviderService) GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider {
-	for _, ip := range space.IdentityProviders {
-		if ip.ID == id {
-			return ip
-		}
-	}
-
-	return nil
-}
-
-func (s AppIdentityProviderService) FindByType(app *models.Application, connType string) []*models.AppIdentityProvider {
-	space, err := s.spaces.GetSpace(app.SpaceId)
-	if err != nil {
-		panic(err)
-	}
-	return s.FindByTypeSpace(space, connType)
-}
-
-func (s AppIdentityProviderService) FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider {
-	var ipc []*models.AppIdentityProvider
-	for _, ip := range space.IdentityProviders {
-		if ip.Type == connType {
-			ipc = append(ipc, ip)
-		}
-	}
-
-	return ipc
+func NewAppIdentityProviderService(spaces repository.SpaceRepository) *AppIdentityProviderService {
+	return &AppIdentityProviderService{spaces: spaces}
 }
 
 func (s AppIdentityProviderService) FindByTypeAndName(app *models.Application, connType string, name string) *models.AppIdentityProvider {
-	space, err := s.spaces.GetSpace(app.SpaceId)
+	space, err := s.spaces.FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
 		panic(err)
 	}
-	return s.FindByTypeAndNameSpace(space, connType, name)
-}
-
-func (s AppIdentityProviderService) FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider {
-	for _, ip := range space.IdentityProviders {
-		if ip.Type == connType && ip.Name == name {
-			return ip
+	for _, p := range space.IdentityProviders {
+		if p.Name == name && string(p.Type) == connType {
+			return &models.AppIdentityProvider{
+				ID:                  bson.ObjectIdHex(string(p.ID)),
+				Name:                p.Name,
+				Type:                string(p.Type),
+				DisplayName:         p.DisplayName,
+				ClientID:            p.ClientID,
+				ClientSecret:        p.ClientSecret,
+				ClientScopes:        p.ClientScopes,
+				EndpointAuthURL:     p.EndpointAuthURL,
+				EndpointTokenURL:    p.EndpointTokenURL,
+				EndpointUserInfoURL: p.EndpointUserInfoURL,
+			}
 		}
 	}
 
 	return nil
 }
 
-func (s AppIdentityProviderService) NormalizeSocialConnection(ipc *models.AppIdentityProvider) error {
-	template, err := s.GetTemplate(ipc.Name)
-	if err != nil {
-		return errors.Errorf(ErrorInvalidSocialProviderName, ipc.Name)
-	}
+// func (s AppIdentityProviderService) NormalizeSocialConnection(ipc *models.AppIdentityProvider) error {
+// 	template, err := s.GetTemplate(ipc.Name)
+// 	if err != nil {
+// 		return errors.Errorf(ErrorInvalidSocialProviderName, ipc.Name)
+// 	}
 
-	list := append(template.ClientScopes, ipc.ClientScopes...)
-	keys := make(map[string]bool)
-	var scopes []string
-	for _, entry := range list {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			scopes = append(scopes, entry)
-		}
-	}
+// 	list := append(template.ClientScopes, ipc.ClientScopes...)
+// 	keys := make(map[string]bool)
+// 	var scopes []string
+// 	for _, entry := range list {
+// 		if _, value := keys[entry]; !value {
+// 			keys[entry] = true
+// 			scopes = append(scopes, entry)
+// 		}
+// 	}
 
-	ipc.DisplayName = template.DisplayName
-	ipc.EndpointAuthURL = template.EndpointAuthURL
-	ipc.EndpointTokenURL = template.EndpointTokenURL
-	ipc.EndpointUserInfoURL = template.EndpointUserInfoURL
-	ipc.ClientScopes = scopes
+// 	ipc.DisplayName = template.DisplayName
+// 	ipc.EndpointAuthURL = template.EndpointAuthURL
+// 	ipc.EndpointTokenURL = template.EndpointTokenURL
+// 	ipc.EndpointUserInfoURL = template.EndpointUserInfoURL
+// 	ipc.ClientScopes = scopes
 
-	return nil
-}
+// 	return nil
+// }
 
 func (s *AppIdentityProviderService) GetAvailableTemplates() []string {
 	return []string{

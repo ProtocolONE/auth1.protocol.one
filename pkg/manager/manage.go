@@ -1,9 +1,11 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -24,7 +26,7 @@ type ManageManager struct {
 func NewManageManager(db database.MgoSession, r service.InternalRegistry) *ManageManager {
 	m := &ManageManager{
 		mfaService:              service.NewMfaService(db),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
+		identityProviderService: service.NewAppIdentityProviderService(r.Spaces()),
 		r:                       r,
 	}
 
@@ -32,7 +34,7 @@ func NewManageManager(db database.MgoSession, r service.InternalRegistry) *Manag
 }
 
 func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.ApplicationForm) (*models.Application, *models.GeneralError) {
-	s, err := m.r.SpaceService().GetSpace(form.SpaceId)
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(form.SpaceId.Hex()))
 	if err != nil {
 		return nil, &models.GeneralError{Message: "Unable to get space", Err: errors.Wrap(err, "Unable to get space")}
 	}
@@ -43,7 +45,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 	appID := bson.NewObjectId()
 	app := &models.Application{
 		ID:                     appID,
-		SpaceId:                s.ID,
+		SpaceId:                bson.ObjectIdHex(string(space.ID)),
 		Name:                   form.Application.Name,
 		Description:            form.Application.Description,
 		IsActive:               form.Application.IsActive,
