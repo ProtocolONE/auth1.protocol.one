@@ -9,8 +9,6 @@ import (
 
 type SpaceServiceInterface interface {
 	GetSpace(bson.ObjectId) (*models.Space, error)
-	AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error
-	UpdateIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error
 }
 
 type SpaceService struct {
@@ -19,14 +17,6 @@ type SpaceService struct {
 
 func NewSpaceService(dbHandler database.MgoSession) *SpaceService {
 	return &SpaceService{db: dbHandler.DB("")}
-}
-
-func (ss SpaceService) UpdateSpace(space *models.Space) error {
-	if err := ss.db.C(database.TableSpace).UpdateId(space.ID, space); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (ss SpaceService) GetSpace(id bson.ObjectId) (*models.Space, error) {
@@ -38,21 +28,4 @@ func (ss SpaceService) GetSpace(id bson.ObjectId) (*models.Space, error) {
 	}
 
 	return &s, nil
-}
-
-func (ss SpaceService) AddIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
-	space.IdentityProviders = append(space.IdentityProviders, ip)
-
-	return ss.UpdateSpace(space)
-}
-
-func (ss SpaceService) UpdateIdentityProvider(space *models.Space, ip *models.AppIdentityProvider) error {
-	for index, provider := range space.IdentityProviders {
-		if provider.ID == ip.ID {
-			space.IdentityProviders[index] = ip
-			return ss.UpdateSpace(space)
-		}
-	}
-
-	return nil
 }
