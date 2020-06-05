@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -26,19 +27,19 @@ import (
 // AppIdentityProviderServiceInterface describes of methods for the AppIdentityProviderService.
 type AppIdentityProviderServiceInterface interface {
 	// Get return the identity provider by application and provider id.
-	Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
-	GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider
+	// Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+	// GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider
 
 	// FindByType find and return list of identity providers by type.
-	FindByType(*models.Application, string) []*models.AppIdentityProvider
-	FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
+	// FindByType(*models.Application, string) []*models.AppIdentityProvider
+	// FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
 
 	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
-	FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider
+	// FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider
 
 	// NormalizeSocialConnection fills in the default fields for social providers.
-	NormalizeSocialConnection(*models.AppIdentityProvider) error
+	// NormalizeSocialConnection(*models.AppIdentityProvider) error
 
 	// GetAvailableTemplates return list of string with available social networks.
 	GetAvailableTemplates() []string
@@ -58,7 +59,8 @@ type AppIdentityProviderServiceInterface interface {
 
 // AppIdentityProviderService is the AppIdentityProvider service.
 type AppIdentityProviderService struct {
-	spaces SpaceServiceInterface
+	spaces    SpaceServiceInterface
+	spacesNew repository.SpaceRepository
 }
 
 var (
@@ -68,8 +70,8 @@ var (
 )
 
 // NewAppIdentityProviderService return new AppIdentityProvider service.
-func NewAppIdentityProviderService(spaces SpaceServiceInterface) *AppIdentityProviderService {
-	return &AppIdentityProviderService{spaces: spaces}
+func NewAppIdentityProviderService(spaces SpaceServiceInterface, spacesNew repository.SpaceRepository) *AppIdentityProviderService {
+	return &AppIdentityProviderService{spaces: spaces, spacesNew: spacesNew}
 }
 
 func (s AppIdentityProviderService) providers(app *models.Application) []*models.AppIdentityProvider {

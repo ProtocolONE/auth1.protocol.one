@@ -39,7 +39,7 @@ func (ctl *Login) check(ctx echo.Context) error {
 	db := ctx.Get("database").(database.MgoSession)
 	m := manager.NewOauthManager(db, ctl.cfg.Registry, ctl.cfg.SessionConfig, ctl.cfg.HydraConfig, ctl.cfg.ServerConfig, ctl.cfg.Recaptcha)
 
-	_, _, _, url, err := m.CheckAuth(ctx, form)
+	url, err := m.CheckAuth(ctx, form)
 	if err != nil {
 		return err
 	}

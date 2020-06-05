@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	_ "github.com/ProtocolONE/auth1.protocol.one/pkg/database/migrations"
 	"github.com/spf13/cobra"
 	"github.com/xakep666/mongo-migrate"

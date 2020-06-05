@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist/redis"
@@ -9,18 +10,19 @@ import (
 
 // RegistryBase contains common services.
 type RegistryBase struct {
-	redis   *redis.Client
-	session database.MgoSession
-	as      ApplicationServiceInterface
-	spaces  SpaceServiceInterface
-	ott     OneTimeTokenServiceInterface
-	lts     LauncherTokenServiceInterface
-	watcher persist.Watcher
-	hydra   HydraAdminApi
-	mfa     MfaApiInterface
-	geo     GeoIp
-	mailer  MailerInterface
-	cent    CentrifugoServiceInterface
+	redis     *redis.Client
+	session   database.MgoSession
+	as        ApplicationServiceInterface
+	spaces    repository.SpaceRepository
+	spacesOld SpaceServiceInterface
+	ott       OneTimeTokenServiceInterface
+	lts       LauncherTokenServiceInterface
+	watcher   persist.Watcher
+	hydra     HydraAdminApi
+	mfa       MfaApiInterface
+	geo       GeoIp
+	mailer    MailerInterface
+	cent      CentrifugoServiceInterface
 }
 
 // RegistryConfig contains the configuration parameters of Registry
@@ -45,21 +47,24 @@ type RegistryConfig struct {
 
 	// CentrifugoService
 	CentrifugoService CentrifugoServiceInterface
+
+	Spaces repository.SpaceRepository
 }
 
 // NewRegistryBase creates new registry service.
 func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 	r := &RegistryBase{
-		session: config.MgoSession,
-		redis:   config.RedisClient,
-		hydra:   config.HydraAdminApi,
-		mfa:     config.MfaService,
-		mailer:  config.Mailer,
-		geo:     config.GeoIpService,
-		ott:     NewOneTimeTokenService(config.RedisClient),
-		lts:     NewLauncherTokenService(config.RedisClient),
-		cent:    config.CentrifugoService,
-		spaces:  NewSpaceService(config.MgoSession),
+		session:   config.MgoSession,
+		redis:     config.RedisClient,
+		hydra:     config.HydraAdminApi,
+		mfa:       config.MfaService,
+		mailer:    config.Mailer,
+		geo:       config.GeoIpService,
+		ott:       NewOneTimeTokenService(config.RedisClient),
+		lts:       NewLauncherTokenService(config.RedisClient),
+		cent:      config.CentrifugoService,
+		spacesOld: NewSpaceService(config.MgoSession),
+		spaces:    config.Spaces,
 	}
 	r.as = NewApplicationService(r)
 
@@ -99,6 +104,10 @@ func (r *RegistryBase) ApplicationService() ApplicationServiceInterface {
 }
 
 func (r *RegistryBase) SpaceService() SpaceServiceInterface {
+	return r.spacesOld
+}
+
+func (r *RegistryBase) Spaces() repository.SpaceRepository {
 	return r.spaces
 }
 

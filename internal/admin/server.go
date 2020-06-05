@@ -37,6 +37,7 @@ func NewServer(p Params) *Server {
 		AllowOrigins:  []string{"http://localhost:3000", "http://localhost:6001"},
 		AllowMethods:  []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
+
 	engine.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Realm: "Auth1",
 		Validator: func(login, password string, ctx echo.Context) (bool, error) {

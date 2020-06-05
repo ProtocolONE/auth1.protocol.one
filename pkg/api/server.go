@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
@@ -112,7 +113,10 @@ type Template struct {
 }
 
 // NewServer creates new instance of the application.
-func NewServer(c *ServerConfig) (*Server, error) {
+func NewServer(
+	c *ServerConfig,
+	spaces repository.SpaceRepository,
+) (*Server, error) {
 	registryConfig := &service.RegistryConfig{
 		MgoSession:        c.MgoSession,
 		HydraAdminApi:     c.HydraAdminApi,
@@ -121,6 +125,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		Mailer:            service.NewMailer(c.Mailer),
 		GeoIpService:      c.GeoService,
 		CentrifugoService: service.NewCentrifugoService(c.Centrifugo),
+		Spaces:            spaces,
 	}
 	server := &Server{
 		Echo:          echo.New(),

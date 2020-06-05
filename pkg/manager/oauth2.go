@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/ProtocolONE/authone-jwt-verifier-golang"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -38,17 +38,8 @@ var (
 
 // OauthManagerInterface describes of methods for the manager.
 type OauthManagerInterface interface {
-	// CheckAuth is a cookie based authentication check.
-	//
-	//  If the user has previously been authorized and selected the option "remember me",
-	//  then this method automatically authorizes the user.
-	//
-	//  If the user does not have an authorization session, his email address will be returned in order
-	//  to offer him authorization under the previous account.
-	//
-	//  If no authorization was found, then a list of social networks is returned (if available) in order to prompt
-	//  the user to log in through them, and not just by login and password.
-	CheckAuth(echo.Context, *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError)
+	// CheckAuth that user need autorize.
+	CheckAuth(echo.Context, *models.Oauth2LoginForm) (string, *models.GeneralError)
 
 	// Auth authorizes a user based on login and password, previous login or
 	// one-time authorization token (obtained after authorization through social networks).
@@ -129,7 +120,7 @@ func NewOauthManager(
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
 		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
 		lm:                      NewLoginManager(db, r),
@@ -138,29 +129,22 @@ func NewOauthManager(
 	return m
 }
 
-func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.User, []*models.AppIdentityProvider, string, *models.GeneralError) {
+func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm) (string, *models.GeneralError) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: form.Challenge, Context: ctx.Request().Context()})
 	if err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorLoginChallenge, Err: errors.Wrap(err, "Unable to get client from login request")}
 	}
-
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
-	if err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
-	}
-
-	ipc := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
 
 	if err := m.session.Set(ctx, clientIdSessionKey, req.Payload.Client.ClientID); err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
 
 	if req.Payload.Subject == "" {
-		return req.Payload.Client.ClientID, nil, ipc, "", nil
+		return "", nil
 	}
 
 	if err := m.session.Set(ctx, loginRememberKey, req.Payload.Skip == true); err != nil {
-		return "", nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
+		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Error saving session")}
 	}
 
 	if req.Payload.Skip == true {
@@ -170,18 +154,13 @@ func (m *OauthManager) CheckAuth(ctx echo.Context, form *models.Oauth2LoginForm)
 			Body:           &models2.AcceptLoginRequest{Subject: &req.Payload.Subject},
 		})
 		if err != nil {
-			return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
+			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
 		}
 
-		return req.Payload.Client.ClientID, nil, nil, reqACL.Payload.RedirectTo, nil
+		return reqACL.Payload.RedirectTo, nil
 	}
 
-	user, err := m.userService.Get(bson.ObjectIdHex(req.Payload.Subject))
-	if err != nil {
-		return req.Payload.Client.ClientID, nil, nil, "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user")}
-	}
-
-	return req.Payload.Client.ClientID, user, ipc, "", nil
+	return "", nil
 }
 
 func (m *OauthManager) FindPrevUser(challenge string) (*models.User, error) {
@@ -208,6 +187,11 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load space")
+	}
+
 	var ipc *models.AppIdentityProvider
 	userId := req.Payload.Subject
 	userIdentity := &models.UserIdentity{}
@@ -228,7 +212,7 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 				return "", apierror.InvalidCredentials
 			}
 
-			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+			encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: space.PasswordSettings.BcryptCost})
 			if err := encryptor.Compare(userIdentity.Credential, form.Password); err != nil {
 				return "", apierror.InvalidCredentials
 			}
@@ -443,11 +427,10 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return "", errors.Wrap(err, "unable to load application")
 	}
 
-	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to load space")
 	}
-	_ = space
 
 	if space.RequiresCaptcha && !m.lm.Check(form.Social) { // don't require captcha for social reg
 		if form.CaptchaToken != "" {
@@ -471,7 +454,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 
 	if space.UniqueUsernames {
 
-		free, err := m.userService.IsUsernameFree(form.Username, space.ID)
+		free, err := m.userService.IsUsernameFree(form.Username, bson.ObjectIdHex(string(space.ID)))
 		if err != nil {
 			return "", errors.Wrap(err, "Unable to check username availability")
 		}
@@ -480,14 +463,14 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		}
 	}
 
-	if false == validator.IsPasswordValid(app, form.Password) {
+	if false == space.PasswordSettings.IsValid(form.Password) {
 		return "", apierror.WeakPassword
 	}
 
 	encryptedPassword := ""
 	t, _ := tomb.WithContext(ctx.Request().Context())
 	t.Go(func() error {
-		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
+		encryptor := models.NewBcryptEncryptor(&models.CryptConfig{Cost: space.PasswordSettings.BcryptCost})
 		encryptedPassword, err = encryptor.Digest(form.Password)
 		return err
 	})
@@ -509,7 +492,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 	user := &models.User{
 		ID:             bson.NewObjectId(),
 		SpaceID:        app.SpaceId,
-		AppID: 			app.ID,
+		AppID:          app.ID,
 		Username:       form.Username,
 		UniqueUsername: app.UniqueUsernames,
 		Email:          form.Email,

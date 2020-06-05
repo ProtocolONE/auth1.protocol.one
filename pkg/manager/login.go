@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
@@ -42,7 +43,7 @@ type LoginManagerInterface interface {
 	SocialLogin(uis *models.UserIdentitySocial, domain, provider, challenge string) (string, error)
 
 	// Providers returns list of available id providers for authentication
-	Providers(challenge string) ([]*models.AppIdentityProvider, error)
+	Providers(challenge string) ([]entity.IdentityProvider, error)
 
 	// Profile returns user profile attached to token
 	Profile(token string) (*models.UserIdentitySocial, error)
@@ -72,7 +73,7 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 		userIdentityService:     service.NewUserIdentityService(h),
 		mfaService:              service.NewMfaService(h),
 		authLogService:          service.NewAuthLogService(h, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 	}
 
 	return m
@@ -111,7 +112,7 @@ func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error)
 	return t.Profile, nil
 }
 
-func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvider, error) {
+func (m *LoginManager) Providers(challenge string) ([]entity.IdentityProvider, error) {
 	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get challenge data")
@@ -122,8 +123,9 @@ func (m *LoginManager) Providers(challenge string) ([]*models.AppIdentityProvide
 		return nil, errors.Wrap(err, "can't get app data")
 	}
 
-	ips := m.identityProviderService.FindByType(app, models.AppIdentityProviderTypeSocial)
-	return ips, nil
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+
+	return space.SocialProviders(), nil
 }
 
 func (m *LoginManager) GetUserIdentities(challenge, provider, domain, code string) (UserIdentity *models.UserIdentity, UserIdentitySocial *models.UserIdentitySocial, err error) {
