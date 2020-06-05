@@ -54,9 +54,6 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 		AuthSecret:             helper.GetRandString(64),
 		AuthRedirectUrls:       form.Application.AuthRedirectUrls,
 		PostLogoutRedirectUrls: form.Application.PostLogoutRedirectUrls,
-		HasSharedUsers:         form.Application.HasSharedUsers,
-		UniqueUsernames:        form.Application.UniqueUsernames,
-		RequiresCaptcha:        form.Application.RequiresCaptcha,
 		OneTimeTokenSettings: &models.OneTimeTokenSettings{
 			Length: 64,
 			TTL:    3600,
@@ -113,9 +110,6 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.UpdatedAt = time.Now()
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 	a.PostLogoutRedirectUrls = form.Application.PostLogoutRedirectUrls
-	a.HasSharedUsers = form.Application.HasSharedUsers
-	a.UniqueUsernames = form.Application.UniqueUsernames
-	a.RequiresCaptcha = form.Application.RequiresCaptcha
 	a.WebHooks = form.Application.Webhooks
 
 	if err := m.r.ApplicationService().Update(a); err != nil {

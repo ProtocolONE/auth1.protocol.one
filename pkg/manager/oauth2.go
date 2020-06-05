@@ -494,7 +494,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		SpaceID:        app.SpaceId,
 		AppID:          app.ID,
 		Username:       form.Username,
-		UniqueUsername: app.UniqueUsernames,
+		UniqueUsername: space.UniqueUsernames,
 		Email:          form.Email,
 		EmailVerified:  false,
 		Blocked:        false,
