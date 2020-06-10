@@ -25,6 +25,14 @@ type Handler struct {
 func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*proto.ProfileResponse, error) {
 	var w proto.ProfileResponse
 	w.UserID = r.UserID
+
+	u, err := h.Users.FindByID(ctx, entity.UserID(r.UserID))
+	if err != nil {
+		return nil, err
+	}
+	w.Username = u.Username
+	w.Email = u.Email
+
 	p, err := h.profile.GetByUserID(ctx, r.UserID)
 	if err == profile.ErrProfileNotFound {
 		return &w, nil
@@ -37,6 +45,11 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 }
 
 func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*proto.ProfileResponse, error) {
+	u, err := h.Users.FindByID(ctx, entity.UserID(r.UserID))
+	if err != nil {
+		return nil, err
+	}
+
 	p, err := h.profile.GetByUserID(ctx, r.UserID)
 	if err != nil && err != profile.ErrProfileNotFound {
 		return nil, err
@@ -88,6 +101,9 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 	}
 
 	var w proto.ProfileResponse
+	w.Username = u.Username
+	w.Email = u.Email
+
 	return &w, fillProfileResponse(&w, p)
 }
 
