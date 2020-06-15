@@ -97,7 +97,6 @@ type OauthManager struct {
 	userService             service.UserServiceInterface
 	userIdentityService     service.UserIdentityServiceInterface
 	authLogService          service.AuthLogServiceInterface
-	identityProviderService service.AppIdentityProviderServiceInterface
 	r                       service.InternalRegistry
 	session                 service.SessionService
 	ApiCfg                  *config.Server
@@ -120,7 +119,6 @@ func NewOauthManager(
 		userService:             service.NewUserService(db),
 		userIdentityService:     service.NewUserIdentityService(db),
 		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		identityProviderService: service.NewAppIdentityProviderService(r.SpaceService(), r.Spaces()),
 		session:                 service.NewSessionService(s.Name),
 		recaptcha:               recaptcha,
 		lm:                      NewLoginManager(db, r),
@@ -192,22 +190,19 @@ func (m *OauthManager) Auth(ctx echo.Context, form *models.Oauth2LoginSubmitForm
 		return "", errors.Wrap(err, "unable to load space")
 	}
 
-	var ipc *models.AppIdentityProvider
 	userId := req.Payload.Subject
 	userIdentity := &models.UserIdentity{}
 	if req.Payload.Subject == "" || req.Payload.Subject != form.PreviousLogin {
+		var ipc *entity.IdentityProvider
 		if form.Token != "" {
 			if err := m.r.OneTimeTokenService().Use(form.Token, userIdentity); err != nil {
 				return "", apierror.InvalidToken
 			}
 		} else {
+			ip := space.DefaultIDProvider()
+			ipc = &ip
 
-			ipc = m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-			if ipc == nil {
-				return "", errors.New("unable to get identity provider")
-			}
-
-			userIdentity, err = m.userIdentityService.Get(ipc, form.Email)
+			userIdentity, err = m.userIdentityService.Get(models.OldIDProvider(ip), form.Email)
 			if err != nil {
 				return "", apierror.InvalidCredentials
 			}
@@ -395,7 +390,7 @@ func (m *OauthManager) IsUsernameFree(ctx echo.Context, challenge, username stri
 		return false, errors.Wrap(err, "unable to load application")
 	}
 
-	space, err := m.r.SpaceService().GetSpace(app.SpaceId)
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
 		return false, errors.Wrap(err, "unable to load space")
 	}
@@ -475,12 +470,9 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		return err
 	})
 
-	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if ipc == nil {
-		return "", errors.New("unable to get identity provider")
-	}
+	ipc := space.DefaultIDProvider()
 
-	userIdentity, err := m.userIdentityService.Get(ipc, form.Email)
+	userIdentity, err := m.userIdentityService.Get(models.OldIDProvider(ipc), form.Email)
 	if err == nil {
 		return "", apierror.EmailRegistered
 	}
@@ -494,7 +486,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		SpaceID:        app.SpaceId,
 		AppID:          app.ID,
 		Username:       form.Username,
-		UniqueUsername: app.UniqueUsernames,
+		UniqueUsername: space.UniqueUsernames,
 		Email:          form.Email,
 		EmailVerified:  false,
 		Blocked:        false,
@@ -515,7 +507,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		UserID:             user.ID,
 		ApplicationID:      app.ID,
 		ExternalID:         form.Email,
-		IdentityProviderID: ipc.ID,
+		IdentityProviderID: bson.ObjectIdHex(string(ipc.ID)),
 		Credential:         encryptedPassword,
 		Email:              form.Email,
 		CreatedAt:          time.Now(),
@@ -534,7 +526,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		}
 	}
 
-	if err := m.authLogService.Add(ctx, service.ActionReg, userIdentity, app, ipc); err != nil {
+	if err := m.authLogService.Add(ctx, service.ActionReg, userIdentity, app, &ipc); err != nil {
 		return "", errors.Wrap(err, "unable to add auth log")
 	}
 

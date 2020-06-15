@@ -15,7 +15,6 @@ import (
 )
 
 type changePasswordTest struct {
-	ip     *mocks.AppIdentityProviderServiceInterface
 	ui     *mocks.UserIdentityServiceInterface
 	app    *mocks.ApplicationServiceInterface
 	ott    *mocks.OneTimeTokenServiceInterface
@@ -28,13 +27,20 @@ type changePasswordTest struct {
 
 func newChangePasswordTest() *changePasswordTest {
 	return &changePasswordTest{
-		ip:     &mocks.AppIdentityProviderServiceInterface{},
 		ui:     &mocks.UserIdentityServiceInterface{},
 		app:    &mocks.ApplicationServiceInterface{},
 		ott:    &mocks.OneTimeTokenServiceInterface{},
 		mailer: &mocks.MailerInterface{},
 		r:      &mocks.InternalRegistry{},
-		space:  &entity.Space{PasswordSettings: entity.PasswordSettings{Min: 1, Max: 8, BcryptCost: 4}},
+		space: &entity.Space{
+			PasswordSettings: entity.PasswordSettings{Min: 1, Max: 8, BcryptCost: 4},
+			IdentityProviders: entity.IdentityProviders{{
+				ID:          entity.IdentityProviderID(bson.NewObjectId().Hex()),
+				Type:        entity.IDProviderTypePassword,
+				Name:        entity.IDProviderNameDefault,
+				DisplayName: "Initial connection",
+			}},
+		},
 	}
 
 }
@@ -43,7 +49,6 @@ func (test *changePasswordTest) init() {
 	test.app.On("Get", mock.Anything).Return(&models.Application{}, nil)
 	test.ott.On("Create", mock.Anything, mock.Anything).Return(&models.OneTimeToken{}, nil)
 	test.mailer.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	test.ip.On("FindByTypeAndName", mock.Anything, mock.Anything, mock.Anything).Return(&models.AppIdentityProvider{})
 	test.ui.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&models.UserIdentity{ID: bson.NewObjectId()}, nil)
 	test.ui.On("Update", mock.Anything).Return(nil)
 	test.r.On("ApplicationService").Return(test.app)
@@ -58,9 +63,8 @@ func (test *changePasswordTest) init() {
 		})).Return(nil)
 
 	test.m = &ChangePasswordManager{
-		r:                       test.r,
-		userIdentityService:     test.ui,
-		identityProviderService: test.ip,
+		r:                   test.r,
+		userIdentityService: test.ui,
 		TplCfg: &config.MailTemplates{
 			ChangePasswordTpl: "./public/templates/email/change_password.html",
 		},
@@ -95,18 +99,6 @@ func TestChangePasswordStartReturnErrorWithIncorrectClient(t *testing.T) {
 	if assert.NotNil(t, err) {
 		assert.Equal(t, "client_id", err.Code)
 		assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-	}
-}
-
-func TestChangePasswordStartReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	test := newChangePasswordTest()
-	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
-	test.init()
-
-	err := test.m.ChangePasswordStart(&models.ChangePasswordStartForm{ClientID: bson.NewObjectId().Hex()})
-	if assert.NotNil(t, err) {
-		assert.Equal(t, "client_id", err.Code)
-		assert.Equal(t, models.ErrorUnknownError, err.Message)
 	}
 }
 
@@ -201,18 +193,6 @@ func TestChangePasswordVerifyReturnErrorWithUseToken(t *testing.T) {
 	if assert.NotNil(t, err) {
 		assert.Equal(t, "common", err.Code)
 		assert.Equal(t, models.ErrorCannotUseToken, err.Message)
-	}
-}
-
-func TestChangePasswordVerifyReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	test := newChangePasswordTest()
-	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
-	test.init()
-
-	err := test.m.ChangePasswordVerify(&models.ChangePasswordVerifyForm{Password: "1", PasswordRepeat: "1", ClientID: bson.NewObjectId().Hex()})
-	if assert.NotNil(t, err) {
-		assert.Equal(t, "common", err.Code)
-		assert.Equal(t, models.ErrorUnknownError, err.Message)
 	}
 }
 

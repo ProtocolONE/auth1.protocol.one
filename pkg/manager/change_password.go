@@ -31,21 +31,19 @@ type ChangePasswordManagerInterface interface {
 
 // ChangePasswordManager is the change password manager.
 type ChangePasswordManager struct {
-	r                       service.InternalRegistry
-	userIdentityService     service.UserIdentityServiceInterface
-	identityProviderService service.AppIdentityProviderServiceInterface
-	ApiCfg                  *config.Server
-	TplCfg                  *config.MailTemplates
+	r                   service.InternalRegistry
+	userIdentityService service.UserIdentityServiceInterface
+	ApiCfg              *config.Server
+	TplCfg              *config.MailTemplates
 }
 
 // NewChangePasswordManager return new change password manager.
 func NewChangePasswordManager(db database.MgoSession, ir service.InternalRegistry, apiCfg *config.Server, tplCfg *config.MailTemplates) ChangePasswordManagerInterface {
 	m := &ChangePasswordManager{
-		ApiCfg:                  apiCfg,
-		TplCfg:                  tplCfg,
-		r:                       ir,
-		userIdentityService:     service.NewUserIdentityService(db),
-		identityProviderService: service.NewAppIdentityProviderService(ir.SpaceService(), ir.Spaces()),
+		ApiCfg:              apiCfg,
+		TplCfg:              tplCfg,
+		r:                   ir,
+		userIdentityService: service.NewUserIdentityService(db),
 	}
 
 	return m
@@ -63,12 +61,9 @@ func (m *ChangePasswordManager) ChangePasswordStart(form *models.ChangePasswordS
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get application space")}
 	}
 
-	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if ipc == nil {
-		return &models.GeneralError{Code: "client_id", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
-	}
+	ipc := space.DefaultIDProvider()
 
-	ui, err := m.userIdentityService.Get(ipc, form.Email)
+	ui, err := m.userIdentityService.Get(models.OldIDProvider(ipc), form.Email)
 	if err != nil {
 		return &models.GeneralError{Code: "email", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity by email")}
 	}
@@ -145,12 +140,9 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 		return &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
 	}
 
-	ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-	if ipc == nil {
-		return &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unable to get identity provider")}
-	}
+	ipc := space.DefaultIDProvider()
 
-	ui, err := m.userIdentityService.Get(ipc, ts.Email)
+	ui, err := m.userIdentityService.Get(models.OldIDProvider(ipc), ts.Email)
 	if err != nil || ui.ID == "" {
 		if err == nil {
 			err = errors.New("User identity not found")

@@ -26,9 +26,6 @@ type InternalRegistry interface {
 	// ApplicationService return instance of the application service.
 	ApplicationService() ApplicationServiceInterface
 
-	// SpaceService return instance of the space service.
-	SpaceService() SpaceServiceInterface
-
 	Spaces() repository.SpaceRepository
 
 	// OneTimeTokenService return instance of the one time token service.

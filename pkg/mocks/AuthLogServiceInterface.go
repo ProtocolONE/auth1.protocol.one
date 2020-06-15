@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	entity "github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	echo "github.com/labstack/echo/v4"
 	mock "github.com/stretchr/testify/mock"
 
@@ -17,11 +18,11 @@ type AuthLogServiceInterface struct {
 }
 
 // Add provides a mock function with given fields: reqctx, kind, identity, app, provider
-func (_m *AuthLogServiceInterface) Add(reqctx echo.Context, kind service.AuthActionType, identity *models.UserIdentity, app *models.Application, provider *models.AppIdentityProvider) error {
+func (_m *AuthLogServiceInterface) Add(reqctx echo.Context, kind service.AuthActionType, identity *models.UserIdentity, app *models.Application, provider *entity.IdentityProvider) error {
 	ret := _m.Called(reqctx, kind, identity, app, provider)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(echo.Context, service.AuthActionType, *models.UserIdentity, *models.Application, *models.AppIdentityProvider) error); ok {
+	if rf, ok := ret.Get(0).(func(echo.Context, service.AuthActionType, *models.UserIdentity, *models.Application, *entity.IdentityProvider) error); ok {
 		r0 = rf(reqctx, kind, identity, app, provider)
 	} else {
 		r0 = ret.Error(0)

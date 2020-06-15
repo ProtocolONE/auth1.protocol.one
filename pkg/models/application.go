@@ -57,16 +57,6 @@ type Application struct {
 	// PostLogoutRedirectUris is an array of allowed post logout redirect urls for the client.
 	PostLogoutRedirectUrls []string `bson:"post_logout_redirect_urls" json:"post_logout_redirect_urls"`
 
-	// HasSharedUsers determines whether users are shared across the entire space or only within the application.
-	// If this option is set, then users from other applications (in space) will be able to log in to this application.
-	HasSharedUsers bool `bson:"has_shared_users" json:"has_shared_users"`
-
-	// UniqueUsernames determines whether app users must have unique usernames
-	UniqueUsernames bool `bson:"unique_usernames" json:"unique_usernames"`
-
-	// RequiresCaptcha determines whether app users must have complete captcha verification
-	RequiresCaptcha bool `bson:"requires_captcha" json:"requires_captcha"`
-
 	// OneTimeTokenSettings contains settings for storing one-time application tokens.
 	OneTimeTokenSettings *OneTimeTokenSettings `bson:"ott_settings" json:"ott_settings"`
 
@@ -82,7 +72,6 @@ func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddBool("IsActive", a.IsActive)
 	enc.AddTime("CreatedAt", a.CreatedAt)
 	enc.AddTime("UpdatedAt", a.UpdatedAt)
-	enc.AddBool("HasSharedUsers", a.HasSharedUsers)
 
 	return nil
 }

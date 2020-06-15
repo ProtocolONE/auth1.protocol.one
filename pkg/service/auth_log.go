@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -85,7 +86,7 @@ type GeoIp interface {
 // AuthLogServiceInterface describes of methods for the AuthLog service.
 type AuthLogServiceInterface interface {
 	// Add adds an authorization log for the user.
-	Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *models.AppIdentityProvider) error
+	Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *entity.IdentityProvider) error
 	Get(userId string, count int, from string) ([]*AuthorizeLog, error)
 	GetByDevice(deviceID string, count int, from string) ([]*AuthorizeLog, error)
 }
@@ -101,7 +102,7 @@ func NewAuthLogService(h database.MgoSession, geo GeoIp) *AuthLogService {
 	return &AuthLogService{db: h.DB(""), geo: geo}
 }
 
-func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *models.AppIdentityProvider) error {
+func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *models.UserIdentity, app *models.Application, provider *entity.IdentityProvider) error {
 	ctime, err := http.ParseTime(reqctx.Request().Header.Get("Date"))
 	if err != nil {
 		// TODO log error
@@ -127,7 +128,7 @@ func (s AuthLogService) Add(reqctx echo.Context, kind AuthActionType, identity *
 	}
 	// identity provider
 	if provider != nil {
-		record.ProviderID = provider.ID
+		record.ProviderID = bson.ObjectIdHex(string(provider.ID))
 		record.ProviderName = provider.Name
 	}
 

@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore/log"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/captcha"
@@ -13,9 +13,11 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
+	
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra-client-go/client/admin"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -80,7 +82,12 @@ func (pr *PasswordReset) PasswordReset(ctx echo.Context) error {
 		return err
 	}
 
-	if app.RequiresCaptcha {
+	space, err := pr.Registry.Spaces().FindByID(ctx.Request().Context(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return  errors.Wrap(err, "unable to load space")
+	}
+
+	if space.RequiresCaptcha {
 		ok, err := pr.Recaptcha.Verify(ctx.Request().Context(), r.CaptchaToken, r.CaptchaAction, ctx.RealIP())
 		if err != nil {
 			return err

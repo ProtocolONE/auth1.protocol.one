@@ -162,22 +162,6 @@ func (_m *InternalRegistry) OneTimeTokenService() service.OneTimeTokenServiceInt
 	return r0
 }
 
-// SpaceService provides a mock function with given fields:
-func (_m *InternalRegistry) SpaceService() service.SpaceServiceInterface {
-	ret := _m.Called()
-
-	var r0 service.SpaceServiceInterface
-	if rf, ok := ret.Get(0).(func() service.SpaceServiceInterface); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(service.SpaceServiceInterface)
-		}
-	}
-
-	return r0
-}
-
 // Spaces provides a mock function with given fields:
 func (_m *InternalRegistry) Spaces() repository.SpaceRepository {
 	ret := _m.Called()

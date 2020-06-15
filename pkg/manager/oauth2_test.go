@@ -18,7 +18,6 @@ import (
 type testOAuth2 struct {
 	app  *mocks.ApplicationServiceInterface
 	h    *mocks.HydraAdminApi
-	ip   *mocks.AppIdentityProviderServiceInterface
 	sess *mocks.SessionService
 	uis  *mocks.UserIdentityServiceInterface
 	us   *mocks.UserServiceInterface
@@ -36,7 +35,6 @@ func newTestOAuth2() *testOAuth2 {
 	return &testOAuth2{
 		app:  &mocks.ApplicationServiceInterface{},
 		h:    &mocks.HydraAdminApi{},
-		ip:   &mocks.AppIdentityProviderServiceInterface{},
 		sess: &mocks.SessionService{},
 		uis:  &mocks.UserIdentityServiceInterface{},
 		us:   &mocks.UserServiceInterface{},
@@ -44,7 +42,15 @@ func newTestOAuth2() *testOAuth2 {
 		al:   &mocks.AuthLogServiceInterface{},
 		r:    mockIntRegistry(),
 
-		space: &entity.Space{PasswordSettings: entity.PasswordSettings{Min: 1, Max: 8, BcryptCost: 4}},
+		space: &entity.Space{
+			PasswordSettings: entity.PasswordSettings{Min: 1, Max: 8, BcryptCost: 4},
+			IdentityProviders: entity.IdentityProviders{{
+				ID:          entity.IdentityProviderID(bson.NewObjectId().Hex()),
+				Type:        entity.IDProviderTypePassword,
+				Name:        entity.IDProviderNameDefault,
+				DisplayName: "Initial connection",
+			}},
+		},
 		loginRequest: &admin.GetLoginRequestOK{Payload: &models2.LoginRequest{
 			Client:  &models2.OAuth2Client{ClientID: bson.NewObjectId().Hex()},
 			Subject: "subj",
@@ -57,9 +63,6 @@ func (test *testOAuth2) init() {
 
 	test.h.On("GetLoginRequest", mock.Anything).Return(test.loginRequest, nil)
 	test.h.On("AcceptLoginRequest", mock.Anything).Return(&admin.AcceptLoginRequestOK{Payload: &models2.CompletedRequest{RedirectTo: "url"}}, nil)
-
-	test.ip.On("FindByType", mock.Anything, models.AppIdentityProviderTypeSocial).Return([]*models.AppIdentityProvider{{}})
-	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(&models.AppIdentityProvider{})
 
 	test.sess.On("Set", mock.Anything, clientIdSessionKey, mock.Anything).Return(nil)
 	test.sess.On("Set", mock.Anything, loginRememberKey, mock.Anything).Return(nil)
@@ -84,12 +87,11 @@ func (test *testOAuth2) init() {
 	test.r.On("Spaces").Return(repository.OneSpaceRepo(test.space))
 
 	test.m = &OauthManager{
-		r:                       test.r,
-		identityProviderService: test.ip,
-		session:                 test.sess,
-		userService:             test.us,
-		userIdentityService:     test.uis,
-		authLogService:          test.al,
+		r:                   test.r,
+		session:             test.sess,
+		userService:         test.us,
+		userIdentityService: test.uis,
+		authLogService:      test.al,
 	}
 }
 
@@ -223,17 +225,6 @@ func TestAuthReturnErrorWithIncorrectToken(t *testing.T) {
 func TestAuthReturnErrorWithIncorrectClient(t *testing.T) {
 	test := newTestOAuth2()
 	test.app.On("Get", mock.Anything).Return(nil, errors.New(""))
-	test.init()
-
-	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	// assert.Equal(t, "client_id", err.Code)
-	// assert.Equal(t, models.ErrorClientIdIncorrect, err.Message)
-}
-
-func TestAuthReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	test := newTestOAuth2()
-	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
 	test.init()
 
 	_, err := test.m.Auth(getContext(), &models.Oauth2LoginSubmitForm{Challenge: "login_challenge"})
@@ -572,17 +563,6 @@ func TestSignUpReturnErrorWithUnableToGetLoginChallenge(t *testing.T) {
 	assert.NotNil(t, err)
 	// assert.Equal(t, "common", err.Code)
 	// assert.Equal(t, models.ErrorLoginChallenge, err.Message)
-}
-
-func TestSignUpReturnErrorWithUnavailableIdentityProvider(t *testing.T) {
-	test := newTestOAuth2()
-	test.ip.On("FindByTypeAndName", mock.Anything, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault).Return(nil)
-	test.init()
-
-	_, err := test.m.SignUp(getContext(), &models.Oauth2SignUpForm{Remember: true, Password: "11", Challenge: "login_challenge"})
-	assert.NotNil(t, err)
-	// assert.Equal(t, "client_id", err.Code)
-	// assert.Equal(t, models.ErrorProviderIdIncorrect, err.Message)
 }
 
 func TestSignUpReturnErrorWithUnableToGetUserIdentity(t *testing.T) {

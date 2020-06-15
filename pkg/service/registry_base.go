@@ -14,7 +14,6 @@ type RegistryBase struct {
 	session   database.MgoSession
 	as        ApplicationServiceInterface
 	spaces    repository.SpaceRepository
-	spacesOld SpaceServiceInterface
 	ott       OneTimeTokenServiceInterface
 	lts       LauncherTokenServiceInterface
 	watcher   persist.Watcher
@@ -63,7 +62,6 @@ func NewRegistryBase(config *RegistryConfig) InternalRegistry {
 		ott:       NewOneTimeTokenService(config.RedisClient),
 		lts:       NewLauncherTokenService(config.RedisClient),
 		cent:      config.CentrifugoService,
-		spacesOld: NewSpaceService(config.MgoSession),
 		spaces:    config.Spaces,
 	}
 	r.as = NewApplicationService(r)
@@ -101,10 +99,6 @@ func (r *RegistryBase) Mailer() MailerInterface {
 
 func (r *RegistryBase) ApplicationService() ApplicationServiceInterface {
 	return r.as
-}
-
-func (r *RegistryBase) SpaceService() SpaceServiceInterface {
-	return r.spacesOld
 }
 
 func (r *RegistryBase) Spaces() repository.SpaceRepository {
