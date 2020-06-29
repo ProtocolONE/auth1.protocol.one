@@ -13,11 +13,12 @@ import (
 )
 
 type Handler struct {
-	profile         service.ProfileService
-	Users           repository.UserRepository
-	Spaces          repository.SpaceRepository
-	userIdentity    service.UserIdentityService
-	passwordManager service.PasswordManager
+	ProfileService      service.ProfileService
+	UserService         service.UserService
+	Users               repository.UserRepository
+	Spaces              repository.SpaceRepository
+	userIdentityService service.UserIdentityService
+	passwordManager     service.PasswordManager
 	// app             service.ApplicationService
 }
 
@@ -32,8 +33,9 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 	}
 	w.Username = u.Username
 	w.Email = u.Email
+	w.Phone = u.PhoneNumber
 
-	p, err := h.profile.GetByUserID(ctx, r.UserID)
+	p, err := h.ProfileService.GetByUserID(ctx, r.UserID)
 	if err == profile.ErrProfileNotFound {
 		return &w, nil
 	}
@@ -45,12 +47,12 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 }
 
 func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*proto.ProfileResponse, error) {
-	u, err := h.Users.FindByID(ctx, entity.UserID(r.UserID))
+	u, err := h.UserService.GetByID(ctx, entity.UserID(r.UserID))
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := h.profile.GetByUserID(ctx, r.UserID)
+	p, err := h.ProfileService.GetByUserID(ctx, r.UserID)
 	if err != nil && err != profile.ErrProfileNotFound {
 		return nil, err
 	}
@@ -60,8 +62,19 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 		return nil, err
 	}
 
+	// update user
+	if u.PhoneNumber != r.Phone {
+		f := false
+		h.UserService.Update(ctx, service.UpdateUserData{
+			ID:            entity.UserID(r.UserID),
+			Phone:         &r.Phone,
+			PhoneVerified: &f,
+		})
+	}
+
+	// update profile
 	if err == profile.ErrProfileNotFound {
-		p, err = h.profile.Create(ctx, &service.CreateProfileData{
+		p, err = h.ProfileService.Create(ctx, &service.CreateProfileData{
 			UserID:    r.UserID,
 			Address1:  r.Address1,
 			Address2:  r.Address2,
@@ -80,7 +93,7 @@ func (h *Handler) SetProfile(ctx context.Context, r *proto.SetProfileRequest) (*
 			return nil, err
 		}
 	} else {
-		p, err = h.profile.Update(ctx, &service.UpdateProfileData{
+		p, err = h.ProfileService.Update(ctx, &service.UpdateProfileData{
 			UserId:    r.UserID,
 			Address1:  r.Address1,
 			Address2:  r.Address2,
@@ -119,7 +132,7 @@ func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserS
 		return nil, err
 	}
 
-	idents, err := h.userIdentity.GetIdentities(ctx, user.ID)
+	idents, err := h.userIdentityService.GetIdentities(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}

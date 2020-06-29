@@ -38,6 +38,8 @@ message SetProfileRequest {
     //
     string Language = 13;
     string Currency = 14;
+    //
+    string Phone = 15;
 }
 
 message ProfileResponse {

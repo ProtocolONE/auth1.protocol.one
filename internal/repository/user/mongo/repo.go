@@ -19,6 +19,21 @@ func New(env *env.Mongo) *UserRepository {
 	}
 }
 
+func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
+	model, err := newModel(user)
+	if err != nil {
+		return err
+	}
+
+	err = r.col.UpdateId(user.ID, user)
+	if err != nil {
+		return err
+	}
+
+	*i = *model.Convert()
+	return nil
+}
+
 func (r *UserRepository) Find(ctx context.Context) ([]*entity.User, error) {
 	var m []model
 	if err := r.col.Find(nil).All(&m); err != nil {

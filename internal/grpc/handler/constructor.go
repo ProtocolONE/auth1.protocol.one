@@ -10,6 +10,7 @@ type Params struct {
 	fx.In
 
 	ProfileService      service.ProfileService
+	UserService         service.UserService
 	UserIdentityService service.UserIdentityService
 	PasswordManager     service.PasswordManager
 	// ApplicationService  service.ApplicationService
@@ -19,11 +20,12 @@ type Params struct {
 
 func New(params Params) *Handler {
 	return &Handler{
-		profile:         params.ProfileService,
-		Users:           params.Users,
-		Spaces:          params.Spaces,
-		userIdentity:    params.UserIdentityService,
-		passwordManager: params.PasswordManager,
+		ProfileService:      params.ProfileService,
+		UserService:         params.UserService,
+		Users:               params.Users,
+		Spaces:              params.Spaces,
+		userIdentityService: params.UserIdentityService,
+		passwordManager:     params.PasswordManager,
 		// app:             params.ApplicationService,
 	}
 }
