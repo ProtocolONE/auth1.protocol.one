@@ -30,7 +30,7 @@ func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 		return err
 	}
 
-	*i = *model.Convert()
+	*user = *model.Convert()
 	return nil
 }
 
