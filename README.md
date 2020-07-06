@@ -6,12 +6,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/qilin/auth1.protocol.one)](https://goreportcard.com/report/github.com/qilin/auth1.protocol.one)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/ProtocolONE/auth1.protocol.one)
 
-Qilin is an open-source digital distribution platform for game developers and publishers. Our mission is to distribute games by minimizing the effort of contracting, sharing documentation and providing comprehensive real-time statistics.
-
-**Qilin architecture schema**
-
-![Qilin architecture schema](qilin-schema.png)
-
 **AuthOne** is an open-source authorization server that supports the OAuth 2.0 and OpenID 1.0 Connect paradigm, created based on the [ORY Hydra](https://github.com/ory/hydra) open source protected and certified application. 
 The server is used as an external service according to OAuth authorization standards.
 
