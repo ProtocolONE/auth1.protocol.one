@@ -52,6 +52,9 @@ func (r *UserRepository) FindByID(ctx context.Context, id entity.UserID) (*entit
 	p := &model{}
 	oid := bson.ObjectIdHex(string(id))
 	if err := r.col.FindId(oid).One(p); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 

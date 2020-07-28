@@ -18,9 +18,12 @@ func NewApplicationsHandler(s repository.ApplicationRepository) *ApplicationsHan
 }
 
 type appView struct {
-	ID          entity.AppID `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
+	ID                     entity.AppID `json:"id"`
+	Name                   string       `json:"name"`
+	Description            string       `json:"description"`
+	AuthRedirectUrls       []string     `json:"auth_redirect_urls"`
+	PostLogoutRedirectUrls []string     `json:"post_logout_redirect_urls"`
+	WebHooks               []string     `json:"web_hooks"`
 }
 
 func (h *ApplicationsHandler) List(ctx echo.Context) error {
@@ -52,8 +55,11 @@ func (h *ApplicationsHandler) Get(ctx echo.Context) error {
 
 func (h *ApplicationsHandler) view(s *entity.Application) appView {
 	return appView{
-		ID:          s.ID,
-		Name:        s.Name,
-		Description: s.Description,
+		ID:                     s.ID,
+		Name:                   s.Name,
+		Description:            s.Description,
+		AuthRedirectUrls:       s.AuthRedirectUrls,
+		PostLogoutRedirectUrls: s.PostLogoutRedirectUrls,
+		WebHooks:               s.WebHooks,
 	}
 }
