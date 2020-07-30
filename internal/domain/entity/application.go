@@ -41,4 +41,10 @@ type Application struct {
 
 	// WebHook endpoint URLs
 	WebHooks []string
+
+	// Possible user roles
+	Roles []string
+
+	// Default Role
+	DefaultRole string
 }

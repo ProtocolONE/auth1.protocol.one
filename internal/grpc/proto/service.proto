@@ -64,6 +64,8 @@ message ProfileResponse {
     //
     string Language = 15;
     string Currency = 16;
+    //
+    string Role = 17;
 }
 
 message ChangePasswordRequest {

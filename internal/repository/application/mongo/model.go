@@ -41,6 +41,9 @@ type model struct {
 
 	// WebHook endpoint URLs
 	WebHooks []string `bson:"webhooks" json:"webhooks"`
+
+	Roles       []string `bson:"roles" json:"roles"`
+	DefaultRole string   `bson:"default_role" json:"default_role"`
 }
 
 func (m model) Convert() *entity.Application {
@@ -56,5 +59,7 @@ func (m model) Convert() *entity.Application {
 		AuthRedirectUrls:       m.AuthRedirectUrls,
 		PostLogoutRedirectUrls: m.PostLogoutRedirectUrls,
 		WebHooks:               m.WebHooks,
+		DefaultRole:            m.DefaultRole,
+		Roles:                  m.Roles,
 	}
 }

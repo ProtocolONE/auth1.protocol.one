@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/micro/go-plugins v2.0.1+incompatible
 	github.com/micro/go-plugins/client/selector/static v0.0.0-20200119172437-4fe21aa238fd
 )

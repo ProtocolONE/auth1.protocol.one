@@ -189,6 +189,8 @@ func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
 	//
 	w.Language = *p.Language
 	w.Currency = *p.Currency
+	//
+	w.Role = *p.Role
 
 	return nil
 }

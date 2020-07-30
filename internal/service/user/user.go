@@ -20,6 +20,11 @@ func (s Service) Update(ctx context.Context, data service.UpdateUserData) error 
 		return err
 	}
 
+	app, err := s.ApplicationService.GetByID(ctx, string(user.AppID))
+	if err != nil {
+		return err
+	}
+
 	if user == nil {
 		return ErrUserNotFound
 	}
@@ -29,6 +34,17 @@ func (s Service) Update(ctx context.Context, data service.UpdateUserData) error 
 	}
 	if data.PhoneVerified != nil {
 		user.PhoneVerified = *data.PhoneVerified
+	}
+	if data.Role != nil {
+		found := false
+		for _, role := range app.Roles {
+			if *data.Role == role {
+				found = true
+			}
+		}
+		if found {
+			user.Role = *data.Role
+		}
 	}
 
 	return s.UserRepo.Update(ctx, user)

@@ -16,4 +16,5 @@ type UpdateUserData struct {
 	ID            entity.UserID
 	Phone         *string
 	PhoneVerified *bool
+	Role          *string
 }
