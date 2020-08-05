@@ -11,6 +11,7 @@ import UsersIcon from '@material-ui/icons/PeopleAlt';
 import AppsIcon from '@material-ui/icons/Tablet';
 
 import { SpaceIcon, SpaceList, SpaceShow, SpaceEdit, SpaceCreate } from './components/spaces.jsx'
+import { UserEdit } from './components/users.jsx'
 import { ProvidersIcon, ProvidersList, ProvidersShow, ProvidersEdit, ProvidersCreate } from './components/providers.jsx'
 
 
@@ -36,7 +37,7 @@ const App = () => (
     <Admin dataProvider={dataProvider} theme={theme}>
         <Resource name="spaces" icon={SpaceIcon} list={SpaceList} show={SpaceShow} edit={SpaceEdit} create={SpaceCreate} />
         <Resource name="identity_providers" icon={ProvidersIcon} list={ProvidersList} show={ProvidersShow} edit={ProvidersEdit} create={ProvidersCreate} />
-        <Resource name="users" icon={UsersIcon} list={ListGuesser} show={ShowGuesser} edit={EditGuesser} />
+        <Resource name="users" icon={UsersIcon} list={ListGuesser} show={ShowGuesser} edit={UserEdit} />
         <Resource name="apps" icon={AppsIcon} list={ListGuesser} show={ShowGuesser} edit={EditGuesser} />
     </Admin>
 );

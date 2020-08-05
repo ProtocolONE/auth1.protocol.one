@@ -24,8 +24,6 @@ type appView struct {
 	AuthRedirectUrls       []string     `json:"auth_redirect_urls"`
 	PostLogoutRedirectUrls []string     `json:"post_logout_redirect_urls"`
 	WebHooks               []string     `json:"web_hooks"`
-	Roles                  []string     `json:"roles"`
-	DefaultRole            string       `json:"default_role"`
 }
 
 func (h *ApplicationsHandler) List(ctx echo.Context) error {
@@ -63,7 +61,5 @@ func (h *ApplicationsHandler) view(s *entity.Application) appView {
 		AuthRedirectUrls:       s.AuthRedirectUrls,
 		PostLogoutRedirectUrls: s.PostLogoutRedirectUrls,
 		WebHooks:               s.WebHooks,
-		Roles:                  s.Roles,
-		DefaultRole:            s.DefaultRole,
 	}
 }

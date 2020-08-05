@@ -34,6 +34,7 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 	w.Username = u.Username
 	w.Email = u.Email
 	w.Phone = u.PhoneNumber
+	w.Roles = u.Roles
 
 	p, err := h.ProfileService.GetByUserID(ctx, r.UserID)
 	if err == profile.ErrProfileNotFound {
@@ -189,8 +190,6 @@ func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
 	//
 	w.Language = *p.Language
 	w.Currency = *p.Currency
-	//
-	w.Role = *p.Role
 
 	return nil
 }

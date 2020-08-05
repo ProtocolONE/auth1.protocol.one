@@ -496,7 +496,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		LoginsCount:    1,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
-		Role:           app.DefaultRole,
+		Roles:          []string{space.DefaultRole},
 	}
 
 	if err := m.userService.Create(user); err != nil {

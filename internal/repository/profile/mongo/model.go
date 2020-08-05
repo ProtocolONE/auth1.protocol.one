@@ -13,7 +13,6 @@ type model struct {
 	ID bson.ObjectId `bson:"_id" json:"id"`
 	// UserID is user's id
 	UserID bson.ObjectId `bson:"user_id" json:"user_id"`
-
 	//
 	Address1 *string `bson:"address_1" json:"address_1"`
 	Address2 *string `bosn:"address_2" json:"address_2"`

@@ -21,7 +21,7 @@ type userView struct {
 	ID       entity.UserID `json:"id"`
 	Username string        `json:"name"`
 	Email    string        `json:"email"`
-	Role     string        `json:"role"`
+	Roles    []string      `json:"roles"`
 }
 
 func (h *UsersHandler) List(ctx echo.Context) error {
@@ -64,7 +64,7 @@ func (h *UsersHandler) Update(ctx echo.Context) error {
 		return err
 	}
 
-	usr.Role = request.Role
+	usr.Roles = request.Roles
 
 	err = h.users.Update(ctx.Request().Context(), usr)
 	if err != nil {
@@ -79,6 +79,6 @@ func (h *UsersHandler) view(s *entity.User) userView {
 		ID:       s.ID,
 		Username: s.Username,
 		Email:    s.Email,
-		Role:     s.Role,
+		Roles:    s.Roles,
 	}
 }

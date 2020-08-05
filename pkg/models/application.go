@@ -62,12 +62,6 @@ type Application struct {
 
 	// WebHook endpoint URLs
 	WebHooks []string `bson:"webhooks" json:"webhooks"`
-
-	// Possible user roles
-	Roles []string `bson:"roles" json:"roles"`
-
-	// Default user role on sign up
-	DefaultRole string `bson:"default_role" json:"default_role"`
 }
 
 func (a *Application) MarshalLogObject(enc zapcore.ObjectEncoder) error {

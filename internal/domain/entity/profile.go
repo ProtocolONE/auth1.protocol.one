@@ -20,5 +20,4 @@ type Profile struct {
 	Language *string
 	Currency *string
 	//
-	Role *string
 }

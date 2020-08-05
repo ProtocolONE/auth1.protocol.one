@@ -26,6 +26,12 @@ type Space struct {
 	// Password requirements
 	PasswordSettings PasswordSettings
 
+	// Roles available in the space
+	Roles []string
+
+	// Default user role
+	DefaultRole string
+
 	// IdentityProviders contains a list of valid authorization providers for the application, for example using a
 	// local database, an external social authentication service (facebook, google and etc), SAML, and others.
 	IdentityProviders

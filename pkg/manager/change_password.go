@@ -12,6 +12,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 )
@@ -157,6 +158,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	if err = m.userIdentityService.Update(ui); err != nil {
+		spew.Dump(err.Error())
 		return &models.GeneralError{Code: "password", Message: models.ErrorUnableChangePassword, Err: errors.Wrap(err, "Unable to update password")}
 	}
 

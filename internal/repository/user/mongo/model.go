@@ -60,8 +60,8 @@ type model struct {
 	// UpdatedAt returns the timestamp of the last update.
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 
-	// Role
-	Role string `bson:"role" json:"role"`
+	// Roles
+	Roles []string `bson:"roles" json:"roles"`
 }
 
 func (m model) Convert() *entity.User {
@@ -82,7 +82,7 @@ func (m model) Convert() *entity.User {
 		// LastLogin:     m.LastLogin,
 		// LoginsCount:   m.LoginsCount,
 		// DeviceID:      m.DeviceID,
-		Role: m.Role,
+		Roles: m.Roles,
 	}
 }
 
@@ -111,6 +111,6 @@ func newModel(i *entity.User) (*model, error) {
 		// LastLogin:   i.LastLogin,
 		// LoginsCount: i.LoginsCount,
 		// DeviceID:    i.DeviceID,
-		Role: i.Role,
+		Roles: i.Roles,
 	}, nil
 }

@@ -58,9 +58,7 @@ func (m *ManageManager) CreateApplication(ctx echo.Context, form *models.Applica
 			Length: 64,
 			TTL:    3600,
 		},
-		WebHooks:    form.Application.Webhooks,
-		Roles:       form.Application.Roles,
-		DefaultRole: form.Application.DefaultRole,
+		WebHooks: form.Application.Webhooks,
 	}
 
 	if err := m.r.ApplicationService().Create(app); err != nil {
@@ -113,8 +111,6 @@ func (m *ManageManager) UpdateApplication(ctx echo.Context, id string, form *mod
 	a.AuthRedirectUrls = form.Application.AuthRedirectUrls
 	a.PostLogoutRedirectUrls = form.Application.PostLogoutRedirectUrls
 	a.WebHooks = form.Application.Webhooks
-	a.Roles = form.Application.Roles
-	a.DefaultRole = form.Application.DefaultRole
 
 	if err := m.r.ApplicationService().Update(a); err != nil {
 		return nil, &models.GeneralError{Message: "Unable to update application", Err: errors.Wrap(err, "Unable to update application")}
