@@ -34,6 +34,7 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 	w.Username = u.Username
 	w.Email = u.Email
 	w.Phone = u.PhoneNumber
+	w.Roles = u.Roles
 
 	p, err := h.ProfileService.GetByUserID(ctx, r.UserID)
 	if err == profile.ErrProfileNotFound {

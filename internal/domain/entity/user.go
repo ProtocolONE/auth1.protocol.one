@@ -8,8 +8,14 @@ type User struct {
 	// ID is the id of user.
 	ID UserID
 
+	// Roles is the user's role
+	Roles []string
+
 	// SpaceID is the id of space to which user belongs
 	SpaceID SpaceID
+
+	// AppID is the id of application
+	AppID AppID
 
 	// Email is the email address of the user.
 	Email string

@@ -9,7 +9,9 @@ import (
 type ServiceParams struct {
 	fx.In
 
-	UserRepo repository.UserRepository
+	ApplicationService service.ApplicationService
+	UserRepo           repository.UserRepository
+	SpaceRepo          repository.SpaceRepository
 	//userIdentityRepo repository.UserIdentityRepository
 }
 

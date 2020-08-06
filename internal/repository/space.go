@@ -19,6 +19,8 @@ type spaceModel struct {
 	RequiresCaptcha   bool             `bson:"requires_captcha"`
 	PasswordSettings  passwordSettings `bson:"password_settings"`
 	IdentityProviders []idProvider     `bson:"identity_providers"`
+	Roles             []string         `bson:"roles" json:"roles"`
+	DefaultRole       string           `bson:"default_role" json:"default_role"`
 	CreatedAt         time.Time        `bson:"created_at"`
 	UpdatedAt         time.Time        `bson:"updated_at"`
 }
@@ -73,6 +75,8 @@ func newSpaceModel(s *entity.Space) *spaceModel {
 		RequiresCaptcha:   s.RequiresCaptcha,
 		PasswordSettings:  passwordSettings(s.PasswordSettings),
 		IdentityProviders: providers,
+		Roles:             s.Roles,
+		DefaultRole:       s.DefaultRole,
 		CreatedAt:         s.CreatedAt,
 		UpdatedAt:         s.UpdatedAt,
 	}
@@ -103,6 +107,8 @@ func (m *spaceModel) convert() *entity.Space {
 		RequiresCaptcha:   m.RequiresCaptcha,
 		PasswordSettings:  entity.PasswordSettings(m.PasswordSettings),
 		IdentityProviders: providers,
+		Roles:             m.Roles,
+		DefaultRole:       m.DefaultRole,
 		CreatedAt:         m.CreatedAt,
 		UpdatedAt:         m.UpdatedAt,
 	}

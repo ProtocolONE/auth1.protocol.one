@@ -93,15 +93,15 @@ type OauthManagerInterface interface {
 
 // OauthManager is the oauth manager.
 type OauthManager struct {
-	hydraConfig             *config.Hydra
-	userService             service.UserServiceInterface
-	userIdentityService     service.UserIdentityServiceInterface
-	authLogService          service.AuthLogServiceInterface
-	r                       service.InternalRegistry
-	session                 service.SessionService
-	ApiCfg                  *config.Server
-	recaptcha               *captcha.Recaptcha
-	lm                      LoginManagerInterface
+	hydraConfig         *config.Hydra
+	userService         service.UserServiceInterface
+	userIdentityService service.UserIdentityServiceInterface
+	authLogService      service.AuthLogServiceInterface
+	r                   service.InternalRegistry
+	session             service.SessionService
+	ApiCfg              *config.Server
+	recaptcha           *captcha.Recaptcha
+	lm                  LoginManagerInterface
 }
 
 // NewOauthManager return new oauth manager.
@@ -113,15 +113,15 @@ func NewOauthManager(
 	apiCfg *config.Server,
 	recaptcha *captcha.Recaptcha) OauthManagerInterface {
 	m := &OauthManager{
-		ApiCfg:                  apiCfg,
-		hydraConfig:             h,
-		r:                       r,
-		userService:             service.NewUserService(db),
-		userIdentityService:     service.NewUserIdentityService(db),
-		authLogService:          service.NewAuthLogService(db, r.GeoIpService()),
-		session:                 service.NewSessionService(s.Name),
-		recaptcha:               recaptcha,
-		lm:                      NewLoginManager(db, r),
+		ApiCfg:              apiCfg,
+		hydraConfig:         h,
+		r:                   r,
+		userService:         service.NewUserService(db),
+		userIdentityService: service.NewUserIdentityService(db),
+		authLogService:      service.NewAuthLogService(db, r.GeoIpService()),
+		session:             service.NewSessionService(s.Name),
+		recaptcha:           recaptcha,
+		lm:                  NewLoginManager(db, r),
 	}
 
 	return m
@@ -496,6 +496,7 @@ func (m *OauthManager) SignUp(ctx echo.Context, form *models.Oauth2SignUpForm) (
 		LoginsCount:    1,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
+		Roles:          []string{space.DefaultRole},
 	}
 
 	if err := m.userService.Create(user); err != nil {

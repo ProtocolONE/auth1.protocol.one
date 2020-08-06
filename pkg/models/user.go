@@ -12,6 +12,8 @@ type User struct {
 	// ID is the id of user.
 	ID bson.ObjectId `bson:"_id" json:"id"`
 
+	Roles []string `bson:"roles" json:"roles"`
+
 	// SpaceID is the id of space to which user belongs
 	SpaceID bson.ObjectId `bson:"space_id" json:"space_id"`
 

@@ -21,6 +21,7 @@ type userView struct {
 	ID       entity.UserID `json:"id"`
 	Username string        `json:"name"`
 	Email    string        `json:"email"`
+	Roles    []string      `json:"roles"`
 }
 
 func (h *UsersHandler) List(ctx echo.Context) error {
@@ -50,10 +51,34 @@ func (h *UsersHandler) Get(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, h.view(sx))
 }
 
+func (h *UsersHandler) Update(ctx echo.Context) error {
+	id := entity.UserID(ctx.Param("id"))
+
+	var request userView
+	if err := ctx.Bind(&request); err != nil {
+		return err
+	}
+
+	usr, err := h.users.FindByID(ctx.Request().Context(), id)
+	if err != nil {
+		return err
+	}
+
+	usr.Roles = request.Roles
+
+	err = h.users.Update(ctx.Request().Context(), usr)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, h.view(usr))
+}
+
 func (h *UsersHandler) view(s *entity.User) userView {
 	return userView{
 		ID:       s.ID,
 		Username: s.Username,
 		Email:    s.Email,
+		Roles:    s.Roles,
 	}
 }

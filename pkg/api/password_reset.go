@@ -13,7 +13,7 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/webhooks"
-	
+
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
 	"github.com/ory/hydra-client-go/client/admin"
@@ -84,7 +84,7 @@ func (pr *PasswordReset) PasswordReset(ctx echo.Context) error {
 
 	space, err := pr.Registry.Spaces().FindByID(ctx.Request().Context(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
-		return  errors.Wrap(err, "unable to load space")
+		return errors.Wrap(err, "unable to load space")
 	}
 
 	if space.RequiresCaptcha {

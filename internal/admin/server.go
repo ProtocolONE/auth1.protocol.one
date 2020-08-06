@@ -66,6 +66,7 @@ func NewServer(p Params) *Server {
 
 	engine.GET("/api/users", p.Users.List)
 	engine.GET("/api/users/:id", p.Users.Get)
+	engine.PUT("/api/users/:id", p.Users.Update)
 
 	engine.GET("/api/apps", p.Apps.List)
 	engine.GET("/api/apps/:id", p.Apps.Get)

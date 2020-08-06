@@ -25,8 +25,7 @@ func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 		return err
 	}
 
-	err = r.col.UpdateId(user.ID, user)
-	if err != nil {
+	if err := r.col.UpdateId(model.ID, model); err != nil {
 		return err
 	}
 

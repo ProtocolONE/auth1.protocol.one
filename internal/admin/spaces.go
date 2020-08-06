@@ -26,6 +26,8 @@ type spaceView struct {
 	UniqueUsernames  bool                 `json:"unique_usernames"`
 	RequiresCaptcha  bool                 `json:"requires_captcha"`
 	PasswordSettings passwordSettingsView `json:"password_settings"`
+	Roles            []string             `json:"roles"`
+	DefaultRole      string               `json:"default_role"`
 	CreatedAt        time.Time            `json:"created_at"`
 	UpdatedAt        time.Time            `json:"updated_at"`
 }
@@ -87,6 +89,9 @@ func (h *SpaceHandler) Create(ctx echo.Context) error {
 	space.Name = request.Name
 	space.Description = request.Description
 
+	space.Roles = request.Roles
+	space.DefaultRole = request.DefaultRole
+
 	if err := h.spaces.Create(ctx.Request().Context(), space); err != nil {
 		return err
 	}
@@ -112,12 +117,22 @@ func (h *SpaceHandler) Update(ctx echo.Context) error {
 	space.PasswordSettings = entity.PasswordSettings(request.PasswordSettings)
 	space.UniqueUsernames = request.UniqueUsernames
 	space.RequiresCaptcha = request.RequiresCaptcha
+	space.Roles = request.Roles
+	space.DefaultRole = request.DefaultRole
 
 	if err := h.spaces.Update(ctx.Request().Context(), space); err != nil {
 		return err
 	}
 
 	return ctx.JSON(http.StatusOK, h.view(space))
+}
+
+func (h *SpaceHandler) bindRequest(ctx echo.Context, request *spaceView) error {
+	if err := ctx.Bind(&request); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *SpaceHandler) view(s *entity.Space) spaceView {
@@ -128,6 +143,8 @@ func (h *SpaceHandler) view(s *entity.Space) spaceView {
 		UniqueUsernames:  s.UniqueUsernames,
 		RequiresCaptcha:  s.RequiresCaptcha,
 		PasswordSettings: passwordSettingsView(s.PasswordSettings),
+		Roles:            s.Roles,
+		DefaultRole:      s.DefaultRole,
 		CreatedAt:        s.CreatedAt,
 		UpdatedAt:        s.UpdatedAt,
 	}

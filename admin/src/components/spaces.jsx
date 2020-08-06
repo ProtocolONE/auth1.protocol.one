@@ -6,8 +6,8 @@ import {
  SimpleForm,  Create,
  Show,  TabbedShowLayout, Tab,
  Edit, TabbedForm, FormTab,
- NumberField, BooleanField,  DateField, TextField, 
- BooleanInput, DateInput, NumberInput, TextInput,
+ NumberField, BooleanField,  DateField, TextField, ArrayField,
+ BooleanInput, DateInput, NumberInput, TextInput, ArrayInput, SimpleFormIterator
 } from 'react-admin';
 import spaceIcon from '@material-ui/icons/Book';
 export const SpaceIcon = spaceIcon
@@ -40,8 +40,13 @@ export const SpaceShow = props => (
                 <TextField source="id" />
                 <TextField source="name" />
                 <TextField source="description" />
+
+                {/*todo: display array of roles */}
+                <TextField source="default_role" />
+
                 <BooleanField source="unique_usernames" />
                 <BooleanField source="requires_captcha" />
+
                 <DateField source="created_at" />
                 <DateField source="updated_at" />
             </Tab>
@@ -69,6 +74,14 @@ export const SpaceEdit = props => (
                 <TextInput source="description" />
                 <BooleanInput source="unique_usernames" />
                 <BooleanInput source="requires_captcha" />
+
+                <ArrayInput source="roles">
+                    <SimpleFormIterator>
+                        <TextInput />
+                    </SimpleFormIterator>
+                </ArrayInput>
+                <TextInput source="default_role" />
+
                 <DateInput disabled source="created_at" />
                 <DateInput disabled source="updated_at" />
             </FormTab>
@@ -86,4 +99,3 @@ export const SpaceEdit = props => (
         </TabbedForm>
     </Edit>
 );
-

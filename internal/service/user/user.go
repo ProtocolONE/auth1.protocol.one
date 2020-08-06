@@ -20,6 +20,11 @@ func (s Service) Update(ctx context.Context, data service.UpdateUserData) error 
 		return err
 	}
 
+	space, err := s.SpaceRepo.FindByID(ctx, user.SpaceID)
+	if err != nil {
+		return err
+	}
+
 	if user == nil {
 		return ErrUserNotFound
 	}
@@ -29,6 +34,19 @@ func (s Service) Update(ctx context.Context, data service.UpdateUserData) error 
 	}
 	if data.PhoneVerified != nil {
 		user.PhoneVerified = *data.PhoneVerified
+	}
+	if data.Role != nil {
+		var role string
+		for i := range space.Roles {
+			for k := range *data.Role {
+				if space.Roles[i] == (*data.Role)[k] {
+					role = space.Roles[i]
+				}
+			}
+		}
+		if role != "" {
+			user.Roles = append(user.Roles, role)
+		}
 	}
 
 	return s.UserRepo.Update(ctx, user)
