@@ -10,11 +10,12 @@ import (
 )
 
 type UsersHandler struct {
-	users repository.UserRepository
+	users  repository.UserRepository
+	spaces repository.SpaceRepository
 }
 
-func NewUsersHandler(s repository.UserRepository) *UsersHandler {
-	return &UsersHandler{s}
+func NewUsersHandler(u repository.UserRepository, s repository.SpaceRepository) *UsersHandler {
+	return &UsersHandler{u, s}
 }
 
 type userView struct {
@@ -64,7 +65,21 @@ func (h *UsersHandler) Update(ctx echo.Context) error {
 		return err
 	}
 
-	usr.Roles = request.Roles
+	space, err := h.spaces.FindByID(ctx.Request().Context(), usr.SpaceID)
+	if err != nil {
+		return err
+	}
+
+	roles := []string{}
+	for i := range space.Roles {
+		for k := range request.Roles {
+			if space.Roles[i] == request.Roles[k] {
+				roles = append(roles, space.Roles[i])
+			}
+		}
+	}
+
+	usr.Roles = roles
 
 	err = h.users.Update(ctx.Request().Context(), usr)
 	if err != nil {
