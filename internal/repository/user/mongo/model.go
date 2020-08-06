@@ -15,6 +15,9 @@ type model struct {
 	// SpaceID is the id of space to which user belongs
 	SpaceID bson.ObjectId `bson:"space_id" json:"space_id"`
 
+	// AppID
+	AppID bson.ObjectId `bson:"app_id" json:"app_id"`
+
 	// Email is the email address of the user.
 	Email string `bson:"email" json:"email" validate:"required,email"`
 
@@ -68,6 +71,7 @@ func (m model) Convert() *entity.User {
 	return &entity.User{
 		ID:            entity.UserID(m.ID.Hex()),
 		SpaceID:       entity.SpaceID(m.SpaceID.Hex()),
+		AppID:         entity.AppID(m.AppID.Hex()),
 		Email:         m.Email,
 		EmailVerified: m.EmailVerified,
 		PhoneNumber:   m.PhoneNumber,
@@ -96,6 +100,7 @@ func newModel(i *entity.User) (*model, error) {
 	return &model{
 		ID:            bson.ObjectIdHex(string(i.ID)),
 		SpaceID:       bson.ObjectIdHex(string(i.SpaceID)),
+		AppID:         bson.ObjectIdHex(string(i.AppID)),
 		Email:         i.Email,
 		EmailVerified: i.EmailVerified,
 		PhoneNumber:   i.PhoneNumber,
