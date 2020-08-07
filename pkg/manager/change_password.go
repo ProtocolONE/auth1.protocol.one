@@ -157,7 +157,7 @@ func (m *ChangePasswordManager) ChangePasswordVerify(form *models.ChangePassword
 	}
 
 	if err = m.userIdentityService.Update(ui); err != nil {
-		return &models.GeneralError{Code: "password", Message: models.ErrorUnableChangePassword, Err: errors.Wrap(err, "Unable to update password")}
+		return &models.GeneralError{Code: "password", Message: models.ErrorUnableChangePassword, Err: errors.Wrap(err, "Unable to update password: "+err.Error())}
 	}
 
 	return nil
