@@ -9,7 +9,7 @@ enableHydraDebug: false
 
 ingress:
   hostname: auth1.tst.protocol.one
-  stgHostname: auth.stg.protocol.one
+  stgHostname: auth.stg.pay.super.com
   hostnamePrefix:
   path: /
 
