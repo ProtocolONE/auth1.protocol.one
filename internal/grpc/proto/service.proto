@@ -40,7 +40,7 @@ message SetProfileRequest {
     string Currency = 14;
     //
     string Phone = 15;
-}
+ }
 
 message ProfileResponse {
     string UserID = 1;
@@ -66,6 +66,7 @@ message ProfileResponse {
     string Currency = 16;
     //
     repeated string Roles = 17;
+    google.protobuf.Timestamp RegisteredAt = 18;
 }
 
 message ChangePasswordRequest {

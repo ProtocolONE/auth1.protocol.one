@@ -9,7 +9,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/internal/grpc/proto"
 	"github.com/ProtocolONE/auth1.protocol.one/internal/service/profile"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type Handler struct {
@@ -35,6 +34,12 @@ func (h *Handler) GetProfile(ctx context.Context, r *proto.GetProfileRequest) (*
 	w.Email = u.Email
 	w.Phone = u.PhoneNumber
 	w.Roles = u.Roles
+
+	reg, err := ptypes.TimestampProto(u.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	w.RegisteredAt = reg
 
 	p, err := h.ProfileService.GetByUserID(ctx, r.UserID)
 	if err == profile.ErrProfileNotFound {
@@ -163,15 +168,12 @@ func (h *Handler) GetUserSocialIdentities(ctx context.Context, r *proto.GetUserS
 }
 
 func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
-	var (
-		birthDate *timestamp.Timestamp
-		err       error
-	)
 	if p.BirthDate != nil {
-		birthDate, err = ptypes.TimestampProto(*p.BirthDate)
+		birthDate, err := ptypes.TimestampProto(*p.BirthDate)
 		if err != nil {
 			return err
 		}
+		w.BirthDate = birthDate
 	}
 
 	w.UserID = p.UserID
@@ -186,7 +188,6 @@ func fillProfileResponse(w *proto.ProfileResponse, p *entity.Profile) error {
 	w.PhotoURL = *p.PhotoURL
 	w.FirstName = *p.FirstName
 	w.LastName = *p.LastName
-	w.BirthDate = birthDate
 	//
 	w.Language = *p.Language
 	w.Currency = *p.Currency
