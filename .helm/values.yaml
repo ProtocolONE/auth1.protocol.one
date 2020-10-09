@@ -10,6 +10,8 @@ enableHydraDebug: false
 ingress:
   hostname: id.tst.qilin.super.com
   adminHostname: admin-id.tst.qilin.super.com
+  stgHostname: id.stg.qilin.super.com
+  adminstgHostname: admin-id.stg.qilin.super.com
   hostnamePrefix:
   path: /
 

@@ -71,6 +71,7 @@ spec:
               serviceName: store-auth-web
               servicePort: 80
 ---
+{{ if eq $namespace "default" }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -99,3 +100,35 @@ spec:
             backend:
               serviceName: {{ .Release.Name }}
               servicePort: {{ $endpoint.adminPort }}
+{{ end }}
+---
+{{ if eq $namespace "stg" }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-admin
+  labels:
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/issuer: {{ .Release.Name }}
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/tls-acme: "true"
+spec:
+  tls:
+    - hosts:
+        - {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminstgHostname }}
+      secretName: {{ .Release.Name}}-admin-ssl-secret
+  rules:
+    - host: {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminstgHostname }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ .Release.Name }}
+              servicePort: {{ $endpoint.adminPort }}
+{{ end }}
