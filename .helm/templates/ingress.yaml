@@ -122,10 +122,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminstgHostname }}
+        - {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminStgHostname }}
       secretName: {{ .Release.Name}}-admin-ssl-secret
   rules:
-    - host: {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminstgHostname }}
+    - host: {{printf "%s%s" .Values.ingress.hostnamePrefix .Values.ingress.adminStgHostname }}
       http:
         paths:
           - path: /
