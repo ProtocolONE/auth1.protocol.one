@@ -1,5 +1,6 @@
 {{- $endpoint := .Values.backend -}}
 {{- $hydraSvc := printf "hydra-external-%s" .Release.Name}}
+{{ $namespace := .Release.Namespace }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
