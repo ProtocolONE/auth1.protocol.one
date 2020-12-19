@@ -34,6 +34,9 @@ type Oauth2LoginSubmitForm struct {
 	// Token is the one-time token for authorize user without password.
 	Token string `query:"token" form:"token"`
 
+	// Social is the one-time token with social profile
+	Social string `query:"social" form:"social"`
+
 	// Remember is the option for the save user session in the cookie.
 	Remember bool `query:"remember" form:"remember"`
 }
@@ -156,6 +159,9 @@ type Oauth2SignUpForm struct {
 	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
 	Challenge string `query:"challenge" form:"challenge" validate:"required"`
 
+	// Username represent user nickname, optional.
+	Username string `query:"username" form:"username"`
+
 	// Email is the email address of user for the registration.
 	Email string `query:"email" form:"email" validate:"required"`
 
@@ -164,10 +170,20 @@ type Oauth2SignUpForm struct {
 
 	// Remember is the option for the save user session in the cookie.
 	Remember bool `query:"remember" form:"remember"`
+
+	// Social is the one-time token with social profile
+	Social string `query:"social" form:"social"`
+
+	// CaptchaToken is optional captcha token for real user validation
+	CaptchaToken string `query:"captchaToken" form:"captchaToken"`
+
+	// CaptchaAction is optional captcha action for real user validation
+	CaptchaAction string `query:"captchaAction" form:"captchaAction"`
 }
 
 func (a *Oauth2SignUpForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Challenge", a.Challenge)
+	enc.AddString("Username", a.Username)
 	enc.AddString("Email", a.Email)
 	enc.AddString("Password", "[HIDDEN]")
 

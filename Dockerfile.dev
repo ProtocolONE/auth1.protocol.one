@@ -1,0 +1,11 @@
+FROM alpine:3.10
+
+WORKDIR /app
+
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+
+COPY ./auth1 auth1
+COPY ./public public
+COPY ./admin/build admin/build
+
+CMD /app/auth1 migration && /app/auth1 server

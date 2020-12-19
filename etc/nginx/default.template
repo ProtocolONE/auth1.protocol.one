@@ -2,15 +2,26 @@ server {
     listen ${NGINX_PORT};
     server_name ${NGINX_HOST};
 
-    location ~* ^/oauth2/auth/sessions/login/revoke(.*)$ {
+    add_header Access-Control-Allow-Origin *;
+    proxy_set_header Host ${DOLLAR}http_host;
+
+    location /oauth2/auth {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location ~* ^/oauth2/(auth|token|revoke)(.*)$ {
+    location /oauth2/token {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /oauth2/revoke {
         proxy_pass ${HYDRA_SERVER};
     }
 
     location /.well-known/jwks.json {
+        proxy_pass ${HYDRA_SERVER};
+    }
+
+    location /.well-known/openid-configuration {
         proxy_pass ${HYDRA_SERVER};
     }
 
@@ -19,11 +30,27 @@ server {
         proxy_pass ${HYDRA_SERVER};
     }
 
-    location / {
+    location /oauth2 {
         proxy_pass ${AUTHONE_SERVER};
-        proxy_set_header Host localhost;
+    }
+
+    location /api {
+        proxy_pass ${AUTHONE_SERVER};
+    }
+
+    location /centrifugo {
+        proxy_pass ${CENTRIFUGO_SERVER};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade ${DOLLAR}http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Origin '';
+    }
+
+    location / {
+        proxy_pass ${WEB_SERVER};
     }
 }
+
 server {
     listen ${DEBUG_PORT};
     server_name ${NGINX_HOST};

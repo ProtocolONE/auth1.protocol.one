@@ -33,6 +33,7 @@ var (
 	ErrorLoginChallenge           = "Invalid login challenge"
 	ErrorAppIdIncorrect           = "Application ID is incorrect"
 	ErrorMfaClientRemove          = "Unable to remove MFA"
+	ErrorUsernameTaken            = "Username already taken"
 )
 
 // ErrorInterface defines basic methods for application errors.

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
@@ -45,7 +46,7 @@ type MFAManager struct {
 func NewMFAManager(h database.MgoSession, r service.InternalRegistry) MFAManagerInterface {
 	m := &MFAManager{
 		r:              r,
-		authLogService: service.NewAuthLogService(h),
+		authLogService: service.NewAuthLogService(h, r.GeoIpService()),
 		mfaService:     service.NewMfaService(h),
 		userService:    service.NewUserService(h),
 	}
@@ -78,7 +79,7 @@ func (m *MFAManager) MFARemove(ctx echo.Context, form *models.MfaRemoveForm) *mo
 		return &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to validate bearer token")}
 	}
 
- 	err = m.mfaService.RemoveUserProvider(&models.MfaUserProvider{
+	err = m.mfaService.RemoveUserProvider(&models.MfaUserProvider{
 		UserID:     c.UserId,
 		ProviderID: p.ID,
 	})
@@ -87,7 +88,7 @@ func (m *MFAManager) MFARemove(ctx echo.Context, form *models.MfaRemoveForm) *mo
 		return &models.GeneralError{Code: "common", Message: models.ErrorMfaClientRemove, Err: errors.Wrap(err, "Unable to remove user provider")}
 	}
 
- 	return nil
+	return nil
 }
 
 func (m *MFAManager) MFAList(ctx echo.Context, form *models.MfaListForm) ([]*models.MfaProvider, *models.GeneralError) {

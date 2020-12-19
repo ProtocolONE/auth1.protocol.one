@@ -1,31 +1,32 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/appcore"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"os"
 )
 
 var (
-	cfg     *config.Config
-	logger  *zap.Logger
-	command = &cobra.Command{}
+	cfg    config.Config
+	logger *zap.Logger
 )
 
 func Execute() {
-	var err error
+	root := &cobra.Command{}
+	// db migration
+	root.AddCommand(migrationCmd)
+	// user facing api server
+	root.AddCommand(serverCmd)
+	// administration server
+	root.AddCommand(adminCmd)
 
-	logger, _ = zap.NewProduction()
-	zap.ReplaceGlobals(logger)
+	logger = appcore.InitLogger()
 	defer logger.Sync() // flushes buffer, if any
 
-	cfg, err = config.Load()
-	if err != nil {
-		logger.Fatal("Failed to load config", zap.Error(err))
-	}
-
-	if err := command.Execute(); err != nil {
+	if err := root.Execute(); err != nil {
 		logger.Fatal("Command execution failed with error", zap.Error(err))
 		os.Exit(1)
 	}

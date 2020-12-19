@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 // User describes a table for storing the basic properties of the user.
@@ -11,7 +12,12 @@ type User struct {
 	// ID is the id of user.
 	ID bson.ObjectId `bson:"_id" json:"id"`
 
-	// AppID is the id of the application.
+	Roles []string `bson:"roles" json:"roles"`
+
+	// SpaceID is the id of space to which user belongs
+	SpaceID bson.ObjectId `bson:"space_id" json:"space_id"`
+
+	// AppID is the id of the application. DEPRICATED
 	AppID bson.ObjectId `bson:"app_id" json:"app_id"`
 
 	// Email is the email address of the user.
@@ -28,6 +34,9 @@ type User struct {
 
 	// Username is the nickname of the user.
 	Username string `bson:"username" json:"username"`
+
+	// UniqueUsername is index flag that username must be unique within app.
+	UniqueUsername bool `bson:"unique_username" json:"-"`
 
 	// Name is the name of the user. Contains first anf last name.
 	Name string `bson:"name" json:"name"`
@@ -47,11 +56,23 @@ type User struct {
 	// Blocked is status of user blocked.
 	Blocked bool `bson:"blocked" json:"blocked"`
 
+	// DeviceID is unique user client identifier
+	DeviceID []string `bson:"device_id" json:"device_id"`
+
 	// CreatedAt returns the timestamp of the user creation.
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 
 	// UpdatedAt returns the timestamp of the last update.
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+func (u *User) AddDeviceID(deviceID string) {
+	for i := range u.DeviceID {
+		if u.DeviceID[i] == deviceID {
+			return
+		}
+	}
+	u.DeviceID = append(u.DeviceID, deviceID)
 }
 
 // AuthorizeForm contains form fields for requesting a social authorization form.
@@ -126,7 +147,7 @@ type LoginPageForm struct {
 
 func (a *User) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", a.ID.String())
-	enc.AddString("ApplicationID", a.AppID.String())
+	enc.AddString("SpaceID", a.SpaceID.String())
 	enc.AddString("Email", a.Email)
 	enc.AddBool("EmailVerified", a.EmailVerified)
 	enc.AddTime("CreatedAt", a.CreatedAt)

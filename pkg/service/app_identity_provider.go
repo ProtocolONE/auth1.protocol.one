@@ -6,35 +6,40 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	"github.com/globalsign/mgo/bson"
-	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/facebook"
-	"golang.org/x/oauth2/google"
-	"golang.org/x/oauth2/twitch"
-	"golang.org/x/oauth2/vk"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/repository"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
+	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/facebook"
+	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/twitch"
+	"golang.org/x/oauth2/vk"
 )
 
 // AppIdentityProviderServiceInterface describes of methods for the AppIdentityProviderService.
 type AppIdentityProviderServiceInterface interface {
 	// Get return the identity provider by application and provider id.
-	Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+	// Get(*models.Application, bson.ObjectId) *models.AppIdentityProvider
+	// GetSpace(space *models.Space, id bson.ObjectId) *models.AppIdentityProvider
 
 	// FindByType find and return list of identity providers by type.
-	FindByType(*models.Application, string) []*models.AppIdentityProvider
+	// FindByType(*models.Application, string) []*models.AppIdentityProvider
+	// FindByTypeSpace(space *models.Space, connType string) []*models.AppIdentityProvider
 
 	// FindByTypeAndName find and return list of identity provider by name and type.
 	FindByTypeAndName(*models.Application, string, string) *models.AppIdentityProvider
+	// FindByTypeAndNameSpace(space *models.Space, connType string, name string) *models.AppIdentityProvider
 
 	// NormalizeSocialConnection fills in the default fields for social providers.
-	NormalizeSocialConnection(*models.AppIdentityProvider) error
+	// NormalizeSocialConnection(*models.AppIdentityProvider) error
 
 	// GetAvailableTemplates return list of string with available social networks.
 	GetAvailableTemplates() []string
@@ -54,6 +59,7 @@ type AppIdentityProviderServiceInterface interface {
 
 // AppIdentityProviderService is the AppIdentityProvider service.
 type AppIdentityProviderService struct {
+	spaces repository.SpaceRepository
 }
 
 var (
@@ -63,65 +69,48 @@ var (
 )
 
 // NewAppIdentityProviderService return new AppIdentityProvider service.
-func NewAppIdentityProviderService() *AppIdentityProviderService {
-	return &AppIdentityProviderService{}
-}
-
-func (s AppIdentityProviderService) Get(app *models.Application, id bson.ObjectId) *models.AppIdentityProvider {
-	for _, ip := range app.IdentityProviders {
-		if ip.ID == id {
-			return ip
-		}
-	}
-
-	return nil
-}
-
-func (s AppIdentityProviderService) FindByType(app *models.Application, connType string) []*models.AppIdentityProvider {
-	var ipc []*models.AppIdentityProvider
-	for _, ip := range app.IdentityProviders {
-		if ip.Type == connType {
-			ipc = append(ipc, ip)
-		}
-	}
-
-	return ipc
+func NewAppIdentityProviderService(spaces repository.SpaceRepository) *AppIdentityProviderService {
+	return &AppIdentityProviderService{spaces: spaces}
 }
 
 func (s AppIdentityProviderService) FindByTypeAndName(app *models.Application, connType string, name string) *models.AppIdentityProvider {
-	for _, ip := range app.IdentityProviders {
-		if ip.Type == connType && ip.Name == name {
-			return ip
-		}
-	}
-
-	return nil
-}
-
-func (s AppIdentityProviderService) NormalizeSocialConnection(ipc *models.AppIdentityProvider) error {
-	template, err := s.GetTemplate(ipc.Name)
+	space, err := s.spaces.FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
 	if err != nil {
-		return errors.Errorf(ErrorInvalidSocialProviderName, ipc.Name)
+		panic(err)
 	}
-
-	list := append(template.ClientScopes, ipc.ClientScopes...)
-	keys := make(map[string]bool)
-	var scopes []string
-	for _, entry := range list {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			scopes = append(scopes, entry)
+	for _, p := range space.IdentityProviders {
+		if p.Name == name && string(p.Type) == connType {
+			return models.OldIDProvider(p)
 		}
 	}
 
-	ipc.DisplayName = template.DisplayName
-	ipc.EndpointAuthURL = template.EndpointAuthURL
-	ipc.EndpointTokenURL = template.EndpointTokenURL
-	ipc.EndpointUserInfoURL = template.EndpointUserInfoURL
-	ipc.ClientScopes = scopes
-
 	return nil
 }
+
+// func (s AppIdentityProviderService) NormalizeSocialConnection(ipc *models.AppIdentityProvider) error {
+// 	template, err := s.GetTemplate(ipc.Name)
+// 	if err != nil {
+// 		return errors.Errorf(ErrorInvalidSocialProviderName, ipc.Name)
+// 	}
+
+// 	list := append(template.ClientScopes, ipc.ClientScopes...)
+// 	keys := make(map[string]bool)
+// 	var scopes []string
+// 	for _, entry := range list {
+// 		if _, value := keys[entry]; !value {
+// 			keys[entry] = true
+// 			scopes = append(scopes, entry)
+// 		}
+// 	}
+
+// 	ipc.DisplayName = template.DisplayName
+// 	ipc.EndpointAuthURL = template.EndpointAuthURL
+// 	ipc.EndpointTokenURL = template.EndpointTokenURL
+// 	ipc.EndpointUserInfoURL = template.EndpointUserInfoURL
+// 	ipc.ClientScopes = scopes
+
+// 	return nil
+// }
 
 func (s *AppIdentityProviderService) GetAvailableTemplates() []string {
 	return []string{
@@ -209,7 +198,7 @@ func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIde
 	v := url.Values{
 		"response_type": {"code"},
 		"client_id":     {ip.ClientID},
-		"redirect_uri":  {fmt.Sprintf("%s/authorize/result", domain)},
+		"redirect_uri":  {s.callbackUrl(domain, ip.Name)},
 	}
 	if len(ip.ClientScopes) > 0 {
 		v.Set("scope", strings.Join(ip.ClientScopes, " "))
@@ -228,8 +217,12 @@ func (s *AppIdentityProviderService) GetAuthUrl(domain string, ip *models.AppIde
 	return buf.String(), nil
 }
 
+func (s *AppIdentityProviderService) callbackUrl(domain, provider string) string {
+	return fmt.Sprintf("%s/api/providers/%s/callback", domain, provider)
+}
+
 func (s *AppIdentityProviderService) GetSocialProfile(ctx context.Context, domain string, code string, ip *models.AppIdentityProvider) (*models.UserIdentitySocial, error) {
-	rUrl := fmt.Sprintf("%s/authorize/result", domain)
+	rUrl := s.callbackUrl(domain, ip.Name)
 	conf := &oauth2.Config{
 		ClientID:     ip.ClientID,
 		ClientSecret: ip.ClientSecret,

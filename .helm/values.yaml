@@ -2,13 +2,16 @@
 # Declare variables to be passed into your templates.
 
 enableRedis: true
-enableMongo: true
-enableHydra: true
+enableMongo: false
+enableHydra: false
 enableCertIssuer: true
 enableHydraDebug: false
 
 ingress:
-  hostname: auth1.tst.protocol.one
+  hostname: id.tst.qilin.super.com
+  adminHostname: admin-id.tst.qilin.super.com
+  stgHostname: id.stg.qilin.super.com
+  adminStgHostname: admin-id.stg.qilin.super.com
   hostnamePrefix:
   path: /
 
@@ -20,6 +23,8 @@ backend:
   role: gobackend
   image: "p1hub/p1auth1"
   imageTag: latest
+  grpcApiPort: 5300
+  adminPort: 8081
   port: 8080
   replicas: 1
   service:
@@ -57,6 +62,17 @@ backend:
     - AUTHONE_MAILER_FROM
     - AUTHONE_MAILER_SKIP_VERIFY
     - AUTHONE_MIGRATION_DIRECT
+    - AUTHONE_AUTH_WEB_FORM_SDK_URL
+    - AUTHONE_RECAPTCHA_KEY
+    - AUTHONE_RECAPTCHA_SECRET
+    - AUTHONE_MAILTEMPLATES_PLATFORM_URL
+    - AUTHONE_MAILTEMPLATES_PLATFORM_NAME
+    - AUTHONE_MAILTEMPLATES_SUPPORT_PORTAL_URL
+    - AUTHONE_CENTRIFUGO_ADDR
+    - AUTHONE_CENTRIFUGO_API_KEY
+    - AUTHONE_CENTRIFUGO_HMAC_SECRET
+    - AUTHONE_CENTRIFUGO_SESSION_TTL
+    - AUTHONE_CENTRIFUGO_LAUNCHER_CHANNEL
 
 hydra:
   env:

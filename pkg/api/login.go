@@ -1,168 +1,123 @@
 package api
 
 import (
-	"fmt"
+	"net/http"
+
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/api/apierror"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/helper"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
-	jwtverifier "github.com/ProtocolONE/authone-jwt-verifier-golang"
+	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
+	"github.com/globalsign/mgo"
 	"github.com/labstack/echo/v4"
-	"net/http"
-	"strings"
+	"github.com/ory/hydra-client-go/client/admin"
+	"github.com/pkg/errors"
 )
 
 func InitLogin(cfg *Server) error {
-	cfg.Echo.GET("/login/form", loginPage)
+	ctl := &Login{cfg}
 
-	g := cfg.Echo.Group("/authorize", func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			db := c.Get("database").(database.MgoSession)
-			c.Set("login_manager", manager.NewLoginManager(db, cfg.Registry))
-
-			return next(c)
-		}
-	})
-
-	g.GET("/link", authorizeLink)
-	g.GET("/result", authorizeResult)
-	g.GET("", authorize)
+	cfg.Echo.POST("/api/login", ctl.login)
+	cfg.Echo.GET("/api/login", ctl.check, apierror.Redirect("/error"))
+	cfg.Echo.GET("/api/login/hint", ctl.hint)
+	cfg.Echo.GET("/api/logout", ctl.logout, apierror.Redirect("/error"))
 
 	return nil
 }
 
-func authorize(ctx echo.Context) error {
-	form := new(models.AuthorizeForm)
-	m := ctx.Get("login_manager").(*manager.LoginManager)
-
-	if err := ctx.Bind(form); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorRequiredField)
-	}
-
-	str, err := m.Authorize(ctx, form)
-	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.HTML(http.StatusBadRequest, err.Message)
-	}
-
-	return ctx.Redirect(http.StatusMovedPermanently, str)
+// Login is login controller
+type Login struct {
+	cfg *Server
 }
 
-func authorizeResult(ctx echo.Context) error {
-	form := new(models.AuthorizeResultForm)
-	m := ctx.Get("login_manager").(*manager.LoginManager)
+func (ctl *Login) check(ctx echo.Context) error {
+	form := new(models.Oauth2LoginForm)
+	if err := ctx.Bind(form); err != nil {
+		return apierror.InvalidRequest(err)
+	}
+
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewOauthManager(db, ctl.cfg.Registry, ctl.cfg.SessionConfig, ctl.cfg.HydraConfig, ctl.cfg.ServerConfig, ctl.cfg.Recaptcha)
+
+	url, err := m.CheckAuth(ctx, form)
+	if err != nil {
+		return err
+	}
+
+	if url != "" {
+		return ctx.Redirect(http.StatusTemporaryRedirect, url)
+	}
+
+	return ctx.Redirect(http.StatusTemporaryRedirect, "/sign-in?login_challenge="+form.Challenge)
+}
+
+func (ctl *Login) login(ctx echo.Context) error {
+	form := new(models.Oauth2LoginSubmitForm)
 
 	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
-			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": e.Code, "message": e.Message},
-		})
+		return apierror.InvalidRequest(err)
 	}
-
 	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
-			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": e.Code, "message": e.Message},
-		})
+		return apierror.InvalidParameters(err)
 	}
 
-	t, err := m.AuthorizeResult(ctx, form)
+	db := ctx.Get("database").(database.MgoSession)
+	m := manager.NewOauthManager(db, ctl.cfg.Registry, ctl.cfg.SessionConfig, ctl.cfg.HydraConfig, ctl.cfg.ServerConfig, ctl.cfg.Recaptcha)
+
+	url, err := m.Auth(ctx, form)
 	if err != nil {
-		ctx.Error(err.Err)
-		return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
-			"Result":  &manager.SocialAccountError,
-			"Payload": map[string]interface{}{"code": err.Code, "message": err.Message},
-		})
+		return err
 	}
 
-	return ctx.Render(http.StatusOK, "social_auth_result.html", map[string]interface{}{
-		"Result":  t.Result,
-		"Payload": t.Payload,
+	return ctx.JSON(http.StatusOK, map[string]interface{}{"url": url})
+}
+
+func (ctl *Login) logout(ctx echo.Context) error {
+	challenge := ctx.QueryParam("logout_challenge")
+
+	r, err := ctl.cfg.Registry.HydraAdminApi().AcceptLogoutRequest(&admin.AcceptLogoutRequestParams{
+		Context:         ctx.Request().Context(),
+		LogoutChallenge: challenge,
 	})
-}
-
-func authorizeLink(ctx echo.Context) error {
-	form := new(models.AuthorizeLinkForm)
-	m := ctx.Get("login_manager").(*manager.LoginManager)
-
-	if err := ctx.Bind(form); err != nil {
-		e := &models.GeneralError{
-			Code:    BadRequiredCodeCommon,
-			Message: models.ErrorInvalidRequestParameters,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	if err := ctx.Validate(form); err != nil {
-		e := &models.GeneralError{
-			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
-			Message: models.ErrorRequiredField,
-		}
-		ctx.Error(err)
-		return helper.JsonError(ctx, e)
-	}
-
-	url, err := m.AuthorizeLink(ctx, form)
 	if err != nil {
-		ctx.Error(err.Err)
-		return helper.JsonError(ctx, err)
+		return err
 	}
 
-	return ctx.JSON(http.StatusOK, map[string]string{"url": url})
+	return ctx.Redirect(http.StatusTemporaryRedirect, r.Payload.RedirectTo)
 }
 
-func loginPage(ctx echo.Context) (err error) {
-	form := new(models.LoginPageForm)
+func (ctl *Login) hint(ctx echo.Context) error {
+	db := ctx.Get("database").(database.MgoSession)
+	authLog := service.NewAuthLogService(db, nil)
+	users := service.NewUserService(db)
 
-	if err := ctx.Bind(form); err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusBadRequest, models.ErrorInvalidRequestParameters)
-	}
-
-	url, err := createAuthUrl(ctx, form)
+	records, err := authLog.GetByDevice(service.GetDeviceID(ctx), 1, "")
 	if err != nil {
-		ctx.Error(err)
-		return ctx.HTML(http.StatusInternalServerError, "Unable to authorize, please come back later")
+		return err
 	}
 
-	return ctx.Redirect(http.StatusMovedPermanently, url)
-}
+	var (
+		email    string
+		avatar   string
+		username string
+	)
 
-func createAuthUrl(ctx echo.Context, form *models.LoginPageForm) (string, error) {
-	scopes := []string{"openid"}
-	if form.Scopes != "" {
-		scopes = strings.Split(form.Scopes, " ")
+	if len(records) > 0 {
+		user, err := users.Get(records[0].UserID)
+		if err != nil && err != mgo.ErrNotFound {
+			return errors.Wrap(err, "failed to load user")
+		}
+
+		if user != nil {
+			email = user.Email
+			avatar = user.Picture
+			username = user.Username
+		}
 	}
 
-	if form.RedirectUri == "" {
-		form.RedirectUri = fmt.Sprintf("%s://%s/oauth2/callback", ctx.Scheme(), ctx.Request().Host)
-	}
-
-	settings := jwtverifier.Config{
-		ClientID:     form.ClientID,
-		ClientSecret: "",
-		Scopes:       scopes,
-		RedirectURL:  form.RedirectUri,
-		Issuer:       fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host),
-	}
-	jwtv := jwtverifier.NewJwtVerifier(settings)
-
-	return jwtv.CreateAuthUrl(form.State), nil
+	return ctx.JSON(http.StatusOK, map[string]interface{}{
+		"username": username,
+		"email":    email,
+		"avatar":   avatar,
+	})
 }

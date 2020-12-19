@@ -1,11 +1,14 @@
+// +build integration
+
 package rediswatcher
 
 import (
-	"github.com/go-redis/redis"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSubscribe(t *testing.T) {

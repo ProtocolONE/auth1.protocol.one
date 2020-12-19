@@ -1,21 +1,22 @@
 package manager
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/service"
-	"github.com/ProtocolONE/auth1.protocol.one/pkg/validator"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo/v4"
-	"github.com/ory/hydra/sdk/go/hydra/client/admin"
-	models2 "github.com/ory/hydra/sdk/go/hydra/models"
+	"github.com/ory/hydra-client-go/client/admin"
+	models2 "github.com/ory/hydra-client-go/models"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 var (
@@ -24,27 +25,34 @@ var (
 	SocialAccountError   = "error"
 )
 
+var ErrAlreadyLinked = errors.New("account already linked to social")
+
 // LoginManagerInterface describes of methods for the manager.
 type LoginManagerInterface interface {
-	// Authorize generates an authorization URL for the social network to redirect the user.
-	Authorize(echo.Context, *models.AuthorizeForm) (string, *models.GeneralError)
 
-	// AuthorizeResult validates the response after authorization in the social network.
-	//
-	// In case of successful authentication, the user will be generated a one-time token to complete the
-	// authorization in the basic authorization form.
-	//
-	// If a user has not previously logged in through a social network, but an account has been found with the same
-	// mail as in a social network, then the user will be asked to link these accounts.
-	AuthorizeResult(echo.Context, *models.AuthorizeResultForm) (*models.AuthorizeResultResponse, *models.GeneralError)
+	// ForwardUrl returns url for forwarding user to id provider
+	ForwardUrl(challenge, provider, domain, launcher string) (string, error)
 
-	// AuthorizeLink implements the situation with linking the account from the social network and password login (when their email addresses match).
-	//
-	// If the user chooses the linking of the account, then the password from the account will be validated and,
-	// if successful, this social account will be tied to the basic record.
-	//
-	// If the user refused to link, then a new account will be created.
-	AuthorizeLink(echo.Context, *models.AuthorizeLinkForm) (string, *models.GeneralError)
+	// Get user's identity and social identity
+	GetUserIdentities(challenge, provider, domain, code string) (UserIdentity *models.UserIdentity, UserIdentitySocial *models.UserIdentitySocial, err error)
+
+	// Accept accepts login request
+	Accept(ctx echo.Context, ui *models.UserIdentity, provider, challenge string) (string, error)
+
+	// SocialLogin
+	SocialLogin(uis *models.UserIdentitySocial, domain, provider, challenge string) (string, error)
+
+	// Providers returns list of available id providers for authentication
+	Providers(challenge string) ([]entity.IdentityProvider, error)
+
+	// Profile returns user profile attached to token
+	Profile(token string) (*models.UserIdentitySocial, error)
+
+	// Link links user profile attached to token with actual user in db
+	Link(token string, userID bson.ObjectId, app *models.Application) error
+
+	// Check verifies that provided token correct
+	Check(token string) bool
 }
 
 // LoginManager is the login manager.
@@ -64,267 +72,236 @@ func NewLoginManager(h database.MgoSession, r service.InternalRegistry) LoginMan
 		userService:             service.NewUserService(h),
 		userIdentityService:     service.NewUserIdentityService(h),
 		mfaService:              service.NewMfaService(h),
-		authLogService:          service.NewAuthLogService(h),
-		identityProviderService: service.NewAppIdentityProviderService(),
+		authLogService:          service.NewAuthLogService(h, r.GeoIpService()),
+		identityProviderService: service.NewAppIdentityProviderService(r.Spaces()),
 	}
 
 	return m
 }
 
-func (m *LoginManager) Authorize(ctx echo.Context, form *models.AuthorizeForm) (string, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
-	if err != nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
-	}
-
-	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, form.Connection)
-	if ip == nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to load identity provider")}
-	}
-
-	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
-	u, err := m.identityProviderService.GetAuthUrl(domain, ip, form)
-	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get auth url for identity provider")}
-	}
-
-	return u, nil
+type State struct {
+	Challenge string `json:"challenge`
+	Launcher  string `json:"launcher"`
 }
 
-func (m *LoginManager) AuthorizeResult(ctx echo.Context, form *models.AuthorizeResultForm) (token *models.AuthorizeResultResponse, error *models.GeneralError) {
-	authForm := &models.AuthorizeForm{}
-
-	s, err := base64.StdEncoding.DecodeString(form.State)
+func DecodeState(state string) (*State, error) {
+	data, err := base64.StdEncoding.DecodeString(state)
 	if err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to decode state param")}
+		return nil, errors.Wrap(err, "unable to decode state param")
 	}
 
-	if err := json.Unmarshal([]byte(s), authForm); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to unmarshal auth form")}
+	var s State
+	if err := json.Unmarshal(data, &s); err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal state")
+	}
+	return &s, nil
+}
+
+type SocialToken struct {
+	UserIdentityID string                     `json:"user_ident"`
+	Profile        *models.UserIdentitySocial `json:"profile"`
+	Provider       string                     `json:"provider"`
+}
+
+func (m *LoginManager) Profile(token string) (*models.UserIdentitySocial, error) {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Get(token, &t); err != nil {
+		return nil, errors.Wrap(err, "can't get token data")
 	}
 
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(authForm.ClientID))
+	return t.Profile, nil
+}
+
+func (m *LoginManager) Providers(challenge string) ([]entity.IdentityProvider, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
 	if err != nil {
-		return nil, &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+		return nil, errors.Wrap(err, "can't get challenge data")
 	}
 
-	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, authForm.Connection)
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get app data")
+	}
+
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+
+	return space.SocialProviders(), nil
+}
+
+func (m *LoginManager) GetUserIdentities(challenge, provider, domain, code string) (UserIdentity *models.UserIdentity, UserIdentitySocial *models.UserIdentitySocial, err error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
 	if ip == nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.New("Unable to load identity provider")}
+		return nil, nil, errors.New("identity provider not found")
 	}
 
-	domain := fmt.Sprintf("%s://%s", ctx.Scheme(), ctx.Request().Host)
-	cp, err := m.identityProviderService.GetSocialProfile(ctx.Request().Context(), domain, ctx.QueryParam("code"), ip)
-	if err != nil || cp == nil || cp.ID == "" {
+	clientProfile, err := m.identityProviderService.GetSocialProfile(context.TODO(), domain, code, ip)
+	if err != nil || clientProfile == nil || clientProfile.ID == "" {
 		if err == nil {
-			err = errors.New("Unable to load identity profile data")
+			err = errors.New("unable to load identity profile data")
 		}
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialData, Err: errors.WithStack(err)}
+		return nil, nil, err
 	}
 
-	userIdentity, err := m.userIdentityService.Get(app, ip, cp.ID)
-	if userIdentity != nil && err != mgo.ErrNotFound {
-		user, err := m.userService.Get(userIdentity.UserID)
-		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user identity by email")}
-		}
-
-		if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
-		}
-
-		ott, err := m.r.OneTimeTokenService().Create(userIdentity, app.OneTimeTokenSettings)
-		if err != nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
-		}
-
-		return &models.AuthorizeResultResponse{
-			Result:  SocialAccountSuccess,
-			Payload: map[string]interface{}{"token": ott.Token},
-		}, nil
+	userIdentity, err := m.userIdentityService.Get(ip, clientProfile.ID)
+	if err != nil && err != mgo.ErrNotFound {
+		return nil, nil, errors.Wrap(err, "can't get user data")
 	}
 
-	if cp.Email != "" {
-		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-		if ipPass == nil {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorConnectionIncorrect, Err: errors.New("Unable to load identity provider")}
-		}
-
-		userIdentity, err := m.userIdentityService.Get(app, ipPass, cp.Email)
-		if err != nil && err != mgo.ErrNotFound {
-			return nil, &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to get user identity")}
-		}
-
-		if userIdentity != nil {
-			ss, err := m.r.ApplicationService().LoadSocialSettings()
-			if err != nil {
-				return nil, &models.GeneralError{Code: "common", Message: models.ErrorGetSocialSettings, Err: errors.Wrap(err, "Unable to load social settings")}
-			}
-
-			ottSettings := &models.OneTimeTokenSettings{
-				Length: ss.LinkedTokenLength,
-				TTL:    ss.LinkedTTL,
-			}
-			userIdentity.IdentityProviderID = ip.ID
-			userIdentity.ExternalID = cp.ID
-			userIdentity.Email = cp.Email
-			ott, err := m.r.OneTimeTokenService().Create(userIdentity, ottSettings)
-			if err != nil {
-				return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
-			}
-
-			return &models.AuthorizeResultResponse{
-				Result:  SocialAccountCanLink,
-				Payload: map[string]interface{}{"token": ott.Token, "email": cp.Email},
-			}, nil
-		}
-	}
-
-	user := &models.User{
-		ID:            bson.NewObjectId(),
-		AppID:         app.ID,
-		Email:         cp.Email,
-		EmailVerified: false,
-		Blocked:       false,
-		LastIp:        ctx.RealIP(),
-		LastLogin:     time.Now(),
-		LoginsCount:   1,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-	if err := m.userService.Create(user); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Err: errors.Wrap(err, "Unable to create user")}
-	}
-
-	userIdentity = &models.UserIdentity{
-		ID:                 bson.NewObjectId(),
-		UserID:             user.ID,
-		ApplicationID:      app.ID,
-		IdentityProviderID: ip.ID,
-		Email:              cp.Email,
-		ExternalID:         cp.ID,
-		Name:               cp.Name,
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
-		Credential:         cp.Token,
-	}
-	if err := m.userIdentityService.Create(userIdentity); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
-	}
-
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
-	}
-
-	ott, err := m.r.OneTimeTokenService().Create(&userIdentity, app.OneTimeTokenSettings)
-	if err != nil {
-		return nil, &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
-	}
-
-	return &models.AuthorizeResultResponse{
-		Result:  SocialAccountSuccess,
-		Payload: map[string]interface{}{"token": ott.Token},
-	}, nil
+	return userIdentity, clientProfile, err
 }
 
-func (m *LoginManager) AuthorizeLink(ctx echo.Context, form *models.AuthorizeLinkForm) (string, *models.GeneralError) {
-	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(form.ClientID))
+func (m *LoginManager) Accept(ctx echo.Context, ui *models.UserIdentity, provider, challenge string) (string, error) {
+	app, err := m.r.ApplicationService().Get(ui.ApplicationID)
 	if err != nil {
-		return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load application")}
+		return "", errors.Wrap(err, "can't get app data")
 	}
 
-	storedUserIdentity := &models.UserIdentity{}
-	if err := m.r.OneTimeTokenService().Use(form.Code, storedUserIdentity); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotUseToken, Err: errors.Wrap(err, "Unable to use OneTimeToken")}
+	space, err := m.r.Spaces().FindByID(context.TODO(), entity.SpaceID(app.SpaceId.Hex()))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to load space")
 	}
 
-	user := &models.User{
-		ID:            bson.NewObjectId(),
-		AppID:         app.ID,
-		Email:         storedUserIdentity.Email,
-		EmailVerified: false,
-		Blocked:       false,
-		LastIp:        ctx.RealIP(),
-		LastLogin:     time.Now(),
-		LoginsCount:   1,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+	ip, ok := space.IDProviderName(provider)
+	if !ok || !ip.IsSocial() {
+		return "", errors.New("identity provider not found")
 	}
 
-	switch form.Action {
-	case "link":
-		if false == validator.IsPasswordValid(app, form.Password) {
-			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.New(models.ErrorPasswordIncorrect)}
-		}
-
-		ipc := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
-		if ipc == nil {
-			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.New("Unable to load identity provider")}
-		}
-
-		userIdentity, err := m.userIdentityService.Get(app, ipc, user.Email)
-		if err != nil && err != mgo.ErrNotFound {
-			return "", &models.GeneralError{Code: "client_id", Message: models.ErrorClientIdIncorrect, Err: errors.Wrap(err, "Unable to load user identity")}
-		}
-
-		be := models.NewBcryptEncryptor(&models.CryptConfig{Cost: app.PasswordSettings.BcryptCost})
-		err = be.Compare(userIdentity.Credential, form.Password)
-		if err != nil {
-			return "", &models.GeneralError{Code: "password", Message: models.ErrorPasswordIncorrect, Err: errors.Wrap(err, "Unable to crypt password for application")}
-		}
-
-		mfa, err := m.mfaService.GetUserProviders(user)
-		if err != nil {
-			return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to load MFA providers")}
-		}
-
-		if len(mfa) > 0 {
-			ott, err := m.r.OneTimeTokenService().Create(
-				&models.UserMfaToken{
-					UserIdentity: userIdentity,
-					MfaProvider:  mfa[0],
-				},
-				app.OneTimeTokenSettings,
-			)
-			if err != nil {
-				return "", &models.GeneralError{Code: "common", Message: models.ErrorCannotCreateToken, Err: errors.Wrap(err, "Unable to create OneTimeToken")}
-			}
-
-			return "", &models.GeneralError{HttpCode: http.StatusForbidden, Code: "common", Message: ott.Token}
-		}
-
-		user, err = m.userService.Get(userIdentity.UserID)
-		if err != nil {
-			return "", &models.GeneralError{Code: "email", Message: models.ErrorLoginIncorrect, Err: errors.Wrap(err, "Unable to get user")}
-		}
-	case "new":
-		if err := m.userService.Create(user); err != nil {
-			return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUser, Err: errors.Wrap(err, "Unable to create user")}
-		}
-	default:
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.New("Unknown action type for social link")}
+	if err := m.authLogService.Add(ctx, service.ActionAuth, ui, app, &ip); err != nil {
+		return "", errors.Wrap(err, "unable to add auth log")
 	}
 
-	storedUserIdentity.ID = bson.NewObjectId()
-	storedUserIdentity.UserID = user.ID
-	storedUserIdentity.ApplicationID = app.ID
-	if err := m.userIdentityService.Create(storedUserIdentity); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorCreateUserIdentity, Err: errors.Wrap(err, "Unable to create user identity")}
-	}
-
-	if err := m.authLogService.Add(ctx.RealIP(), ctx.Request().UserAgent(), user); err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorAddAuthLog, Err: errors.Wrap(err, "Unable to add log authorization for user")}
-	}
-
-	userId := user.ID.Hex()
+	id := ui.UserID.Hex()
 	reqACL, err := m.r.HydraAdminApi().AcceptLoginRequest(&admin.AcceptLoginRequestParams{
-		Challenge: form.Challenge,
-		Body:      &models2.HandledLoginRequest{Subject: &userId, Remember: true, RememberFor: 0},
-		Context:   ctx.Request().Context(),
+		Context:        context.TODO(),
+		LoginChallenge: challenge,
+		Body:           &models2.AcceptLoginRequest{Subject: &id, Remember: true, RememberFor: RememberTime},
 	})
 	if err != nil {
-		return "", &models.GeneralError{Code: "common", Message: models.ErrorUnknownError, Err: errors.Wrap(err, "Unable to accept login challenge")}
+		return "", errors.Wrap(err, "unable to accept login challenge")
 	}
 
 	return reqACL.Payload.RedirectTo, nil
+}
+
+func (m *LoginManager) SocialLogin(clientProfile *models.UserIdentitySocial, domain, provider, challenge string) (string, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return "", errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return "", errors.New("identity provider not found")
+	}
+
+	if clientProfile.Email != "" {
+		ipPass := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypePassword, models.AppIdentityProviderNameDefault)
+		if ipPass == nil {
+			return "", errors.New("default identity provider not found")
+		}
+
+		userIdentity, err := m.userIdentityService.Get(ipPass, clientProfile.Email)
+		if err != nil && err != mgo.ErrNotFound {
+			return "", errors.Wrap(err, "unable to get user identity")
+		}
+
+		if userIdentity != nil && err != mgo.ErrNotFound {
+			ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+				UserIdentityID: userIdentity.ID.Hex(),
+				Profile:        clientProfile,
+				Provider:       provider,
+			}, app.OneTimeTokenSettings)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to create one time link token")
+			}
+
+			return fmt.Sprintf("%s/social-existing/%s?login_challenge=%s&token=%s", domain, provider, challenge, ott.Token), nil
+		}
+	}
+
+	ott, err := m.r.OneTimeTokenService().Create(&SocialToken{
+		Profile:  clientProfile,
+		Provider: provider,
+	}, app.OneTimeTokenSettings)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create one time link token")
+	}
+
+	return fmt.Sprintf("%s/social-new/%s?login_challenge=%s&token=%s", domain, provider, challenge, ott.Token), nil
+}
+
+func (m *LoginManager) ForwardUrl(challenge, provider, domain, launcher string) (string, error) {
+	req, err := m.r.HydraAdminApi().GetLoginRequest(&admin.GetLoginRequestParams{LoginChallenge: challenge, Context: context.TODO()})
+	if err != nil {
+		return "", errors.Wrap(err, "can't get challenge data")
+	}
+
+	app, err := m.r.ApplicationService().Get(bson.ObjectIdHex(req.Payload.Client.ClientID))
+	if err != nil {
+		return "", errors.Wrap(err, "can't get app data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, provider)
+	if ip == nil {
+		return "", errors.New("identity provider not found")
+	}
+
+	return m.identityProviderService.GetAuthUrl(domain, ip, &State{Challenge: challenge, Launcher: launcher})
+}
+
+func (m *LoginManager) Check(token string) bool {
+	var t SocialToken
+	return m.r.OneTimeTokenService().Get(token, &t) == nil
+}
+
+// Link links user profile attached to token with actual user in db
+func (m *LoginManager) Link(token string, userID bson.ObjectId, app *models.Application) error {
+	var t SocialToken
+	if err := m.r.OneTimeTokenService().Use(token, &t); err != nil {
+		return errors.Wrap(err, "can't get token data")
+	}
+
+	ip := m.identityProviderService.FindByTypeAndName(app, models.AppIdentityProviderTypeSocial, t.Provider)
+	if ip == nil {
+		return errors.New("identity provider not found")
+	}
+
+	// check for already linked
+	_, err := m.userIdentityService.FindByUser(ip, userID)
+	if err != mgo.ErrNotFound {
+		if err != nil {
+			return errors.Wrap(err, "can't search user identity info")
+		}
+		return ErrAlreadyLinked
+	}
+
+	userIdentity := &models.UserIdentity{
+		ID:                 bson.NewObjectId(),
+		UserID:             userID,
+		ApplicationID:      app.ID,
+		IdentityProviderID: ip.ID,
+		Email:              t.Profile.Email,
+		ExternalID:         t.Profile.ID,
+		Name:               t.Profile.Name,
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+		Credential:         t.Profile.Token,
+	}
+
+	return m.userIdentityService.Create(userIdentity)
 }

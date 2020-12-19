@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 // UserIdentity describes a table for storing the basic properties of the user identifier.
@@ -51,28 +52,33 @@ type UserIdentity struct {
 // UserIdentitySocial contains a basic set of fields for receiving information from external social networks.
 type UserIdentitySocial struct {
 	// ID is the id in the external network.
-	ID string `json:"id"`
+	ID string `json:"id,omitempty"`
 
 	// Name is the nickname or username of the user.
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 
 	// FirstName is the first name of the user.
-	FirstName string `json:"first_name"`
+	FirstName string `json:"first_name,omitempty"`
 
 	// LastName is the last name of the user.
-	LastName string `json:"last_name"`
+	LastName string `json:"last_name,omitempty"`
 
 	// Email is the email address of the user.
-	Email string `json:"email"`
+	Email string `json:"email,omitempty"`
 
 	// Birthday is the date of birthday.
-	Birthday string `json:"birthday"`
+	Birthday string `json:"birthday,omitempty"`
 
 	// Picture is the avatar of the user.
-	Picture string `json:"picture"`
+	Picture string `json:"picture,omitempty"`
 
 	// Token is the access token on social network.
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"`
+}
+
+func (u *UserIdentitySocial) HideSensitive() {
+	u.ID = ""
+	u.Token = ""
 }
 
 // SocialSettings contains settings for a one-time token when linking a social account and password provider.

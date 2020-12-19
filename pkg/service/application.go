@@ -1,13 +1,14 @@
 package service
 
 import (
+	"sync"
+
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/database"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/persist"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 const ApplicationWatcherChannel = "application"
@@ -30,10 +31,10 @@ type ApplicationServiceInterface interface {
 	LoadMfaConnection(string) ([]*models.MfaConnection, error)
 
 	// AddIdentityProvider adds the identity of the provider to the list available for the application.
-	AddIdentityProvider(*models.Application, *models.AppIdentityProvider) error
+	// AddIdentityProvider(*models.Application, *models.AppIdentityProvider) error
 
 	// UpdateIdentityProvider updates the provider identity of the application.
-	UpdateIdentityProvider(*models.Application, *models.AppIdentityProvider) error
+	// UpdateIdentityProvider(*models.Application, *models.AppIdentityProvider) error
 }
 
 // ApplicationService is the Application service.
@@ -122,22 +123,22 @@ func (s ApplicationService) LoadMfaConnection(connection string) ([]*models.MfaC
 	return conn, nil
 }
 
-func (s ApplicationService) AddIdentityProvider(app *models.Application, ip *models.AppIdentityProvider) error {
-	app.IdentityProviders = append(app.IdentityProviders, ip)
+// func (s ApplicationService) AddIdentityProvider(app *models.Application, ip *models.AppIdentityProvider) error {
+// 	app.IdentityProviders = append(app.IdentityProviders, ip)
 
-	return s.Update(app)
-}
+// 	return s.Update(app)
+// }
 
-func (s ApplicationService) UpdateIdentityProvider(app *models.Application, ip *models.AppIdentityProvider) error {
-	for index, provider := range app.IdentityProviders {
-		if provider.ID == ip.ID {
-			app.IdentityProviders[index] = ip
-			return s.Update(app)
-		}
-	}
+// func (s ApplicationService) UpdateIdentityProvider(app *models.Application, ip *models.AppIdentityProvider) error {
+// 	for index, provider := range app.IdentityProviders {
+// 		if provider.ID == ip.ID {
+// 			app.IdentityProviders[index] = ip
+// 			return s.Update(app)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (s ApplicationService) loadToCache(id bson.ObjectId) (*models.Application, error) {
 	app := &models.Application{}

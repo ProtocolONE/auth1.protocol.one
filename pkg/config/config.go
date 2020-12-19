@@ -4,6 +4,11 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+type Admin struct {
+	// Database contains settings for connection to the database.
+	Database Database
+}
+
 // Config is general configuration settings for the application.
 type Config struct {
 	// Server contains settings for http application.
@@ -24,16 +29,26 @@ type Config struct {
 	// Mailer contains settings for the postman service.
 	Mailer Mailer
 
+	// Recaptcha contains settings for recaptcha integration.
+	Recaptcha Recaptcha
+
+	MailTemplates MailTemplates
+
+	// Centrifugo settings to connect to centrifugo
+	Centrifugo Centrifugo
+
 	// MigrationDirect specifies direction for database migrations.
 	MigrationDirect string `envconfig:"MIGRATION_DIRECT" required:"false"`
 }
 
 // Server contains settings for http application.
 type Server struct {
-	Port             int      `envconfig:"PORT" required:"false" default:"8080"`
-	Debug            bool     `envconfig:"DEBUG" required:"false" default:"true"`
-	AllowOrigins     []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
-	AllowCredentials bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
+	Port              int      `envconfig:"PORT" required:"false" default:"8080"`
+	Debug             bool     `envconfig:"DEBUG" required:"false" default:"true"`
+	AllowOrigins      []string `envconfig:"ALLOW_ORIGINS" required:"false" default:"*"`
+	AllowCredentials  bool     `envconfig:"ALLOW_CREDENTIALS" required:"false" default:"true"`
+	AuthWebFormSdkUrl string   `envconfig:"AUTH_WEB_FORM_SDK_URL" required:"false" default:"https://static.protocol.one/auth/form/dev/auth-web-form.js"`
+	ManageSecret      string   `required:"false" default:"password"`
 }
 
 // Database contains settings for connection to the database.
@@ -79,7 +94,29 @@ type Mailer struct {
 	InsecureSkipVerify bool   `envconfig:"SKIP_VERIFY" required:"false" default:"true"`
 }
 
-func Load() (*Config, error) {
-	config := &Config{}
-	return config, envconfig.Process("AUTHONE", config)
+type Recaptcha struct {
+	Key      string `envconfig:"KEY" required:"false" default:""`
+	Secret   string `envconfig:"SECRET" required:"false" default:""`
+	Hostname string `required:"false" default:""`
+}
+
+// Hydra contains settings for public and private urls of the Hydra api.
+type MailTemplates struct {
+	ChangePasswordTpl string `envconfig:"CHANGE_PASSWORD_TPL" required:"true" default:"./public/templates/email/change_password.html"`
+	PlatformUrl       string `envconfig:"PLATFORM_URL" required:"true" default:"http://localhost:7001"`
+	PlatformName      string `envconfig:"PLATFORM_NAME" required:"true" default:"Auth1"`
+	SupportPortalUrl  string `envconfig:"SUPPORT_PORTAL_URL" required:"true" default:"http://localhost:7001"`
+}
+
+// Centrifugo settings
+type Centrifugo struct {
+	Addr            string `envconfig:"ADDR" required:"true" default:""`
+	ApiKey          string `envconfig:"API_KEY" default:""`
+	HMACSecret      string `envconfig:"HMAC_SECRET" required:"true" default:""`
+	SessionTTL      int    `envconfig:"SESSION_TTL" required:"true" default:"1200"`
+	LauncherChannel string `envconfig:"LAUNCHER_CHANNEL" required:"true" default:"launcher"`
+}
+
+func Load(v interface{}) error {
+	return envconfig.Process("AUTHONE", v)
 }

@@ -16,15 +16,22 @@ func (a *ChangePasswordForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 // ChangePasswordStartForm contains the form fields for starting an operation for changing the password.
 type ChangePasswordStartForm struct {
+	// Subject is the user id
+	Subject string `json:"subject" form:"subject" validate:"required"`
+
 	// ClientID is the application id
 	ClientID string `json:"client_id" form:"client_id" validate:"required"`
 
 	// Email is the email address of the user to which the account is registered.
 	Email string `json:"email" form:"email" validate:"required,email"`
+
+	// Challenge is the code of the oauth2 login challenge. This code to generates of the Hydra service.
+	Challenge string `json:"challenge" form:"challenge" validate:"required"`
 }
 
 // ChangePasswordVerifyForm contains form fields for completing a password change.
 type ChangePasswordVerifyForm struct {
+	//todo: remove field? used in dbconnections/password-change and unused in /api/password/reset
 	// ClientID is the application id
 	ClientID string `form:"client_id" json:"client_id" validate:"required"`
 
@@ -39,7 +46,10 @@ type ChangePasswordVerifyForm struct {
 }
 
 type ChangePasswordTokenSource struct {
-	Email string
+	Email     string
+	ClientID  string
+	Challenge string
+	Subject   string
 }
 
 func (a *ChangePasswordStartForm) MarshalLogObject(enc zapcore.ObjectEncoder) error {

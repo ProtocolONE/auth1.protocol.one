@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/ProtocolONE/auth1.protocol.one/internal/domain/entity"
 	"github.com/globalsign/mgo/bson"
 	"go.uber.org/zap/zapcore"
 )
@@ -11,7 +12,10 @@ type AppIdentityProvider struct {
 	ID bson.ObjectId `bson:"_id" json:"id"`
 
 	// ApplicationID is the id of application.
-	ApplicationID bson.ObjectId `bson:"app_id" json:"application_id"`
+	// ApplicationID bson.ObjectId `bson:"app_id" json:"application_id"`
+
+	// ApplicationID is the id of application.
+	// SpaceID bson.ObjectId `bson:"spac_id" json:"application_id"`
 
 	// DisplayName is the human-readable string name of the provider.
 	DisplayName string `bson:"display_name" json:"display_name"`
@@ -43,7 +47,7 @@ type AppIdentityProvider struct {
 
 func (ipc *AppIdentityProvider) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ID", ipc.ID.String())
-	enc.AddString("ApplicationID", ipc.ApplicationID.String())
+	// enc.AddString("ApplicationID", ipc.ApplicationID.String())
 	enc.AddString("DisplayName", ipc.DisplayName)
 	enc.AddString("Name", ipc.Name)
 	enc.AddString("Type", ipc.Type)
@@ -55,4 +59,19 @@ func (ipc *AppIdentityProvider) MarshalLogObject(enc zapcore.ObjectEncoder) erro
 	enc.AddString("EndpointUserInfoURL", ipc.EndpointUserInfoURL)
 
 	return nil
+}
+
+func OldIDProvider(p entity.IdentityProvider) *AppIdentityProvider {
+	return &AppIdentityProvider{
+		ID:                  bson.ObjectIdHex(string(p.ID)),
+		Name:                p.Name,
+		Type:                string(p.Type),
+		DisplayName:         p.DisplayName,
+		ClientID:            p.ClientID,
+		ClientSecret:        p.ClientSecret,
+		ClientScopes:        p.ClientScopes,
+		EndpointAuthURL:     p.EndpointAuthURL,
+		EndpointTokenURL:    p.EndpointTokenURL,
+		EndpointUserInfoURL: p.EndpointUserInfoURL,
+	}
 }
