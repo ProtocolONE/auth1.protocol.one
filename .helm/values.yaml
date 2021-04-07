@@ -8,7 +8,7 @@ enableCertIssuer: true
 enableHydraDebug: false
 
 ingress:
-  hostname: auth1.tst.protocol.one
+  hostname: auth.tst.gameservices.unlimint.com
   stgHostname: auth.stg.pay.super.com
   hostnamePrefix:
   path: /
