@@ -117,9 +117,10 @@ func NewServer(c *ServerConfig) (*Server, error) {
 		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
 	}))
 	server.Echo.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-		TokenLookup: "header:X-XSRF-TOKEN",
-		CookieName:  "_csrf",
-		Skipper:     csrfSkipper,
+		TokenLookup:    "header:X-XSRF-TOKEN",
+		CookieName:     "_csrf",
+		Skipper:        csrfSkipper,
+		CookieSameSite: http.SameSiteNoneMode,
 	}))
 	server.Echo.Use(session.Middleware(c.SessionStore))
 	server.Echo.Use(middleware.RequestID())
