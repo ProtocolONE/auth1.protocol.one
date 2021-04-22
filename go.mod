@@ -27,8 +27,8 @@ require (
 	github.com/labstack/echo-contrib v0.0.0-20190220224852-7fa08ffe9442
 	github.com/labstack/echo/v4 v4.2.2
 	github.com/labstack/gommon v0.3.0
-	github.com/micro/go-micro v1.8.0
-	github.com/micro/go-plugins v1.2.0
+	github.com/micro/go-micro v1.18.0
+	github.com/micro/go-plugins v1.5.1
 	github.com/ory/hydra v0.0.0-20190418080013-9c6e4c120c12
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.2
@@ -37,15 +37,15 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
-	go.uber.org/zap v1.10.0
+	go.uber.org/zap v1.12.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	gopkg.in/go-playground/validator.v9 v9.29.1
+	gopkg.in/go-playground/validator.v9 v9.30.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.4
 )
 
 replace (
