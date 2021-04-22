@@ -822,9 +822,6 @@ github.com/micro/go-plugins v1.2.0 h1:/p9EzqJUiKkldzhANbu4hgKOaQufSBBwusQyhhvfjv
 github.com/micro/go-plugins v1.2.0/go.mod h1:N2UCiG7ExrTZ1N1dq1PF9bOgtuBOlUVEc86rfNGqxFQ=
 github.com/micro/go-rcache v0.0.0-20180418165751-a581a57b5133/go.mod h1:CBzgfnsCYHcyLg1qeTShF0iDErQmcLmSt+SdwjLkckI=
 github.com/micro/h2c v1.0.0/go.mod h1:54sOOQW/GRlHhH43vKwOhUb+kHaXhVxR0d3CJhn9alE=
-github.com/micro/mdns v0.0.0-20181201230301-9c3770d4057a/go.mod h1:SQG6o/94RinohLuB5noHSevg2Iqg2wXLDUn4lj2LWWo=
-github.com/micro/mdns v0.1.1-0.20190729112526-ef68c9635478 h1:L6jnZZ763dMLlvst8P0dWHa1WbUu7ppUY1q3AY2hhIU=
-github.com/micro/mdns v0.1.1-0.20190729112526-ef68c9635478/go.mod h1:KJ0dW7KmicXU2BV++qkLlmHYcVv7/hHnbtguSWt9Aoc=
 github.com/micro/micro v1.8.0/go.mod h1:dF7nfyek86puqmlN1cEeyCos98rGzprwehRKJ4HMudE=
 github.com/micro/util v0.0.0-20181115195001-2d4f591dc538/go.mod h1:vxd7TGn28ynEMF4szG3PHTzgo3bx3FpfON9xpFsGc+g=
 github.com/microcosm-cc/bluemonday v1.0.1/go.mod h1:hsXNsILzKxV+sX77C5b8FSuKF00vh2OMYv+xgHpAMF4=
