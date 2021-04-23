@@ -43,6 +43,10 @@ func (s *SessionSettings) Set(ctx echo.Context, name string, value interface{}) 
 	sess.Options = &sessions.Options{
 		SameSite: http.SameSiteNoneMode,
 		Secure:   true,
+		HttpOnly: true,
+		Domain:   ctx.Request().Host,
+		Path:     "/",
+		MaxAge:   60 * 30,
 	}
 
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
