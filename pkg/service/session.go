@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -39,15 +38,11 @@ func (s *SessionSettings) Set(ctx echo.Context, name string, value interface{}) 
 	if err != nil {
 		return err
 	}
+
 	sess.Values[name] = value
-	sess.Options = &sessions.Options{
-		SameSite: http.SameSiteNoneMode,
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   ctx.Request().Host,
-		Path:     "/",
-		MaxAge:   60 * 30,
-	}
+	sess.Options.SameSite = http.SameSiteNoneMode
+	sess.Options.Secure = true
+	sess.Options.HttpOnly = true
 
 	if err := sess.Save(ctx.Request(), ctx.Response()); err != nil {
 		return err

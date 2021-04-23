@@ -64,7 +64,7 @@ type Session struct {
 	Size     int    `envconfig:"SIZE" required:"false" default:"1"`
 	Network  string `envconfig:"NETWORK" required:"false" default:"tcp"`
 	Secret   string `envconfig:"SECRET" required:"false" default:"secretkey"`
-	Name     string `envconfig:"NAME" required:"false" default:"sessid"`
+	Name     string `envconfig:"NAME" required:"false" default:"session_id"`
 	Address  string `envconfig:"ADDRESS" required:"false" default:"127.0.0.1:6379"`
 	Password string `envconfig:"PASSWORD" required:"false" default:""`
 }
