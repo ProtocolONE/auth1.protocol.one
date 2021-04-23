@@ -46,8 +46,8 @@ jobs:
         run: |
           mongo auth-one --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
           go test ./... -coverprofile=coverage.out -covermode=atomic -p=1
-      - name: publish codecov
-        run: bash <(curl -s https://codecov.io/bash)
+      #- name: publish codecov
+      #  run: bash <(curl -s https://codecov.io/bash)
         
   
   deploy-tst:
