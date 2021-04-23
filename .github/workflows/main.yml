@@ -90,7 +90,8 @@ jobs:
   #           -e JENKINS_BUILD_PROJECT=$GITHUB_REPOSITORY -e JENKINS_BUILD_BRANCH=${GITHUB_REF##*/} -e DEPLOY_TO_ENV="stg" p1hub/p1jenkinstrigger
 
   slack-notification:
-    needs: [tests, deploy-tst, deploy-stg-releasebranch, deploy-stg-tag]
+    #needs: [tests, deploy-tst, deploy-stg-releasebranch, deploy-stg-tag]
+    needs: [tests, deploy-tst]
     runs-on: ubuntu-latest
     if: always()
     steps:
