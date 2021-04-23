@@ -10,9 +10,9 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elliotchance/redismock v1.5.1
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
-	github.com/go-openapi/runtime v0.19.0
-	github.com/go-openapi/strfmt v0.19.0
-	github.com/go-openapi/swag v0.19.0
+	github.com/go-openapi/runtime v0.19.28
+	github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/swag v0.19.9
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
 	github.com/golang/protobuf v1.3.2
@@ -34,7 +34,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	github.com/xakep666/mongo-migrate v0.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583 // indirect
 	go.uber.org/zap v1.12.0
@@ -45,7 +45,7 @@ require (
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0 // indirect
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.3.0
 )
 
 replace (
