@@ -7,8 +7,6 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 )
 
@@ -77,23 +75,10 @@ func oauthLogin(ctx echo.Context) error {
 }
 
 func oauthLoginSubmit(ctx echo.Context) error {
-	log := zap.L().With(
-		zap.String(
-			echo.HeaderXRequestID,
-			ctx.Response().Header().Get(echo.HeaderXRequestID),
-		),
-	)
-
 	form := new(models.Oauth2LoginSubmitForm)
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
-		fields := []zapcore.Field{
-			zap.Any("form", form),
-			zap.Any("err", err),
-		}
-		log.Info("Auth bind form error", fields...)
-
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
@@ -102,12 +87,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
-		fields := []zapcore.Field{
-			zap.Any("form", form),
-			zap.Any("err", err),
-		}
-		log.Info("Auth validate form error", fields...)
-
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
@@ -117,13 +96,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	}
 
 	url, err := m.Auth(ctx, form)
-
-	fields := []zapcore.Field{
-		zap.String("url", url),
-		zap.Any("err", err),
-	}
-	log.Info("Auth result", fields...)
-
 	if err != nil {
 		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
