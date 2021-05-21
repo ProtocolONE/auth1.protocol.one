@@ -80,6 +80,13 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	form := new(models.Oauth2LoginSubmitForm)
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
+	var log *zap.Logger
+
+	logger := ctx.Get("logger")
+	if logger != nil {
+		log = logger.(*zap.Logger)
+	}
+
 	if err := ctx.Bind(form); err != nil {
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
@@ -98,13 +105,6 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	}
 
 	url, err := m.Auth(ctx, form)
-
-	var log *zap.Logger
-
-	logger := ctx.Get("logger")
-	if logger != nil {
-		log = logger.(*zap.Logger)
-	}
 
 	fields := []zapcore.Field{
 		zap.String("url", url),
