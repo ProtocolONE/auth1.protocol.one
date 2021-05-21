@@ -7,6 +7,8 @@ import (
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/manager"
 	"github.com/ProtocolONE/auth1.protocol.one/pkg/models"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"net/http"
 )
 
@@ -96,6 +98,20 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	}
 
 	url, err := m.Auth(ctx, form)
+
+	var log *zap.Logger
+
+	logger := ctx.Get("logger")
+	if logger != nil {
+		log = logger.(*zap.Logger)
+	}
+
+	fields := []zapcore.Field{
+		zap.String("url", url),
+		zap.Any("err", err),
+	}
+	log.Info("Auth result", fields...)
+
 	if err != nil {
 		ctx.Error(err.Err)
 		return helper.JsonError(ctx, err)
