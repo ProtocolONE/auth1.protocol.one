@@ -88,6 +88,12 @@ func oauthLoginSubmit(ctx echo.Context) error {
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
 
 	if err := ctx.Bind(form); err != nil {
+		fields := []zapcore.Field{
+			zap.Any("form", form),
+			zap.Any("err", err),
+		}
+		log.Info("Auth bind form error", fields...)
+
 		e := &models.GeneralError{
 			Code:    BadRequiredCodeCommon,
 			Message: models.ErrorInvalidRequestParameters,
@@ -96,6 +102,12 @@ func oauthLoginSubmit(ctx echo.Context) error {
 		return helper.JsonError(ctx, e)
 	}
 	if err := ctx.Validate(form); err != nil {
+		fields := []zapcore.Field{
+			zap.Any("form", form),
+			zap.Any("err", err),
+		}
+		log.Info("Auth validate form error", fields...)
+
 		e := &models.GeneralError{
 			Code:    fmt.Sprintf(BadRequiredCodeField, helper.GetSingleError(err).Field()),
 			Message: models.ErrorRequiredField,
