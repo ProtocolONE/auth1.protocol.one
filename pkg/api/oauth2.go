@@ -77,7 +77,12 @@ func oauthLogin(ctx echo.Context) error {
 }
 
 func oauthLoginSubmit(ctx echo.Context) error {
-	log := zap.L()
+	log := zap.L().With(
+		zap.String(
+			echo.HeaderXRequestID,
+			ctx.Response().Header().Get(echo.HeaderXRequestID),
+		),
+	)
 
 	form := new(models.Oauth2LoginSubmitForm)
 	m := ctx.Get("oauth_manager").(*manager.OauthManager)
