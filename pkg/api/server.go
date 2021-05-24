@@ -201,6 +201,7 @@ func (s *Server) setupRoutes() error {
 		InitManage,
 		InitOauth2,
 		InitHealth,
+		InitSafariHack,
 	}
 
 	for _, r := range routes {
