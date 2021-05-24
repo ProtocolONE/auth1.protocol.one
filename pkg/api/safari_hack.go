@@ -12,5 +12,14 @@ func InitSafariHack(cfg *Server) error {
 }
 
 func SafariHack(ctx echo.Context) error {
-	return ctx.HTML(http.StatusOK, "<script>window.location.replace(document.referrer)</script>")
+	return ctx.HTML(http.StatusOK, `
+		<script>
+			document.cookie = 'safari_cookie_fix=fixed; path=/';
+			if (window.location.href.indexOf('verbose') > -1) {
+				setTimeout(window.location.replace(document.referrer), 2000);
+			} else {
+				window.location.replace(document.referrer) //>>>>>>> leave this line ONLY <<<<<<<<
+			}
+		</script>
+	`)
 }
