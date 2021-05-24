@@ -111,7 +111,7 @@ func NewServer(c *ServerConfig) (*Server, error) {
 	server.Echo.Use(middleware.Recover())
 	// TODO: Validate origins for each application by settings
 	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowHeaders:     []string{"authorization", "content-type"},
+		AllowHeaders:     []string{echo.HeaderAuthorization, echo.HeaderContentType, echo.HeaderOrigin, echo.HeaderAccept},
 		AllowOrigins:     c.ApiConfig.AllowOrigins,
 		AllowCredentials: c.ApiConfig.AllowCredentials,
 		AllowMethods:     []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
@@ -217,5 +217,5 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, ctx echo.C
 }
 
 func csrfSkipper(ctx echo.Context) bool {
-	return ctx.Path() != "/oauth2/login" && ctx.Path() != "/oauth2/signup"
+	return true //ctx.Path() != "/oauth2/login" && ctx.Path() != "/oauth2/signup"
 }
