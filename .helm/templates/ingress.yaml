@@ -10,7 +10,8 @@ metadata:
     heritage: {{ .Release.Service }}
   annotations:
     kubernetes.io/ingress.class: nginx
-    certmanager.k8s.io/issuer: {{ .Release.Name }}
+    #certmanager.k8s.io/issuer: {{ .Release.Name }}
+    cert-manager.io/cluster-issuer: letsencrypt-default-issuer
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/tls-acme: "true"
