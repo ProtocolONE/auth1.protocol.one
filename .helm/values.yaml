@@ -4,7 +4,7 @@
 enableRedis: true
 enableMongo: true
 enableHydra: true
-enableCertIssuer: true
+enableCertIssuer: false
 enableHydraDebug: false
 
 ingress:
