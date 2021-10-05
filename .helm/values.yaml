@@ -9,7 +9,7 @@ enableHydraDebug: false
 
 ingress:
   hostname: auth.tst.gameservices.unlimint.com
-  stgHostname: auth.stg.pay.super.com
+  stgHostname: auth.stg.gameservices.unlimint.com
   hostnamePrefix:
   path: /
 
